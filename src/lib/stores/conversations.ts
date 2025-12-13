@@ -50,8 +50,14 @@ const loadMessagesForChat = (chatId: string | null) => {
 	const conversation = conversations.find((c) => c.id === chatId);
 	
 	if (conversation) {
-		// Valid chat ID - load its messages
-		messagesAtom.set(conversation.messages);
+		// Only load messages if the conversation has stored messages
+		// OR if the current messagesAtom is empty.
+		// This prevents overwriting messages that were just added to a new conversation
+		// before the async subscriber runs.
+		const currentMessages = messagesAtom.get();
+		if (conversation.messages.length > 0 || currentMessages.length === 0) {
+			messagesAtom.set(conversation.messages);
+		}
 	} else {
 		// Invalid chat ID - clear it from URL and show new chat
 		setActiveChat(null, true);

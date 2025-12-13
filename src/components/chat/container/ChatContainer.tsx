@@ -76,6 +76,9 @@ export const ChatContainer = () => {
 				conversationId = newConversation.id;
 			}
 
+			// Get the current message history for context BEFORE adding the new user message
+			const currentMessages = messagesAtom.get();
+
 			// Add user message only if this is a new message (not a retry/regenerate)
 			if (addUserMessage) {
 				addMessage("user", prompt, images);
@@ -93,9 +96,6 @@ export const ChatContainer = () => {
 			try {
 				abortController = new AbortController();
 
-				// Get the current message history for context
-				const currentMessages = messagesAtom.get();
-
 				// Get the stream from the AI (pass images and history)
 				const stream = await promptAsync(prompt, {
 					...aiSettings,
@@ -109,12 +109,39 @@ export const ChatContainer = () => {
 						break;
 					}
 
-					if (chunk.type === "text-delta") {
-						appendToStream(chunk.text);
+					switch (chunk.type) {
+						case "text-delta":
+							appendToStream(chunk.text);
+							break;
+						case "tool-call": {
+							// Save any content before the tool call as a separate message
+							const preToolContent = currentStreamAtom.get();
+							if (preToolContent) {
+								addMessage("assistant", preToolContent);
+								clearStream();
+							}
+							// Add the tool call as its own message
+							addMessage("assistant", `🔧 Using tool: ${chunk.toolName}`);
+							break;
+						}
+						case "tool-result": {
+							// Tool completed - format the result as a natural response
+							const result = chunk.output as Record<string, unknown>;
+							if (chunk.toolName === "weather" && result) {
+								const weatherResponse = `The weather in ${result.location} is currently ${result.temperature}°F.`;
+								appendToStream(weatherResponse);
+							}
+							break;
+						}
+						case "tool-error":
+							// Tool failed - show error as its own message
+							addMessage("assistant", `❌ Error: ${chunk.error}`);
+							break;
+						// Other chunk types (step-start, step-finish, etc.) are handled automatically
 					}
 				}
 
-				// After streaming completes, add the full message
+				// After streaming completes, add the full message (the final response)
 				const finalContent = currentStreamAtom.get();
 				if (finalContent) {
 					addMessage("assistant", finalContent);
