@@ -248,10 +248,20 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 			? buildMessageContent(prompt, images)
 			: prompt;
 
-		// Few-shot example to teach the model the exact tool call format
-		// Shows complete flow: user asks → assistant calls tool → result → natural response
-		// Using an uncommon city to avoid conflicts with user's actual requests
+		// Few-shot examples to teach the model:
+		// 1. How to respond to general conversation (no tools)
+		// 2. When and how to use tools (only for specific requests)
 		const fewShotMessages: ModelMessage[] = [
+			// Example 1: General greeting - NO tool needed
+			{
+				role: "user",
+				content: "Hi there!",
+			},
+			{
+				role: "assistant",
+				content: "Hello! How can I help you today?",
+			},
+			// Example 2: Weather request - USE tool
 			{
 				role: "user",
 				content: "Weather in Reykjavik",
@@ -291,14 +301,26 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 			}),
 			toolSystemPromptTemplate: (toolsDefinition) =>
 				[
-					"You have these tools:",
+					"You are a helpful AI assistant. For most questions and conversations, respond naturally without tools.",
+					"",
+					"You have these tools available (use ONLY when specifically needed):",
 					toolsDefinition,
 					"",
-					'For weather, use: <tool>{"name":"weather","arguments":{"location":"CityName"}}</tool>',
-					'For date/time, use: <tool>{"name":"datetime","arguments":{}}</tool>',
-					'For date/time in a specific timezone: <tool>{"name":"datetime","arguments":{"timezone":"America/New_York"}}</tool>',
+					"WHEN TO USE TOOLS:",
+					"- weather: ONLY when user explicitly asks about weather, forecast, or temperature for a specific location",
+					"- datetime: ONLY when user explicitly asks about the current date, time, or what day it is",
 					"",
-					"IMPORTANT: When using a tool, output ONLY the tool call. Do NOT write any response text before or after it.",
+					"WHEN NOT TO USE TOOLS:",
+					"- Greetings (hi, hello, hey, etc.) - just respond friendly",
+					"- General questions, opinions, explanations - respond conversationally",
+					"- Jokes, stories, creative requests - respond directly",
+					"- If unsure whether to use a tool, DON'T - respond conversationally instead",
+					"",
+					"TOOL CALL FORMAT (only when a tool is needed):",
+					'- Weather: <tool>{"name":"weather","arguments":{"location":"CityName"}}</tool>',
+					'- Date/time: <tool>{"name":"datetime","arguments":{}}</tool>',
+					"",
+					"When using a tool, output ONLY the tool call with no other text.",
 				].join("\n"),
 		});
 

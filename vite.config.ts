@@ -100,6 +100,9 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "./src"),
 		},
 	},
+	optimizeDeps: {
+		include: ["react-is", "recharts", "@tanstack/react-table"],
+	},
 	// SPA fallback - all routes serve index.html
 	appType: "spa",
 	// SSR configuration

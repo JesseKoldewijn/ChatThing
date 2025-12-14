@@ -1,13 +1,13 @@
 import { useState, useCallback } from "react";
 import { useStore } from "@nanostores/react";
 import { MessageItemUI } from "./MessageItem.ui";
-import { messagesAtom, removeLastMessage, lastUserMessageAtom } from "@/lib/stores/chat";
+import { messagesAtom, removeAssistantMessagesFromTransaction, lastUserMessageAtom } from "@/lib/stores/chat";
 import type { Message } from "@/lib/stores/chat";
 
 interface MessageItemProps {
 	message: Message;
 	isStreaming?: boolean;
-	onRegenerate?: (prompt: string) => void;
+	onRegenerate?: (prompt: string, transactionId: string) => void;
 	renderContent?: (content: string) => React.ReactNode;
 }
 
@@ -37,10 +37,10 @@ export const MessageItem = ({
 
 	const handleRegenerate = useCallback(() => {
 		if (onRegenerate && lastUserMessage) {
-			// Remove the current assistant message
-			removeLastMessage();
-			// Regenerate with the last user message
-			onRegenerate(lastUserMessage.content);
+			// Remove all assistant messages from this transaction (includes tool announcements)
+			removeAssistantMessagesFromTransaction(lastUserMessage.transactionId);
+			// Regenerate with the last user message, preserving the transaction ID
+			onRegenerate(lastUserMessage.content, lastUserMessage.transactionId);
 		}
 	}, [onRegenerate, lastUserMessage]);
 
