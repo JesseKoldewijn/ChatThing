@@ -6,8 +6,15 @@ import {
 	setTheme,
 	archiveThresholdAtom,
 	setArchiveThreshold,
+	temperatureUnitAtom,
+	setTemperatureUnit,
+	timezoneAtom,
+	setTimezone,
+	getSystemTimezone,
 	type Theme,
 	type ArchiveThreshold,
+	type TemperatureUnit,
+	type TimezonePreference,
 } from "@/lib/stores/settings";
 import {
 	conversationsAtom,
@@ -23,6 +30,9 @@ export const SettingsPage = () => {
 	const currentTheme = useStore(themeAtom);
 	const conversations = useStore(conversationsAtom);
 	const archiveThreshold = useStore(archiveThresholdAtom);
+	const temperatureUnit = useStore(temperatureUnitAtom);
+	const timezone = useStore(timezoneAtom);
+	const systemTimezone = getSystemTimezone();
 	const [isImporting, setIsImporting] = useState(false);
 
 	// Calculate counts by status
@@ -34,6 +44,14 @@ export const SettingsPage = () => {
 
 	const handleThemeChange = useCallback((theme: Theme) => {
 		setTheme(theme);
+	}, []);
+
+	const handleTemperatureUnitChange = useCallback((unit: TemperatureUnit) => {
+		setTemperatureUnit(unit);
+	}, []);
+
+	const handleTimezoneChange = useCallback((tz: TimezonePreference) => {
+		setTimezone(tz);
 	}, []);
 
 	const handleArchiveThresholdChange = useCallback((threshold: ArchiveThreshold) => {
@@ -85,6 +103,9 @@ export const SettingsPage = () => {
 	return (
 		<SettingsPageUI
 			currentTheme={currentTheme}
+			temperatureUnit={temperatureUnit}
+			timezone={timezone}
+			systemTimezone={systemTimezone}
 			conversationCount={conversations.length}
 			activeCount={activeCount}
 			archivedCount={archivedCount}
@@ -92,6 +113,8 @@ export const SettingsPage = () => {
 			archiveThreshold={archiveThreshold}
 			isImporting={isImporting}
 			onThemeChange={handleThemeChange}
+			onTemperatureUnitChange={handleTemperatureUnitChange}
+			onTimezoneChange={handleTimezoneChange}
 			onArchiveThresholdChange={handleArchiveThresholdChange}
 			onExport={handleExport}
 			onImport={handleImport}

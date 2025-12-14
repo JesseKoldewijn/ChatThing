@@ -259,7 +259,7 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 			{
 				role: "assistant",
 				content:
-					'<tool>{"name":"weather","arguments":{"location":"Reykjavik"}}</tool><result>{"location":"Reykjavik","temperature":45}</result>The weather in Reykjavik is currently 45°F.',
+					'<tool>{"name":"weather","arguments":{"location":"Reykjavik"}}</tool>',
 			},
 		];
 
@@ -290,13 +290,16 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 				toolResponseEnd: "</result>",
 			}),
 			toolSystemPromptTemplate: (toolsDefinition) =>
-				`You have these tools:
-${toolsDefinition}
-
-For weather, use exactly: <tool>{"name":"weather","arguments":{"location":"CityName"}}</tool>
-Replace CityName with the actual city.
-
-After receiving results, respond naturally. Do not repeat the tool call.`,
+				[
+					"You have these tools:",
+					toolsDefinition,
+					"",
+					'For weather, use: <tool>{"name":"weather","arguments":{"location":"CityName"}}</tool>',
+					'For date/time, use: <tool>{"name":"datetime","arguments":{}}</tool>',
+					'For date/time in a specific timezone: <tool>{"name":"datetime","arguments":{"timezone":"America/New_York"}}</tool>',
+					"",
+					"IMPORTANT: When using a tool, output ONLY the tool call. Do NOT write any response text before or after it.",
+				].join("\n"),
 		});
 
 		// Wrap with tool parser middleware to enable tool calling
