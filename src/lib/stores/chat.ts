@@ -16,6 +16,7 @@ export interface MessageContent {
 
 export interface Message {
 	id: string;
+	transactionId: string; // Links prompts with their responses
 	role: "user" | "assistant";
 	content: string; // Keep as string for backwards compatibility and simple display
 	images?: ImageAttachment[]; // Optional images attached to the message
@@ -40,17 +41,27 @@ export const lastUserMessageAtom = computed(messagesAtom, (messages) => {
 	return userMessages[userMessages.length - 1] ?? null;
 });
 
+// Options for addMessage
+export interface AddMessageOptions {
+	images?: ImageAttachment[];
+	transactionId?: string;
+}
+
 // Actions
 export const addMessage = (
 	role: Message["role"],
 	content: string,
-	images?: ImageAttachment[]
+	options?: AddMessageOptions
 ) => {
 	const message: Message = {
 		id: crypto.randomUUID(),
+		transactionId: options?.transactionId ?? crypto.randomUUID(),
 		role,
 		content,
-		images: images && images.length > 0 ? images : undefined,
+		images:
+			options?.images && options.images.length > 0
+				? options.images
+				: undefined,
 		timestamp: Date.now(),
 	};
 	messagesAtom.set([...messagesAtom.get(), message]);
@@ -95,7 +106,9 @@ export const addPendingImage = (image: ImageAttachment) => {
 };
 
 export const removePendingImage = (id: string) => {
-	pendingImagesAtom.set(pendingImagesAtom.get().filter((img) => img.id !== id));
+	pendingImagesAtom.set(
+		pendingImagesAtom.get().filter((img) => img.id !== id)
+	);
 };
 
 export const clearPendingImages = () => {

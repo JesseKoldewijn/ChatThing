@@ -80,12 +80,18 @@ const buildMessageContent = (
 };
 
 /**
- * Check if a message is a tool UI announcement that should be filtered from history
- * We keep weather responses so the model knows those questions were already answered
+ * Check if a message is a tool call announcement
+ */
+const isToolCallMessage = (content: string): boolean => {
+	return content.startsWith("🔧 Using tool:");
+};
+
+/**
+ * Check if a message is a tool UI message (announcement or error) that should be filtered
  */
 const isToolUIMessage = (content: string): boolean => {
 	// Filter out tool announcements (UI-only, not actual responses)
-	if (content.startsWith("🔧 Using tool:")) {
+	if (isToolCallMessage(content)) {
 		return true;
 	}
 	// Filter out error messages
@@ -96,22 +102,81 @@ const isToolUIMessage = (content: string): boolean => {
 };
 
 /**
+ * Find all transactionIds that contain tool call messages
+ */
+const findToolCallTransactionIds = (messages: Message[]): Set<string> => {
+	const toolTransactionIds = new Set<string>();
+	for (const msg of messages) {
+		if (msg.role === "assistant" && isToolCallMessage(msg.content)) {
+			toolTransactionIds.add(msg.transactionId);
+		}
+	}
+	return toolTransactionIds;
+};
+
+/**
+ * Find the most recent transactionId that has a tool call
+ * Returns undefined if no tool calls exist
+ */
+const findMostRecentToolTransactionId = (
+	messages: Message[],
+	toolTransactionIds: Set<string>
+): string | undefined => {
+	if (toolTransactionIds.size === 0) return undefined;
+
+	// Iterate from the end to find the most recent tool transaction
+	for (let i = messages.length - 1; i >= 0; i--) {
+		const msg = messages[i];
+		if (toolTransactionIds.has(msg.transactionId)) {
+			return msg.transactionId;
+		}
+	}
+	return undefined;
+};
+
+/**
  * Convert app Message[] to AI SDK ModelMessage[] format
- * Filters out tool-related UI messages to avoid confusing the model
+ * Filters out tool-related UI messages to avoid confusing the model.
+ * Only keeps the most recent tool call transaction to prevent hallucinations
+ * based on previous tool call patterns.
  */
 const convertHistoryToMessages = (history?: Message[]): ModelMessage[] => {
 	if (!history || history.length === 0) {
 		return [];
 	}
 
+	// Find all transactions that have tool calls
+	const toolTransactionIds = findToolCallTransactionIds(history);
+
+	// Find the most recent tool transaction (if any)
+	const mostRecentToolTransactionId = findMostRecentToolTransactionId(
+		history,
+		toolTransactionIds
+	);
+
+	// Filter messages:
+	// 1. Remove all messages from older tool transactions (not the most recent)
+	// 2. Remove tool UI messages (announcements and errors)
+	// 3. Keep the most recent tool transaction and all non-tool transactions
 	const filtered = history
 		.filter((msg) => {
-			// Keep all user messages
-			if (msg.role === "user") return true;
-			// Filter out tool UI announcements (but keep actual responses)
-			if (msg.role === "assistant" && isToolUIMessage(msg.content))
+			const isFromToolTransaction = toolTransactionIds.has(
+				msg.transactionId
+			);
+
+			// If this message is from a tool transaction...
+			if (isFromToolTransaction) {
+				// Only keep it if it's from the most recent tool transaction
+				if (msg.transactionId !== mostRecentToolTransactionId) {
+					return false;
+				}
+			}
+
+			// Filter out tool UI messages (announcements and errors)
+			if (msg.role === "assistant" && isToolUIMessage(msg.content)) {
 				return false;
-			// Keep other assistant messages (including weather responses)
+			}
+
 			return true;
 		})
 		.map((msg): ModelMessage => {
@@ -183,16 +248,18 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 			? buildMessageContent(prompt, images)
 			: prompt;
 
-		// Few-shot example to teach the model the exact format
+		// Few-shot example to teach the model the exact tool call format
+		// Shows complete flow: user asks → assistant calls tool → result → natural response
+		// Using an uncommon city to avoid conflicts with user's actual requests
 		const fewShotMessages: ModelMessage[] = [
 			{
 				role: "user",
-				content: "Weather in Seattle",
+				content: "Weather in Reykjavik",
 			},
 			{
 				role: "assistant",
 				content:
-					'<tool>{"name":"weather","arguments":{"location":"Seattle"}}</tool>',
+					'<tool>{"name":"weather","arguments":{"location":"Reykjavik"}}</tool><result>{"location":"Reykjavik","temperature":45}</result>The weather in Reykjavik is currently 45°F.',
 			},
 		];
 

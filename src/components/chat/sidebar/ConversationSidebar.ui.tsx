@@ -332,8 +332,8 @@ export const ConversationSidebarUI = ({
 				</div>
 			</div>
 
-			{/* Conversation list */}
-			<ScrollArea className="flex-1">
+			{/* Conversation list - flex-1 with min-h-0 enables scrolling in flex container */}
+			<ScrollArea className="flex-1 min-h-0">
 				<div className="p-2">
 					{!hasAnyConversations ? (
 						<div className="px-2 py-8 text-center text-sm text-muted-foreground">
