@@ -60,8 +60,8 @@ export const MessageListUI = ({
 	scrollRef,
 }: MessageListUIProps) => {
 	return (
-		<ScrollArea className="h-full">
-			<div ref={scrollRef} className="flex min-h-full flex-col">
+		<ScrollArea className="h-full w-full">
+			<div ref={scrollRef} className="flex min-h-full min-w-0 flex-col">
 				{isEmpty && !isLoading ? (
 					<div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
 						<div className="relative mb-6">
@@ -82,7 +82,7 @@ export const MessageListUI = ({
 						</p>
 					</div>
 				) : (
-					<div className="flex-1 py-4">
+					<div className="flex-1 min-w-0 py-4">
 						{children}
 						{isLoading && (
 							<div className="flex gap-3 px-4 py-4">

@@ -6,16 +6,18 @@ import {
 	getUsageSummary,
 	getRecentDailyUsage,
 	clearUsageData,
-	type DailyUsage,
 } from "@/lib/stores/usage";
 import { goBack } from "@/lib/stores/navigation";
 
 export const UsagePage = () => {
-	// Subscribe to daily usage changes
-	useStore(dailyUsageAtom);
+	// Subscribe to daily usage changes - this triggers re-render when data changes
+	const dailyUsage = useStore(dailyUsageAtom);
 
-	const summary = useMemo(() => getUsageSummary(), [dailyUsageAtom.get()]);
-	const chartData = useMemo(() => getRecentDailyUsage(30), [dailyUsageAtom.get()]);
+	// Compute summary and chart data based on current usage
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const summary = useMemo(() => getUsageSummary(), [dailyUsage]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const chartData = useMemo(() => getRecentDailyUsage(30), [dailyUsage]);
 
 	// Transform chart data for display
 	const formattedChartData = useMemo(() => {

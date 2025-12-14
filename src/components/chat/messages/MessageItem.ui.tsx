@@ -74,15 +74,33 @@ export const MessageItemUI = ({
 								key={image.id}
 								className="overflow-hidden rounded-xl border border-border shadow-sm"
 							>
-								<img
-									src={image.data}
-									alt={image.name || "Attached image"}
-									className="max-h-64 max-w-xs object-contain cursor-pointer hover:opacity-90 transition-opacity"
-									onClick={() => {
-										// Open image in new tab for full view
-										window.open(image.data, "_blank");
-									}}
-								/>
+								{(image.storedInDb && !image.data) ? (
+									// Show loading placeholder while fetching from IndexedDB
+									<div className="flex h-32 w-32 flex-col items-center justify-center gap-2 bg-muted p-4 text-center text-muted-foreground animate-pulse">
+										<span className="text-2xl">🖼️</span>
+										<span className="text-xs">Loading...</span>
+									</div>
+								) : image.stripped || !image.data ? (
+									// Show placeholder for stripped images (legacy)
+									<div className="flex h-32 w-32 flex-col items-center justify-center gap-2 bg-muted p-4 text-center text-muted-foreground">
+										<span className="text-2xl">🖼️</span>
+										<span className="text-xs">
+											{image.name || "Image"}
+											<br />
+											<span className="text-[10px] opacity-70">(not saved)</span>
+										</span>
+									</div>
+								) : (
+									<img
+										src={image.data}
+										alt={image.name || "Attached image"}
+										className="max-h-64 max-w-xs object-contain cursor-pointer hover:opacity-90 transition-opacity"
+										onClick={() => {
+											// Open image in new tab for full view
+											window.open(image.data, "_blank");
+										}}
+									/>
+								)}
 							</div>
 						))}
 					</div>

@@ -89,9 +89,9 @@ export const SettingsPage = () => {
 		}
 	}, []);
 
-	const handleCleanupDeleted = useCallback(() => {
+	const handleCleanupDeleted = useCallback(async () => {
 		if (confirm(`Permanently delete ${deletedCount} conversation${deletedCount !== 1 ? "s" : ""} from trash? This cannot be undone.`)) {
-			const cleaned = cleanupDeletedConversations();
+			const cleaned = await cleanupDeletedConversations();
 			alert(`${cleaned} conversation${cleaned !== 1 ? "s" : ""} permanently deleted.`);
 		}
 	}, [deletedCount]);
