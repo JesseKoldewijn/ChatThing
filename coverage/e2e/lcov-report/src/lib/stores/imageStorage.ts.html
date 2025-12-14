@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">21.17% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/85</span>
+                <span class='fraction'>18/85</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">27.27% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>3/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">20.98% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/81</span>
+                <span class='fraction'>17/81</span>
             </div>
         
             
@@ -311,23 +311,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -335,18 +335,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -515,14 +515,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -554,23 +554,23 @@
  * Provides much larger storage capacity than localStorage (~50MB+ vs 5MB)
  */
 &nbsp;
-const DB_NAME = <span class="cstat-no" title="statement not covered" >"ai-chat-images";</span>
-const DB_VERSION = <span class="cstat-no" title="statement not covered" >1;</span>
-const STORE_NAME = <span class="cstat-no" title="statement not covered" >"images";</span>
+const DB_NAME = "ai-chat-images";
+const DB_VERSION = 1;
+const STORE_NAME = "images";
 &nbsp;
-let db: IDBDatabase | null = <span class="cstat-no" title="statement not covered" >null;</span>
+let db: IDBDatabase | null = null;
 &nbsp;
 /**
  * Initialize the IndexedDB database
  */
 export const initImageStorage = (): Promise&lt;IDBDatabase&gt; =&gt; {
-<span class="cstat-no" title="statement not covered" >	return new <span class="fstat-no" title="function not covered" >Promise((r</span>esolve, reject) =&gt; {</span>
+	return new Promise((resolve, reject) =&gt; {
 		if (db) {
 <span class="cstat-no" title="statement not covered" >			resolve(db);</span>
 <span class="cstat-no" title="statement not covered" >			return;</span>
 		}
 &nbsp;
-		const request = <span class="cstat-no" title="statement not covered" >indexedDB.open(DB_NAME, DB_VERSION);</span>
+		const request = indexedDB.open(DB_NAME, DB_VERSION);
 &nbsp;
 		request.onerror = () =&gt; {
 <span class="cstat-no" title="statement not covered" >			console.error("Failed to open image storage:", request.error);</span>
@@ -578,18 +578,18 @@ export const initImageStorage = (): Promise&lt;IDBDatabase&gt; =&gt; {
 		};
 &nbsp;
 		request.onsuccess = () =&gt; {
-<span class="cstat-no" title="statement not covered" >			db = request.result;</span>
-<span class="cstat-no" title="statement not covered" >			resolve(db);</span>
+			db = request.result;
+			resolve(db);
 		};
 &nbsp;
 		request.onupgradeneeded = (event) =&gt; {
-			const database = (<span class="cstat-no" title="statement not covered" >event.target as IDBOpenDBRequest).result;</span>
+			const database = (event.target as IDBOpenDBRequest).result;
 			
 			// Create the images store if it doesn't exist
 			if (!database.objectStoreNames.contains(STORE_NAME)) {
-				const store = <span class="cstat-no" title="statement not covered" >database.createObjectStore(STORE_NAME, { keyPath: "id" });</span>
+				const store = database.createObjectStore(STORE_NAME, { keyPath: "id" });
 				// Index by conversation ID for bulk operations
-<span class="cstat-no" title="statement not covered" >				store.createIndex("conversationId", "conversationId", { unique: false });</span>
+				store.createIndex("conversationId", "conversationId", { unique: false });
 			}
 		};
 	});
@@ -758,14 +758,14 @@ export const deleteConversationImages = async (conversationId: string): Promise&
  * Clear all images from storage
  */
 export const clearAllImages = async (): Promise&lt;void&gt; =&gt; {
-	const database = <span class="cstat-no" title="statement not covered" >await initImageStorage();</span>
+	const database = await initImageStorage();
 	
-<span class="cstat-no" title="statement not covered" >	return new <span class="fstat-no" title="function not covered" >Promise((r</span>esolve, reject) =&gt; {</span>
-		const transaction = <span class="cstat-no" title="statement not covered" >database.transaction(STORE_NAME, "readwrite");</span>
-		const store = <span class="cstat-no" title="statement not covered" >transaction.objectStore(STORE_NAME);</span>
-		const request = <span class="cstat-no" title="statement not covered" >store.clear();</span>
+	return new Promise((resolve, reject) =&gt; {
+		const transaction = database.transaction(STORE_NAME, "readwrite");
+		const store = transaction.objectStore(STORE_NAME);
+		const request = store.clear();
 		
-<span class="cstat-no" title="statement not covered" >		request.<span class="fstat-no" title="function not covered" >onsuccess = () =&gt; <span class="cstat-no" title="statement not covered" >r</span>esolve();</span></span>
+		request.onsuccess = () =&gt; resolve();
 		request.onerror = () =&gt; {
 <span class="cstat-no" title="statement not covered" >			console.error("Failed to clear images:", request.error);</span>
 <span class="cstat-no" title="statement not covered" >			reject(request.error);</span>
@@ -799,7 +799,7 @@ export const getStorageEstimate = async (): Promise&lt;{ used: number; quota: nu
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-14T18:53:06.043Z
+                at 2025-12-14T22:30:09.432Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

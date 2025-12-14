@@ -1,9 +1,15 @@
 import { useStore } from "@nanostores/react";
 import { lazy, Suspense, useEffect } from "react";
-import { ChatContainer } from "@/components/chat/container/ChatContainer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { currentPageAtom, setSSRInitialRoute } from "@/lib/stores/navigation";
 import { markHydrated } from "@/lib/stores/hydration";
+
+// Lazy load ChatContainer for code splitting
+const ChatContainer = lazy(() =>
+	import("@/components/chat/container/ChatContainer").then((m) => ({
+		default: m.ChatContainer,
+	}))
+);
 
 // Lazy load SettingsPage for code splitting
 const SettingsPage = lazy(() =>
@@ -42,7 +48,11 @@ const PageRouter = () => {
 			);
 		case "chat":
 		default:
-			return <ChatContainer />;
+			return (
+				<Suspense fallback={null}>
+					<ChatContainer />
+				</Suspense>
+			);
 	}
 };
 

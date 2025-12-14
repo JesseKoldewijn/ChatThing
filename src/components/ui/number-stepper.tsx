@@ -11,6 +11,8 @@ export interface NumberStepperProps {
 	disabled?: boolean;
 	className?: string;
 	allowManualInput?: boolean;
+	/** Accessible label for the input */
+	"aria-label"?: string;
 }
 
 export const NumberStepper = ({
@@ -22,6 +24,7 @@ export const NumberStepper = ({
 	disabled = false,
 	className,
 	allowManualInput = true,
+	"aria-label": ariaLabel,
 }: NumberStepperProps) => {
 	const [inputValue, setInputValue] = useState(String(value));
 
@@ -88,6 +91,7 @@ export const NumberStepper = ({
 				type="button"
 				onClick={handleDecrement}
 				disabled={disabled || value <= min}
+				aria-label="Decrease value"
 				className={cn(
 					"flex h-9 w-9 shrink-0 items-center justify-center rounded-l-md transition-colors text-foreground",
 					"hover:bg-muted disabled:pointer-events-none disabled:opacity-50",
@@ -106,6 +110,7 @@ export const NumberStepper = ({
 					onBlur={handleInputBlur}
 					onKeyDown={handleKeyDown}
 					disabled={disabled}
+					aria-label={ariaLabel || "Value"}
 					className={cn(
 						"h-9 w-12 bg-transparent text-center text-sm font-medium text-foreground",
 						"focus:outline-none disabled:pointer-events-none disabled:opacity-50",
@@ -122,6 +127,7 @@ export const NumberStepper = ({
 				type="button"
 				onClick={handleIncrement}
 				disabled={disabled || value >= max}
+				aria-label="Increase value"
 				className={cn(
 					"flex h-9 w-9 shrink-0 items-center justify-center rounded-r-md transition-colors text-foreground",
 					"hover:bg-muted disabled:pointer-events-none disabled:opacity-50",

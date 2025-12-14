@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { axe } from "vitest-axe";
 import {
 	Card,
 	CardHeader,
@@ -138,6 +139,33 @@ describe("Card components", () => {
 				screen.getByText("This is the main content of the card.")
 			).toBeInTheDocument();
 			expect(screen.getByText("Footer actions")).toBeInTheDocument();
+		});
+	});
+
+	describe("accessibility", () => {
+		it("should have no axe violations with simple card", async () => {
+			const { container } = render(
+				<Card>
+					<CardContent>Simple content</CardContent>
+				</Card>
+			);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
+		});
+
+		it("should have no axe violations with full card composition", async () => {
+			const { container } = render(
+				<Card>
+					<CardHeader>
+						<CardTitle>Card Title</CardTitle>
+						<CardDescription>Card description goes here</CardDescription>
+					</CardHeader>
+					<CardContent>This is the main content of the card.</CardContent>
+					<CardFooter>Footer actions</CardFooter>
+				</Card>
+			);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
 		});
 	});
 });

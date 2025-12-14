@@ -9,6 +9,10 @@
 			"destination": "/settings.html"
 		},
 		{
+			"source": "/usage",
+			"destination": "/usage.html"
+		},
+		{
 			"source": "/((?!assets/|.*\\.html$|.*\\.js$|.*\\.css$|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
 			"destination": "/index.html"
 		}

@@ -119,7 +119,7 @@
 <a name='L54'></a><a href='#L54'>54</a>
 <a name='L55'></a><a href='#L55'>55</a>
 <a name='L56'></a><a href='#L56'>56</a>
-<a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -129,30 +129,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -175,62 +152,85 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import * as React from <span class="branch-2 cbranch-no" title="branch not covered" ><span class="branch-1 cbranch-no" title="branch not covered" >"react"</span></span>
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import * as React from <span class="branch-2 cbranch-no" title="branch not covered" ><span class="branch-1 cbranch-no" title="branch not covered" >"react";</span></span>
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 &nbsp;
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 &nbsp;
 function ScrollArea({
-  className,
-  children,
-  ...props
+	className,
+	children,
+	...props
 }: React.ComponentProps&lt;typeof ScrollAreaPrimitive.Root&gt;) {
-  return (
-    &lt;ScrollAreaPrimitive.Root
-      data-slot="scroll-area"
-      className={cn("relative", className)}
-      {...props}
-    &gt;
-      &lt;ScrollAreaPrimitive.Viewport
-        data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
-      &gt;
-        {children}
-      &lt;/ScrollAreaPrimitive.Viewport&gt;
-      &lt;ScrollBar /&gt;
-      &lt;ScrollAreaPrimitive.Corner /&gt;
-    &lt;/ScrollAreaPrimitive.Root&gt;
-  )
+	return (
+		&lt;ScrollAreaPrimitive.Root
+			data-slot="scroll-area"
+			className={cn("relative overflow-hidden", className)}
+			{...props}
+		&gt;
+			&lt;ScrollAreaPrimitive.Viewport
+				data-slot="scroll-area-viewport"
+				className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&amp;&gt;div]:block! [&amp;&gt;div]:min-w-0!"
+			&gt;
+				{children}
+			&lt;/ScrollAreaPrimitive.Viewport&gt;
+			&lt;ScrollBar /&gt;
+			&lt;ScrollAreaPrimitive.Corner /&gt;
+		&lt;/ScrollAreaPrimitive.Root&gt;
+	);
 }
 &nbsp;
 function ScrollBar({
-  className,
-  orientation = "vertical",
-  ...props
+	className,
+	orientation = "vertical",
+	...props
 }: React.ComponentProps&lt;typeof ScrollAreaPrimitive.ScrollAreaScrollbar&gt;) {
-  return (
-    &lt;ScrollAreaPrimitive.ScrollAreaScrollbar
-      data-slot="scroll-area-scrollbar"
-      orientation={orientation}
-      className={cn(
-        "flex touch-none p-px transition-colors select-none",
-        orientation === "vertical" &amp;&amp;
-          "h-full w-2.5 border-l border-l-transparent",
-        orientation === "horizontal" &amp;&amp;
-<span class="branch-1 cbranch-no" title="branch not covered" >          "h-2.5 flex-col border-t border-t-transparent",</span>
-        className
-      )}
-      {...props}
-    &gt;
-      &lt;ScrollAreaPrimitive.ScrollAreaThumb
-        data-slot="scroll-area-thumb"
-        className="bg-border relative flex-1 rounded-full"
-      /&gt;
-    &lt;/ScrollAreaPrimitive.ScrollAreaScrollbar&gt;
-  )
+	return (
+		&lt;ScrollAreaPrimitive.ScrollAreaScrollbar
+			data-slot="scroll-area-scrollbar"
+			orientation={orientation}
+			className={cn(
+				"flex touch-none p-px transition-colors select-none",
+				orientation === "vertical" &amp;&amp;
+					"h-full w-2.5 border-l border-l-transparent",
+				orientation === "horizontal" &amp;&amp;
+<span class="branch-1 cbranch-no" title="branch not covered" >					"h-2.5 flex-col border-t border-t-transparent",</span>
+				className
+			)}
+			{...props}
+		&gt;
+			&lt;ScrollAreaPrimitive.ScrollAreaThumb
+				data-slot="scroll-area-thumb"
+				className="bg-border relative flex-1 rounded-full"
+			/&gt;
+		&lt;/ScrollAreaPrimitive.ScrollAreaScrollbar&gt;
+	);
 }
 &nbsp;
-export { ScrollArea, ScrollBar }
+export { ScrollArea, ScrollBar };
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -238,7 +238,7 @@ export { ScrollArea, ScrollBar }
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-14T18:53:06.043Z
+                at 2025-12-14T22:30:09.432Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

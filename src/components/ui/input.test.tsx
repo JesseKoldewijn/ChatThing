@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { axe } from "vitest-axe";
 import { Input } from "./input";
 
 describe("Input component", () => {
@@ -142,6 +143,36 @@ describe("Input component", () => {
 				"aria-invalid",
 				"true"
 			);
+		});
+
+		it("should have no axe violations with label", async () => {
+			const { container } = render(
+				<div>
+					<label htmlFor="email">Email</label>
+					<Input id="email" type="email" />
+				</div>
+			);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
+		});
+
+		it("should have no axe violations with aria-label", async () => {
+			const { container } = render(
+				<Input aria-label="Search" type="search" />
+			);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
+		});
+
+		it("should have no axe violations when disabled", async () => {
+			const { container } = render(
+				<div>
+					<label htmlFor="disabled-input">Disabled</label>
+					<Input id="disabled-input" disabled />
+				</div>
+			);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
 		});
 	});
 

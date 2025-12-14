@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { axe } from "vitest-axe";
 import { Button } from "./button";
 
 describe("Button component", () => {
@@ -168,6 +169,33 @@ describe("Button component", () => {
 			render(<Button type="submit">Submit</Button>);
 
 			expect(screen.getByRole("button")).toHaveAttribute("type", "submit");
+		});
+
+		it("should have no axe violations with default variant", async () => {
+			const { container } = render(<Button>Click me</Button>);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
+		});
+
+		it("should have no axe violations with all variants", async () => {
+			const { container } = render(
+				<div>
+					<Button variant="default">Default</Button>
+					<Button variant="destructive">Destructive</Button>
+					<Button variant="outline">Outline</Button>
+					<Button variant="secondary">Secondary</Button>
+					<Button variant="ghost">Ghost</Button>
+					<Button variant="link">Link</Button>
+				</div>
+			);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
+		});
+
+		it("should have no axe violations when disabled", async () => {
+			const { container } = render(<Button disabled>Disabled</Button>);
+			const results = await axe(container);
+			expect(results).toHaveNoViolations();
 		});
 	});
 });

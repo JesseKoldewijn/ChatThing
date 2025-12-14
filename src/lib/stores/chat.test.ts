@@ -15,6 +15,9 @@ import {
 	addPendingImage,
 	removePendingImage,
 	clearPendingImages,
+	compressImage,
+	fileToImageAttachment,
+	saveImagesToIndexedDB,
 	type ImageAttachment,
 } from "./chat";
 
@@ -261,6 +264,59 @@ describe("chat store", () => {
 			addMessage("assistant", "Hello");
 
 			expect(lastUserMessageAtom.get()).toBeNull();
+		});
+	});
+
+	describe("compressImage", () => {
+		it("should be a function", () => {
+			expect(typeof compressImage).toBe("function");
+		});
+	});
+
+	describe("fileToImageAttachment", () => {
+		it("should be a function", () => {
+			expect(typeof fileToImageAttachment).toBe("function");
+		});
+	});
+
+	describe("saveImagesToIndexedDB", () => {
+		it("should be a function", () => {
+			expect(typeof saveImagesToIndexedDB).toBe("function");
+		});
+
+		it("should return an array", async () => {
+			const result = await saveImagesToIndexedDB([], "conv-id");
+			expect(Array.isArray(result)).toBe(true);
+		});
+	});
+
+	describe("message ID uniqueness", () => {
+		it("should generate unique IDs for each message", () => {
+			const msg1 = addMessage("user", "First");
+			const msg2 = addMessage("user", "Second");
+			const msg3 = addMessage("user", "Third");
+
+			expect(msg1.id).not.toBe(msg2.id);
+			expect(msg2.id).not.toBe(msg3.id);
+			expect(msg1.id).not.toBe(msg3.id);
+		});
+
+		it("should generate unique transaction IDs when not provided", () => {
+			const msg1 = addMessage("user", "First");
+			const msg2 = addMessage("user", "Second");
+
+			expect(msg1.transactionId).not.toBe(msg2.transactionId);
+		});
+	});
+
+	describe("timestamp accuracy", () => {
+		it("should set accurate timestamps", () => {
+			const before = Date.now();
+			const msg = addMessage("user", "Test");
+			const after = Date.now();
+
+			expect(msg.timestamp).toBeGreaterThanOrEqual(before);
+			expect(msg.timestamp).toBeLessThanOrEqual(after);
 		});
 	});
 });

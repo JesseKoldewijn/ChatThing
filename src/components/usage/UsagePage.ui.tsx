@@ -74,16 +74,20 @@ const HeroStat = ({
 	<div
 		className={cn(
 			"relative overflow-hidden rounded-2xl p-5",
-			"bg-gradient-to-br",
+			"bg-linear-to-br",
 			gradient
 		)}
 	>
 		<div className="relative z-10">
 			<div className="mb-3 flex items-center gap-2">
 				<Icon className="h-5 w-5 text-white/80" />
-				<span className="text-sm font-medium text-white/80">{label}</span>
+				<span className="text-sm font-medium text-white/80">
+					{label}
+				</span>
 			</div>
-			<p className="text-4xl font-bold tracking-tight text-white">{value}</p>
+			<p className="text-4xl font-bold tracking-tight text-white">
+				{value}
+			</p>
 			{subLabel && (
 				<p className="mt-1 text-xs text-white/60">{subLabel}</p>
 			)}
@@ -138,10 +142,15 @@ const CustomTooltip = ({
 
 	return (
 		<div className="rounded-xl border bg-popover/95 px-4 py-3 shadow-xl backdrop-blur-sm">
-			<p className="mb-2 text-sm font-semibold text-foreground">{label}</p>
+			<p className="mb-2 text-sm font-semibold text-foreground">
+				{label}
+			</p>
 			<div className="space-y-1">
 				{payload.map((entry, index) => (
-					<div key={index} className="flex items-center justify-between gap-4">
+					<div
+						key={index}
+						className="flex items-center justify-between gap-4"
+					>
 						<div className="flex items-center gap-2">
 							<div
 								className="h-2.5 w-2.5 rounded-full"
@@ -335,7 +344,7 @@ export const UsagePageUI = ({
 					<ArrowLeft className="h-4 w-4" />
 				</Button>
 				<div className="flex items-center gap-2">
-					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-violet-500 to-purple-600">
 						<TrendingUp className="h-4 w-4 text-white" />
 					</div>
 					<div>
@@ -382,7 +391,8 @@ export const UsagePageUI = ({
 								label="Tool Calls"
 								value={summary.totalToolCalls}
 								subLabel={
-									Object.keys(summary.toolBreakdown).length > 0
+									Object.keys(summary.toolBreakdown).length >
+									0
 										? Object.entries(summary.toolBreakdown)
 												.map(([t, c]) => `${t}: ${c}`)
 												.join(" · ")
@@ -435,25 +445,39 @@ export const UsagePageUI = ({
 							<div className="flex items-center gap-4 text-xs">
 								<div className="flex items-center gap-1.5">
 									<div className="h-2 w-2 rounded-full bg-blue-500" />
-									<span className="text-muted-foreground">Messages</span>
+									<span className="text-muted-foreground">
+										Messages
+									</span>
 								</div>
 								<div className="flex items-center gap-1.5">
 									<div className="h-2 w-2 rounded-full bg-emerald-500" />
-									<span className="text-muted-foreground">Responses</span>
+									<span className="text-muted-foreground">
+										Responses
+									</span>
 								</div>
 								<div className="flex items-center gap-1.5">
 									<div className="h-2 w-2 rounded-full bg-amber-500" />
-									<span className="text-muted-foreground">Tools</span>
+									<span className="text-muted-foreground">
+										Tools
+									</span>
 								</div>
 							</div>
 						</div>
 						<div className="p-4">
 							{hasData ? (
 								<div className="h-[260px] w-full">
-									<ResponsiveContainer width="100%" height="100%">
+									<ResponsiveContainer
+										width="100%"
+										height="100%"
+									>
 										<AreaChart
 											data={chartData}
-											margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+											margin={{
+												top: 5,
+												right: 5,
+												left: -20,
+												bottom: 0,
+											}}
 										>
 											<defs>
 												<linearGradient
@@ -533,7 +557,9 @@ export const UsagePageUI = ({
 												allowDecimals={false}
 												width={35}
 											/>
-											<Tooltip content={<CustomTooltip />} />
+											<Tooltip
+												content={<CustomTooltip />}
+											/>
 											<Area
 												type="monotone"
 												dataKey="messageCount"
@@ -587,43 +613,64 @@ export const UsagePageUI = ({
 							<div className="overflow-x-auto">
 								<table className="w-full text-sm">
 									<thead>
-										{table.getHeaderGroups().map((headerGroup) => (
-											<tr key={headerGroup.id} className="border-b bg-muted/30">
-												{headerGroup.headers.map((header) => (
-													<th
-														key={header.id}
-														className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-muted-foreground"
-													>
-														{header.isPlaceholder
-															? null
-															: flexRender(
-																	header.column.columnDef.header,
-																	header.getContext()
-																)}
-													</th>
-												))}
-											</tr>
-										))}
+										{table
+											.getHeaderGroups()
+											.map((headerGroup) => (
+												<tr
+													key={headerGroup.id}
+													className="border-b bg-muted/30"
+												>
+													{headerGroup.headers.map(
+														(header) => (
+															<th
+																key={header.id}
+																className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+															>
+																{header.isPlaceholder
+																	? null
+																	: flexRender(
+																			header
+																				.column
+																				.columnDef
+																				.header,
+																			header.getContext()
+																	  )}
+															</th>
+														)
+													)}
+												</tr>
+											))}
 									</thead>
 									<tbody>
-										{table.getRowModel().rows.map((row, idx) => (
-											<tr
-												key={row.id}
-												className={cn(
-													"border-b last:border-0 transition-colors hover:bg-muted/20",
-													idx % 2 === 0 ? "bg-transparent" : "bg-muted/10"
-												)}
-											>
-												{row.getVisibleCells().map((cell) => (
-													<td key={cell.id} className="whitespace-nowrap px-4 py-3">
-														{flexRender(
-															cell.column.columnDef.cell,
-															cell.getContext()
-														)}
-													</td>
-												))}
-											</tr>
-										))}
+										{table
+											.getRowModel()
+											.rows.map((row, idx) => (
+												<tr
+													key={row.id}
+													className={cn(
+														"border-b last:border-0 transition-colors hover:bg-muted/20",
+														idx % 2 === 0
+															? "bg-transparent"
+															: "bg-muted/10"
+													)}
+												>
+													{row
+														.getVisibleCells()
+														.map((cell) => (
+															<td
+																key={cell.id}
+																className="whitespace-nowrap px-4 py-3"
+															>
+																{flexRender(
+																	cell.column
+																		.columnDef
+																		.cell,
+																	cell.getContext()
+																)}
+															</td>
+														))}
+												</tr>
+											))}
 									</tbody>
 								</table>
 							</div>
@@ -650,7 +697,8 @@ export const UsagePageUI = ({
 											Clear All Usage Data
 										</h3>
 										<p className="text-xs text-muted-foreground">
-											This will permanently delete all tracked metrics
+											This will permanently delete all
+											tracked metrics
 										</p>
 									</div>
 								</div>

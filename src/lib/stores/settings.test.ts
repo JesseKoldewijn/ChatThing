@@ -7,8 +7,15 @@ import {
 	aiSettingsAtom,
 	archiveThresholdAtom,
 	thresholdToHours,
+	formatThreshold,
 	getSystemTimezone,
 	getResolvedTimezone,
+	setTheme,
+	setTemperatureUnit,
+	setTimezone,
+	setArchiveThreshold,
+	setArchiveThresholdDays,
+	updateAiSettings,
 	PROMPT_API_SUPPORTED_LANGUAGES,
 } from "./settings";
 
@@ -161,6 +168,89 @@ describe("settings store", () => {
 
 		it("should include Japanese", () => {
 			expect(PROMPT_API_SUPPORTED_LANGUAGES).toContain("ja");
+		});
+	});
+
+	describe("formatThreshold", () => {
+		it('should return "Never" when value is 0', () => {
+			expect(formatThreshold({ value: 0, unit: "hours" })).toBe("Never");
+			expect(formatThreshold({ value: 0, unit: "days" })).toBe("Never");
+		});
+
+		it("should format singular unit correctly", () => {
+			expect(formatThreshold({ value: 1, unit: "hours" })).toBe("1 hour");
+			expect(formatThreshold({ value: 1, unit: "days" })).toBe("1 day");
+			expect(formatThreshold({ value: 1, unit: "weeks" })).toBe("1 week");
+			expect(formatThreshold({ value: 1, unit: "months" })).toBe("1 month");
+		});
+
+		it("should format plural units correctly", () => {
+			expect(formatThreshold({ value: 2, unit: "hours" })).toBe("2 hours");
+			expect(formatThreshold({ value: 3, unit: "days" })).toBe("3 days");
+			expect(formatThreshold({ value: 4, unit: "weeks" })).toBe("4 weeks");
+			expect(formatThreshold({ value: 6, unit: "months" })).toBe("6 months");
+		});
+	});
+
+	describe("setTheme", () => {
+		it("should set theme and persist to localStorage", () => {
+			setTheme("dark");
+			expect(themeAtom.get()).toBe("dark");
+			expect(localStorage.getItem("theme")).toBe("dark");
+		});
+	});
+
+	describe("setTemperatureUnit", () => {
+		it("should set temperature unit and persist to localStorage", () => {
+			setTemperatureUnit("celsius");
+			expect(temperatureUnitAtom.get()).toBe("celsius");
+			expect(localStorage.getItem("temperature-unit")).toBe("celsius");
+		});
+	});
+
+	describe("setTimezone", () => {
+		it("should set timezone and persist to localStorage", () => {
+			setTimezone("America/New_York");
+			expect(timezoneAtom.get()).toBe("America/New_York");
+			expect(localStorage.getItem("timezone")).toBe("America/New_York");
+		});
+	});
+
+	describe("setArchiveThreshold", () => {
+		it("should set archive threshold and persist to localStorage", () => {
+			setArchiveThreshold({ value: 5, unit: "days" });
+			expect(archiveThresholdAtom.get().value).toBe(5);
+			expect(archiveThresholdAtom.get().unit).toBe("days");
+		});
+
+		it("should clamp negative values to 0", () => {
+			setArchiveThreshold({ value: -5, unit: "days" });
+			expect(archiveThresholdAtom.get().value).toBe(0);
+		});
+
+		it("should floor decimal values", () => {
+			setArchiveThreshold({ value: 3.7, unit: "hours" });
+			expect(archiveThresholdAtom.get().value).toBe(3);
+		});
+	});
+
+	describe("setArchiveThresholdDays (legacy)", () => {
+		it("should set threshold in days", () => {
+			setArchiveThresholdDays(7);
+			expect(archiveThresholdAtom.get().value).toBe(7);
+			expect(archiveThresholdAtom.get().unit).toBe("days");
+		});
+	});
+
+	describe("updateAiSettings", () => {
+		it("should merge settings with existing", () => {
+			aiSettingsAtom.set({ expectedInputs: [{ type: "text" }] });
+			updateAiSettings({ expectedInputs: [{ type: "text" }, { type: "image" }] });
+			
+			const settings = aiSettingsAtom.get();
+			expect(settings.expectedInputs).toHaveLength(2);
+			expect(settings.expectedInputs?.[0].type).toBe("text");
+			expect(settings.expectedInputs?.[1].type).toBe("image");
 		});
 	});
 });

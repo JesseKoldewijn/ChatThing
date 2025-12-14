@@ -41,6 +41,12 @@ function getHeadForRoute(url: string): string {
 				<title>Settings - ChatThing</title>
 				<meta name="description" content="Configure your ChatThing settings" />
 			`;
+		case "/usage":
+			return `
+				${baseHead}
+				<title>Usage - ChatThing</title>
+				<meta name="description" content="View your ChatThing usage statistics and history" />
+			`;
 		case "/":
 		default:
 			return `
@@ -55,6 +61,6 @@ function getHeadForRoute(url: string): string {
  * Get the list of routes to pre-render
  */
 export function getRoutesToPrerender(): string[] {
-	return ["/", "/settings"];
+	return ["/", "/settings", "/usage"];
 }
 
