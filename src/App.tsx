@@ -12,6 +12,13 @@ const SettingsPage = lazy(() =>
 	}))
 );
 
+// Lazy load UsagePage for code splitting
+const UsagePage = lazy(() =>
+	import("@/components/usage/UsagePage").then((m) => ({
+		default: m.UsagePage,
+	}))
+);
+
 /**
  * Page router component
  * Note: With SSR pre-rendering, the settings page HTML is already pre-rendered.
@@ -25,6 +32,12 @@ const PageRouter = () => {
 			return (
 				<Suspense fallback={null}>
 					<SettingsPage />
+				</Suspense>
+			);
+		case "usage":
+			return (
+				<Suspense fallback={null}>
+					<UsagePage />
 				</Suspense>
 			);
 		case "chat":

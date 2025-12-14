@@ -1,18 +1,20 @@
 import { atom, onMount } from "nanostores";
 import { isHydratedAtom } from "./hydration";
 
-export type Page = "chat" | "settings";
+export type Page = "chat" | "settings" | "usage";
 
 // Route configuration
 const ROUTES: Record<Page, string> = {
 	chat: "/",
 	settings: "/settings",
+	usage: "/usage",
 };
 
 // Reverse lookup: path -> page
 const PATH_TO_PAGE: Record<string, Page> = {
 	"/": "chat",
 	"/settings": "settings",
+	"/usage": "usage",
 };
 
 // Query parameter keys
@@ -358,6 +360,23 @@ export const goToSettings = () => {
 		showDeleted: false,
 	};
 	window.history.pushState(settingsState, "", ROUTES.settings);
+};
+
+export const goToUsage = () => {
+	if (typeof window === "undefined") return;
+
+	// Close sidebar and navigate to usage
+	sidebarOpenAtom.set(false);
+	currentPageAtom.set("usage");
+
+	const usageState = {
+		page: "usage" as Page,
+		chatId: null,
+		sidebarOpen: false,
+		showArchived: false,
+		showDeleted: false,
+	};
+	window.history.pushState(usageState, "", ROUTES.usage);
 };
 
 /**

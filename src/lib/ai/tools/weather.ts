@@ -121,7 +121,7 @@ async function fetchWeather(
 }
 
 export const weatherTool = tool({
-	description: "Get the current weather in a location",
+	description: "Get the current weather in a location. Use ONLY when user explicitly asks about weather, forecast, or temperature for a specific city or place. Do NOT use for greetings or general conversation.",
 	inputSchema: z.object({
 		location: z
 			.string()

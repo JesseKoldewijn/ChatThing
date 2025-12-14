@@ -85,6 +85,19 @@ export const removeLastMessage = () => {
 	}
 };
 
+/**
+ * Remove all assistant messages from a specific transaction
+ * Used when regenerating a response to remove tool announcements and previous responses
+ */
+export const removeAssistantMessagesFromTransaction = (transactionId: string) => {
+	const messages = messagesAtom.get();
+	messagesAtom.set(
+		messages.filter(
+			(m) => !(m.transactionId === transactionId && m.role === "assistant")
+		)
+	);
+};
+
 export const clearMessages = () => {
 	messagesAtom.set([]);
 	currentStreamAtom.set("");

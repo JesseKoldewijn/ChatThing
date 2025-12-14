@@ -5,7 +5,7 @@ import { MessageItem } from "./MessageItem";
 import { messagesAtom, currentStreamAtom, isStreamingAtom } from "@/lib/stores/chat";
 
 interface MessageListProps {
-	onRegenerate?: (prompt: string) => void;
+	onRegenerate?: (prompt: string, transactionId: string) => void;
 	renderContent?: (content: string) => React.ReactNode;
 }
 
