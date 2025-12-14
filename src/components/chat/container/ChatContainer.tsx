@@ -23,7 +23,7 @@ import {
 	createConversation,
 	triggerTitleGeneration,
 } from "@/lib/stores/conversations";
-import { aiSettingsAtom } from "@/lib/stores/settings";
+import { aiSettingsAtom, temperatureUnitAtom, type TemperatureUnit, getResolvedTimezone } from "@/lib/stores/settings";
 import { setError, clearError } from "@/lib/stores/errors";
 import { promptAsync } from "@/lib/ai/prompt";
 import { loadingAtom } from "@/lib/ai/store";
@@ -36,6 +36,79 @@ import {
 
 // Abort controller for stopping streams
 let abortController: AbortController | null = null;
+
+/**
+ * Strip tool result tags from content that may have leaked through the middleware
+ */
+const stripToolResultTags = (content: string): string => {
+	return content.replace(/<result>[\s\S]*?<\/result>/g, "").trim();
+};
+
+// Countries that primarily use Fahrenheit for temperature
+const FAHRENHEIT_COUNTRIES = new Set([
+	"US", // United States
+	"BS", // Bahamas
+	"BZ", // Belize
+	"KY", // Cayman Islands
+	"PW", // Palau
+	"FM", // Micronesia
+	"MH", // Marshall Islands
+]);
+
+/**
+ * Detect user's preferred temperature unit based on locale
+ */
+const detectTemperatureUnitFromLocale = (): "fahrenheit" | "celsius" => {
+	try {
+		const locale = navigator.language || "en-US";
+		const regionMatch = locale.match(/-([A-Z]{2})$/i);
+		const region = regionMatch ? regionMatch[1].toUpperCase() : null;
+
+		if (region && FAHRENHEIT_COUNTRIES.has(region)) {
+			return "fahrenheit";
+		}
+
+		if (typeof Intl !== "undefined" && Intl.Locale) {
+			const intlLocale = new Intl.Locale(locale);
+			const intlRegion = intlLocale.region?.toUpperCase();
+			if (intlRegion && FAHRENHEIT_COUNTRIES.has(intlRegion)) {
+				return "fahrenheit";
+			}
+		}
+
+		return "celsius";
+	} catch {
+		return "celsius";
+	}
+};
+
+/**
+ * Get the resolved temperature unit (handles "auto" setting)
+ */
+const getResolvedTemperatureUnit = (setting: TemperatureUnit): "fahrenheit" | "celsius" => {
+	if (setting === "auto") {
+		return detectTemperatureUnitFromLocale();
+	}
+	return setting;
+};
+
+/**
+ * Convert Fahrenheit to Celsius
+ */
+const fahrenheitToCelsius = (f: number): number => {
+	return Math.round((f - 32) * 5 / 9);
+};
+
+/**
+ * Format temperature with the user's preferred unit
+ * Assumes input temperature is in Fahrenheit (from the weather tool)
+ */
+const formatTemperature = (tempF: number, unit: "fahrenheit" | "celsius"): string => {
+	if (unit === "celsius") {
+		return `${fahrenheitToCelsius(tempF)}°C`;
+	}
+	return `${tempF}°F`;
+};
 
 export const ChatContainer = () => {
 	const isSidebarOpen = useStore(sidebarOpenAtom);
@@ -120,26 +193,58 @@ export const ChatContainer = () => {
 						case "text-delta":
 							appendToStream(chunk.text);
 							break;
-						case "tool-call": {
-							// Save any content before the tool call as a separate message
-							const preToolContent = currentStreamAtom.get();
-							if (preToolContent) {
-								addMessage("assistant", preToolContent, { transactionId });
-								clearStream();
-							}
-							// Add the tool call as its own message
-							addMessage("assistant", `🔧 Using tool: ${chunk.toolName}`, { transactionId });
-							break;
-						}
-						case "tool-result": {
-							// Tool completed - format the result as a natural response
-							const result = chunk.output as Record<string, unknown>;
-							if (chunk.toolName === "weather" && result) {
-								const weatherResponse = `The weather in ${result.location} is currently ${result.temperature}°F.`;
+					case "tool-call": {
+						// Discard any content before the tool call - it's typically a guess
+						// The model should wait for tool results, but sometimes generates text first
+						clearStream();
+						// Add the tool call as its own message
+						addMessage("assistant", `🔧 Using tool: ${chunk.toolName}`, { transactionId });
+						break;
+					}
+					case "tool-result": {
+						// Tool completed - format the response based on the tool type
+						const result = chunk.output as Record<string, unknown>;
+						if (chunk.toolName === "weather" && result) {
+							// Check for errors
+							if (result.error) {
+								appendToStream(`I couldn't get the weather: ${result.error}`);
+							} else {
+								const tempUnit = getResolvedTemperatureUnit(temperatureUnitAtom.get());
+								const formattedTemp = formatTemperature(result.temperature as number, tempUnit);
+								const formattedFeelsLike = formatTemperature(result.feelsLike as number, tempUnit);
+								
+								const weatherResponse = [
+									`The weather in ${result.location} is currently ${formattedTemp} and ${result.condition?.toString().toLowerCase()}.`,
+									`Feels like ${formattedFeelsLike} with ${result.humidity}% humidity and winds at ${result.windSpeed} mph.`,
+								].join(" ");
 								appendToStream(weatherResponse);
 							}
-							break;
+						} else if (chunk.toolName === "datetime" && result) {
+							// Format datetime using user's preferred timezone
+							const userTimezone = getResolvedTimezone();
+							const timestamp = result.timestamp as number;
+							const date = new Date(timestamp);
+							
+							const dateStr = date.toLocaleDateString("en-US", {
+								weekday: "long",
+								year: "numeric",
+								month: "long",
+								day: "numeric",
+								timeZone: userTimezone,
+							});
+							const timeStr = date.toLocaleTimeString("en-US", {
+								hour: "2-digit",
+								minute: "2-digit",
+								second: "2-digit",
+								hour12: true,
+								timeZone: userTimezone,
+							});
+							
+							const datetimeResponse = `It's currently ${timeStr} on ${dateStr} (${userTimezone}).`;
+							appendToStream(datetimeResponse);
 						}
+						break;
+					}
 						case "tool-error":
 							// Tool failed - show error as its own message
 							addMessage("assistant", `❌ Error: ${chunk.error}`, { transactionId });
@@ -149,7 +254,7 @@ export const ChatContainer = () => {
 				}
 
 				// After streaming completes, add the full message (the final response)
-				const finalContent = currentStreamAtom.get();
+				const finalContent = stripToolResultTags(currentStreamAtom.get());
 				if (finalContent) {
 					addMessage("assistant", finalContent, { transactionId });
 				}
@@ -196,7 +301,7 @@ export const ChatContainer = () => {
 		loadingAtom.set(false);
 
 		// Keep what was streamed so far
-		const partialContent = currentStreamAtom.get();
+		const partialContent = stripToolResultTags(currentStreamAtom.get());
 		if (partialContent) {
 			const transactionId = currentTransactionIdRef.current ?? undefined;
 			addMessage("assistant", partialContent + " [stopped]", { transactionId });

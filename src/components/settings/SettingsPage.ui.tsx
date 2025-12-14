@@ -22,16 +22,23 @@ import {
 	MessageSquare,
 	Archive,
 	AlertTriangle,
+	Thermometer,
+	Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
 	Theme,
 	ArchiveThreshold,
 	ArchiveThresholdUnit,
+	TemperatureUnit,
+	TimezonePreference,
 } from "@/lib/stores/settings";
 
 export interface SettingsPageUIProps {
 	currentTheme: Theme;
+	temperatureUnit: TemperatureUnit;
+	timezone: TimezonePreference;
+	systemTimezone: string;
 	conversationCount: number;
 	activeCount: number;
 	archivedCount: number;
@@ -39,6 +46,8 @@ export interface SettingsPageUIProps {
 	archiveThreshold: ArchiveThreshold;
 	isImporting: boolean;
 	onThemeChange: (theme: Theme) => void;
+	onTemperatureUnitChange: (unit: TemperatureUnit) => void;
+	onTimezoneChange: (timezone: TimezonePreference) => void;
 	onArchiveThresholdChange: (threshold: ArchiveThreshold) => void;
 	onExport: () => void;
 	onImport: (file: File, mode: "merge" | "replace") => void;
@@ -52,6 +61,36 @@ const UNIT_OPTIONS: { value: ArchiveThresholdUnit; label: string }[] = [
 	{ value: "days", label: "Days" },
 	{ value: "weeks", label: "Weeks" },
 	{ value: "months", label: "Months" },
+];
+
+// Common timezones for the dropdown
+const COMMON_TIMEZONES = [
+	{ value: "America/New_York", label: "New York (EST/EDT)" },
+	{ value: "America/Chicago", label: "Chicago (CST/CDT)" },
+	{ value: "America/Denver", label: "Denver (MST/MDT)" },
+	{ value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+	{ value: "America/Toronto", label: "Toronto (EST/EDT)" },
+	{ value: "America/Vancouver", label: "Vancouver (PST/PDT)" },
+	{ value: "America/Mexico_City", label: "Mexico City (CST)" },
+	{ value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+	{ value: "Europe/London", label: "London (GMT/BST)" },
+	{ value: "Europe/Paris", label: "Paris (CET/CEST)" },
+	{ value: "Europe/Berlin", label: "Berlin (CET/CEST)" },
+	{ value: "Europe/Amsterdam", label: "Amsterdam (CET/CEST)" },
+	{ value: "Europe/Madrid", label: "Madrid (CET/CEST)" },
+	{ value: "Europe/Rome", label: "Rome (CET/CEST)" },
+	{ value: "Europe/Moscow", label: "Moscow (MSK)" },
+	{ value: "Asia/Dubai", label: "Dubai (GST)" },
+	{ value: "Asia/Kolkata", label: "Mumbai (IST)" },
+	{ value: "Asia/Singapore", label: "Singapore (SGT)" },
+	{ value: "Asia/Hong_Kong", label: "Hong Kong (HKT)" },
+	{ value: "Asia/Shanghai", label: "Shanghai (CST)" },
+	{ value: "Asia/Tokyo", label: "Tokyo (JST)" },
+	{ value: "Asia/Seoul", label: "Seoul (KST)" },
+	{ value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+	{ value: "Australia/Melbourne", label: "Melbourne (AEST/AEDT)" },
+	{ value: "Pacific/Auckland", label: "Auckland (NZST/NZDT)" },
+	{ value: "UTC", label: "UTC" },
 ];
 
 // Reusable section card component
@@ -109,12 +148,17 @@ const SettingsSection = ({
 
 export const SettingsPageUI = ({
 	currentTheme,
+	temperatureUnit,
+	timezone,
+	systemTimezone,
 	activeCount,
 	archivedCount,
 	deletedCount,
 	archiveThreshold,
 	isImporting,
 	onThemeChange,
+	onTemperatureUnitChange,
+	onTimezoneChange,
 	onArchiveThresholdChange,
 	onExport,
 	onImport,
@@ -190,6 +234,109 @@ export const SettingsPageUI = ({
 									{label}
 								</button>
 							))}
+						</div>
+					</SettingsSection>
+
+					{/* Temperature Units */}
+					<SettingsSection
+						icon={Thermometer}
+						title="Temperature Units"
+						description="Choose how temperatures are displayed"
+					>
+						<div className="flex flex-wrap gap-2">
+							{[
+								{
+									value: "auto" as TemperatureUnit,
+									label: "Auto",
+									description: "Based on your locale",
+								},
+								{
+									value: "fahrenheit" as TemperatureUnit,
+									label: "°F",
+									description: "Fahrenheit",
+								},
+								{
+									value: "celsius" as TemperatureUnit,
+									label: "°C",
+									description: "Celsius",
+								},
+							].map(({ value, label, description }) => (
+								<button
+									key={value}
+									onClick={() => onTemperatureUnitChange(value)}
+									className={cn(
+										"flex flex-1 min-w-[90px] flex-col items-center justify-center gap-0.5 rounded-lg border px-4 py-2.5 transition-all",
+										temperatureUnit === value
+											? "border-primary bg-primary text-primary-foreground"
+											: "border-border bg-background hover:bg-muted"
+									)}
+								>
+									<span className="text-sm font-medium">{label}</span>
+									<span className={cn(
+										"text-[10px]",
+										temperatureUnit === value
+											? "text-primary-foreground/70"
+											: "text-muted-foreground"
+									)}>
+										{description}
+									</span>
+								</button>
+							))}
+						</div>
+					</SettingsSection>
+
+					{/* Timezone */}
+					<SettingsSection
+						icon={Globe}
+						title="Timezone"
+						description="Set your preferred timezone for date/time display"
+					>
+						<div className="space-y-3">
+							{/* Auto option */}
+							<button
+								onClick={() => onTimezoneChange("auto")}
+								className={cn(
+									"flex w-full items-center justify-between rounded-lg border px-4 py-3 transition-all",
+									timezone === "auto"
+										? "border-primary bg-primary text-primary-foreground"
+										: "border-border bg-background hover:bg-muted"
+								)}
+							>
+								<div className="flex flex-col items-start">
+									<span className="text-sm font-medium">Auto (System)</span>
+									<span className={cn(
+										"text-xs",
+										timezone === "auto"
+											? "text-primary-foreground/70"
+											: "text-muted-foreground"
+									)}>
+										{systemTimezone}
+									</span>
+								</div>
+								{timezone === "auto" && (
+									<span className="text-xs font-medium">Selected</span>
+								)}
+							</button>
+
+							{/* Custom timezone dropdown */}
+							<div className="space-y-2">
+								<p className="text-xs text-muted-foreground">Or choose a specific timezone:</p>
+								<Select
+									value={timezone === "auto" ? "" : timezone}
+									onValueChange={(value) => onTimezoneChange(value)}
+								>
+									<SelectTrigger className="w-full bg-background text-foreground">
+										<SelectValue placeholder="Select timezone..." />
+									</SelectTrigger>
+									<SelectContent>
+										{COMMON_TIMEZONES.map((tz) => (
+											<SelectItem key={tz.value} value={tz.value}>
+												{tz.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 						</div>
 					</SettingsSection>
 

@@ -4,6 +4,9 @@ import { isHydratedAtom } from "./hydration";
 
 export type Theme = "light" | "dark" | "system";
 
+// Temperature unit preference
+export type TemperatureUnit = "auto" | "fahrenheit" | "celsius";
+
 // Languages supported by the Prompt API (optimal quality and safety attestation)
 export const PROMPT_API_SUPPORTED_LANGUAGES = ["en", "es", "ja"] as const;
 export type PromptApiLanguage = (typeof PROMPT_API_SUPPORTED_LANGUAGES)[number];
@@ -43,6 +46,35 @@ export const themeAtom = atom<Theme>("system");
 
 // Output language state - auto-detected from browser, always a supported language
 export const outputLanguageAtom = atom<PromptApiLanguage>("en");
+
+// Temperature unit preference - "auto" uses browser locale detection
+export const temperatureUnitAtom = atom<TemperatureUnit>("auto");
+
+// Timezone preference - "auto" uses system timezone
+export type TimezonePreference = "auto" | string;
+export const timezoneAtom = atom<TimezonePreference>("auto");
+
+/**
+ * Get the system's default timezone
+ */
+export const getSystemTimezone = (): string => {
+	try {
+		return Intl.DateTimeFormat().resolvedOptions().timeZone;
+	} catch {
+		return "UTC";
+	}
+};
+
+/**
+ * Get the resolved timezone (handles "auto" setting)
+ */
+export const getResolvedTimezone = (): string => {
+	const setting = timezoneAtom.get();
+	if (setting === "auto") {
+		return getSystemTimezone();
+	}
+	return setting;
+};
 
 // AI model settings
 export const aiSettingsAtom = atom<BuiltInAIChatSettings>({});
@@ -94,6 +126,12 @@ export const archiveThresholdDaysAtom = atom<number>(2);
 // Storage key for archive threshold
 const ARCHIVE_THRESHOLD_KEY = "archive-threshold";
 
+// Storage key for temperature unit
+const TEMPERATURE_UNIT_KEY = "temperature-unit";
+
+// Storage key for timezone
+const TIMEZONE_KEY = "timezone";
+
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
 
@@ -105,6 +143,28 @@ const loadThemeFromStorage = () => {
 	const stored = localStorage.getItem("theme") as Theme | null;
 	if (stored) {
 		themeAtom.set(stored);
+	}
+};
+
+/**
+ * Load temperature unit from localStorage (called after hydration)
+ */
+const loadTemperatureUnitFromStorage = () => {
+	if (!isBrowser) return;
+	const stored = localStorage.getItem(TEMPERATURE_UNIT_KEY) as TemperatureUnit | null;
+	if (stored && ["auto", "fahrenheit", "celsius"].includes(stored)) {
+		temperatureUnitAtom.set(stored);
+	}
+};
+
+/**
+ * Load timezone from localStorage (called after hydration)
+ */
+const loadTimezoneFromStorage = () => {
+	if (!isBrowser) return;
+	const stored = localStorage.getItem(TIMEZONE_KEY);
+	if (stored) {
+		timezoneAtom.set(stored);
 	}
 };
 
@@ -165,6 +225,48 @@ onMount(outputLanguageAtom, () => {
 	outputLanguageAtom.set(detected);
 });
 
+// Initialize temperature unit - defer localStorage read until after hydration
+onMount(temperatureUnitAtom, () => {
+	if (!isBrowser) return;
+	
+	// If already hydrated, load immediately
+	if (isHydratedAtom.get()) {
+		loadTemperatureUnitFromStorage();
+		return;
+	}
+	
+	// Otherwise, wait for hydration to complete
+	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
+		if (hydrated) {
+			loadTemperatureUnitFromStorage();
+			unsubscribe();
+		}
+	});
+	
+	return unsubscribe;
+});
+
+// Initialize timezone - defer localStorage read until after hydration
+onMount(timezoneAtom, () => {
+	if (!isBrowser) return;
+	
+	// If already hydrated, load immediately
+	if (isHydratedAtom.get()) {
+		loadTimezoneFromStorage();
+		return;
+	}
+	
+	// Otherwise, wait for hydration to complete
+	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
+		if (hydrated) {
+			loadTimezoneFromStorage();
+			unsubscribe();
+		}
+	});
+	
+	return unsubscribe;
+});
+
 // Initialize archive threshold - defer localStorage read until after hydration
 onMount(archiveThresholdAtom, () => {
 	if (!isBrowser) return;
@@ -197,6 +299,20 @@ export const setTheme = (theme: Theme) => {
 
 export const updateAiSettings = (settings: Partial<BuiltInAIChatSettings>) => {
 	aiSettingsAtom.set({ ...aiSettingsAtom.get(), ...settings });
+};
+
+export const setTemperatureUnit = (unit: TemperatureUnit) => {
+	temperatureUnitAtom.set(unit);
+	if (isBrowser) {
+		localStorage.setItem(TEMPERATURE_UNIT_KEY, unit);
+	}
+};
+
+export const setTimezone = (timezone: TimezonePreference) => {
+	timezoneAtom.set(timezone);
+	if (isBrowser) {
+		localStorage.setItem(TIMEZONE_KEY, timezone);
+	}
 };
 
 export const setArchiveThreshold = (threshold: ArchiveThreshold) => {

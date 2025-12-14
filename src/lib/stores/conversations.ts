@@ -33,6 +33,9 @@ const titleGenerationInProgress = new Set<string>();
 // Track the previous chat ID to detect changes and save before switching
 let previousChatId: string | null = null;
 
+// Flag to indicate a programmatic switch is in progress (skips subscriber save)
+let programmaticSwitchInProgress = false;
+
 // Storage key
 const STORAGE_KEY = "ai-chat-conversations";
 
@@ -50,14 +53,8 @@ const loadMessagesForChat = (chatId: string | null) => {
 	const conversation = conversations.find((c) => c.id === chatId);
 	
 	if (conversation) {
-		// Only load messages if the conversation has stored messages
-		// OR if the current messagesAtom is empty.
-		// This prevents overwriting messages that were just added to a new conversation
-		// before the async subscriber runs.
-		const currentMessages = messagesAtom.get();
-		if (conversation.messages.length > 0 || currentMessages.length === 0) {
-			messagesAtom.set(conversation.messages);
-		}
+		// Always load the conversation's messages
+		messagesAtom.set(conversation.messages);
 	} else {
 		// Invalid chat ID - clear it from URL and show new chat
 		setActiveChat(null, true);
@@ -119,12 +116,18 @@ onMount(conversationsAtom, () => {
 		// Skip if chat ID hasn't actually changed
 		if (newChatId === previousChatId) return;
 
+		// Skip if this is a programmatic switch (already handled by switchConversation)
+		if (programmaticSwitchInProgress) return;
+
 		// Defer state updates to avoid updating during React render
 		queueMicrotask(() => {
 			// Double-check the value hasn't changed again
 			if (activeChatIdAtom.get() !== newChatId) return;
+			// Skip if programmatic switch started while we were waiting
+			if (programmaticSwitchInProgress) return;
 			
 			// Save the previous conversation before switching
+			// Only do this for browser navigation (back/forward), not programmatic switches
 			if (previousChatId) {
 				saveCurrentConversationById(previousChatId);
 			}
@@ -216,8 +219,16 @@ export const createConversation = (title?: string): Conversation => {
 		status: "active",
 	};
 	conversationsAtom.set([conversation, ...conversationsAtom.get()]);
+	
+	// Set flag to prevent the subscriber from interfering
+	programmaticSwitchInProgress = true;
+	previousChatId = conversation.id;
 	setActiveChat(conversation.id);
 	clearMessages();
+	queueMicrotask(() => {
+		programmaticSwitchInProgress = false;
+	});
+	
 	persist();
 	return conversation;
 };
@@ -228,8 +239,16 @@ export const switchConversation = (id: string) => {
 
 	const conversation = conversationsAtom.get().find((c) => c.id === id);
 	if (conversation) {
+		// Set flag to prevent the subscriber from trying to save again
+		programmaticSwitchInProgress = true;
+		// Update previousChatId before changing messages to prevent race condition
+		previousChatId = id;
 		setActiveChat(id);
 		messagesAtom.set(conversation.messages);
+		// Reset flag after a microtask to allow future subscriber handling
+		queueMicrotask(() => {
+			programmaticSwitchInProgress = false;
+		});
 	}
 };
 
