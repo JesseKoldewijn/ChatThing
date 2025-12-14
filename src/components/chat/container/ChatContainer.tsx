@@ -46,6 +46,8 @@ export const ChatContainer = () => {
 	// Keep track of last message and images for retry functionality
 	const lastMessageRef = useRef<string>("");
 	const lastImagesRef = useRef<ImageAttachment[] | undefined>(undefined);
+	// Keep track of current transaction ID for stop functionality
+	const currentTransactionIdRef = useRef<string | null>(null);
 
 	/**
 	 * Core function to stream AI response for a given prompt
@@ -58,9 +60,14 @@ export const ChatContainer = () => {
 			options: {
 				addUserMessage?: boolean;
 				images?: ImageAttachment[];
+				transactionId?: string;
 			} = {}
 		) => {
 			const { addUserMessage = true, images } = options;
+
+			// Generate a transaction ID to link the prompt with all its responses
+			const transactionId = options.transactionId ?? crypto.randomUUID();
+			currentTransactionIdRef.current = transactionId;
 
 			// Clear any existing error
 			clearError();
@@ -81,7 +88,7 @@ export const ChatContainer = () => {
 
 			// Add user message only if this is a new message (not a retry/regenerate)
 			if (addUserMessage) {
-				addMessage("user", prompt, images);
+				addMessage("user", prompt, { images, transactionId });
 
 				// Trigger title generation immediately in parallel with the AI response
 				// This makes the title appear sooner rather than waiting for the response to complete
@@ -117,11 +124,11 @@ export const ChatContainer = () => {
 							// Save any content before the tool call as a separate message
 							const preToolContent = currentStreamAtom.get();
 							if (preToolContent) {
-								addMessage("assistant", preToolContent);
+								addMessage("assistant", preToolContent, { transactionId });
 								clearStream();
 							}
 							// Add the tool call as its own message
-							addMessage("assistant", `🔧 Using tool: ${chunk.toolName}`);
+							addMessage("assistant", `🔧 Using tool: ${chunk.toolName}`, { transactionId });
 							break;
 						}
 						case "tool-result": {
@@ -135,7 +142,7 @@ export const ChatContainer = () => {
 						}
 						case "tool-error":
 							// Tool failed - show error as its own message
-							addMessage("assistant", `❌ Error: ${chunk.error}`);
+							addMessage("assistant", `❌ Error: ${chunk.error}`, { transactionId });
 							break;
 						// Other chunk types (step-start, step-finish, etc.) are handled automatically
 					}
@@ -144,7 +151,7 @@ export const ChatContainer = () => {
 				// After streaming completes, add the full message (the final response)
 				const finalContent = currentStreamAtom.get();
 				if (finalContent) {
-					addMessage("assistant", finalContent);
+					addMessage("assistant", finalContent, { transactionId });
 				}
 
 				// Save the conversation
@@ -158,6 +165,7 @@ export const ChatContainer = () => {
 						streamResponse(retryMessage, {
 							addUserMessage: false,
 							images: retryImages,
+							transactionId, // Preserve the transaction ID on retry
 						});
 					});
 				}
@@ -166,6 +174,7 @@ export const ChatContainer = () => {
 				loadingAtom.set(false);
 				clearStream();
 				abortController = null;
+				currentTransactionIdRef.current = null;
 			}
 		},
 		[activeConversationId, aiSettings]
@@ -189,9 +198,11 @@ export const ChatContainer = () => {
 		// Keep what was streamed so far
 		const partialContent = currentStreamAtom.get();
 		if (partialContent) {
-			addMessage("assistant", partialContent + " [stopped]");
+			const transactionId = currentTransactionIdRef.current ?? undefined;
+			addMessage("assistant", partialContent + " [stopped]", { transactionId });
 		}
 		clearStream();
+		currentTransactionIdRef.current = null;
 	}, []);
 
 	// Regenerate doesn't add a new user message, just streams a new response
