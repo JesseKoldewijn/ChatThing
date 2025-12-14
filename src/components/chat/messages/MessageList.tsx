@@ -24,11 +24,13 @@ export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) =
 
 	// When streaming starts, add an assistant message placeholder
 	// This is handled in the chat hook, but we show the streaming content
+	// Use a stable timestamp for the streaming message to avoid React purity issues
 	const streamingMessage = isStreaming && currentStream ? {
 		id: "streaming",
+		transactionId: "streaming",
 		role: "assistant" as const,
 		content: currentStream,
-		timestamp: Date.now(),
+		timestamp: 0, // Streaming messages don't need a real timestamp
 	} : null;
 
 	// Combine real messages with streaming message

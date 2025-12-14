@@ -1,5 +1,8 @@
 # ChatThing
 
+![Unit Test Coverage](./coverage/unit/badge.svg)
+![E2E Test Coverage](./coverage/e2e/badge.svg)
+
 A sleek AI chat application that runs entirely in your browser using Chrome's built-in Prompt API. No API keys, no cloud costs, no data leaving your device — just local AI conversations powered by Gemini Nano (Chrome) or Phi mini (Edge).
 
 ## ✨ Features
@@ -169,6 +172,14 @@ src/
 | `yarn prerender` | Generate pre-rendered HTML |
 | `yarn preview` | Preview production build locally |
 | `yarn lint` | Run ESLint |
+| `yarn test` | Run unit tests in watch mode |
+| `yarn test:run` | Run unit tests once |
+| `yarn test:coverage` | Run unit tests with coverage |
+| `yarn test:e2e` | Run E2E browser tests in watch mode |
+| `yarn test:e2e:run` | Run E2E browser tests once |
+| `yarn test:e2e:coverage` | Run E2E tests with coverage |
+| `yarn test:all` | Run all tests (unit + E2E) |
+| `yarn test:badges` | Generate coverage badge SVGs |
 
 ## 🤝 Contributing
 

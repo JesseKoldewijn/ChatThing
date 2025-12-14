@@ -11,7 +11,7 @@ interface CodeBlockProps {
 }
 
 // Cache for lazy-loaded modules
-let syntaxHighlighterCache: {
+const syntaxHighlighterCache: {
 	SyntaxHighlighter: ComponentType<SyntaxHighlighterProps> | null;
 	oneDark: Record<string, React.CSSProperties> | null;
 	oneLight: Record<string, React.CSSProperties> | null;
@@ -363,6 +363,7 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 };
 
 // Helper to create a render function for MessageItem
+// eslint-disable-next-line react-refresh/only-export-components
 export const createMarkdownRenderer = () => {
 	return (content: string) => <MarkdownRenderer content={content} />;
 };

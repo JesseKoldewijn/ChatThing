@@ -1,9 +1,10 @@
 import { atom, onMount } from "nanostores";
-import { messagesAtom, clearMessages, type Message } from "./chat";
+import { messagesAtom, clearMessages, type Message, saveImagesToIndexedDB } from "./chat";
 import { generateConversationTitle, needsTitleGeneration } from "@/lib/ai/titleGenerator";
 import { activeChatIdAtom, setActiveChat } from "./navigation";
 import { archiveThresholdAtom, thresholdToHours } from "./settings";
 import { isHydratedAtom } from "./hydration";
+import { deleteConversationImages, clearAllImages } from "./imageStorage";
 
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
@@ -144,18 +145,65 @@ onMount(conversationsAtom, () => {
 });
 
 /**
+ * Prepare messages for localStorage by saving images to IndexedDB
+ * Returns messages with image data stripped (storedInDb=true)
+ */
+const prepareMessagesForStorage = async (
+	messages: Message[],
+	conversationId: string
+): Promise<Message[]> => {
+	const preparedMessages: Message[] = [];
+
+	for (const msg of messages) {
+		if (msg.images && msg.images.length > 0) {
+			// Check if images need to be saved to IndexedDB
+			const imagesNeedingSave = msg.images.filter(
+				(img) => img.data && !img.storedInDb
+			);
+
+			if (imagesNeedingSave.length > 0) {
+				// Save images to IndexedDB
+				const savedImages = await saveImagesToIndexedDB(
+					imagesNeedingSave,
+					conversationId
+				);
+
+				// Merge saved images with already-stored images
+				const alreadyStored = msg.images.filter((img) => img.storedInDb);
+				const allImages = [...alreadyStored, ...savedImages];
+
+				preparedMessages.push({
+					...msg,
+					images: allImages,
+				});
+			} else {
+				// All images already stored
+				preparedMessages.push(msg);
+			}
+		} else {
+			preparedMessages.push(msg);
+		}
+	}
+
+	return preparedMessages;
+};
+
+/**
  * Save a specific conversation by ID (used when navigating away)
  */
-const saveCurrentConversationById = (chatId: string) => {
+const saveCurrentConversationById = async (chatId: string) => {
 	const messages = messagesAtom.get();
 	const conversations = conversationsAtom.get();
 	const index = conversations.findIndex((c) => c.id === chatId);
 
 	if (index !== -1 && messages.length > 0) {
+		// Prepare messages (save images to IndexedDB)
+		const preparedMessages = await prepareMessagesForStorage(messages, chatId);
+
 		const updated = [...conversations];
 		updated[index] = {
 			...updated[index],
-			messages,
+			messages: preparedMessages,
 			updatedAt: Date.now(),
 		};
 		conversationsAtom.set(updated);
@@ -163,10 +211,30 @@ const saveCurrentConversationById = (chatId: string) => {
 	}
 };
 
-// Save to localStorage
+// Save to localStorage with error handling
+// Images are stored in IndexedDB, so localStorage only contains metadata
 const persist = () => {
 	if (!isBrowser) return;
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(conversationsAtom.get()));
+	
+	const conversations = conversationsAtom.get();
+	
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+	} catch (error) {
+		// Check if it's a quota exceeded error
+		if (
+			error instanceof DOMException &&
+			(error.name === "QuotaExceededError" ||
+				error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+		) {
+			console.error(
+				"Storage quota exceeded. This shouldn't happen with hybrid storage. " +
+				"Consider clearing old conversations."
+			);
+		} else {
+			console.error("Failed to persist conversations:", error);
+		}
+	}
 };
 
 /**
@@ -252,7 +320,7 @@ export const switchConversation = (id: string) => {
 	}
 };
 
-export const saveCurrentConversation = () => {
+export const saveCurrentConversation = async () => {
 	const activeId = activeChatIdAtom.get();
 	if (!activeId) return;
 
@@ -261,12 +329,15 @@ export const saveCurrentConversation = () => {
 	const index = conversations.findIndex((c) => c.id === activeId);
 
 	if (index !== -1) {
+		// Prepare messages (save images to IndexedDB)
+		const preparedMessages = await prepareMessagesForStorage(messages, activeId);
+
 		const updated = [...conversations];
 		const currentConversation = updated[index];
 
 		updated[index] = {
 			...currentConversation,
-			messages,
+			messages: preparedMessages,
 			updatedAt: Date.now(),
 			// Keep isGeneratingTitle state - title generation is triggered separately via triggerTitleGeneration
 		};
@@ -450,9 +521,16 @@ export const restoreConversation = (id: string) => {
 /**
  * Permanently delete a conversation (cannot be undone)
  */
-export const permanentlyDeleteConversation = (id: string) => {
+export const permanentlyDeleteConversation = async (id: string) => {
 	const conversations = conversationsAtom.get().filter((c) => c.id !== id);
 	conversationsAtom.set(conversations);
+
+	// Delete images from IndexedDB
+	try {
+		await deleteConversationImages(id);
+	} catch (error) {
+		console.error("Failed to delete conversation images:", error);
+	}
 
 	// If we deleted the active conversation, switch to another or clear
 	if (activeChatIdAtom.get() === id) {
@@ -471,11 +549,21 @@ export const permanentlyDeleteConversation = (id: string) => {
 /**
  * Permanently delete all soft-deleted conversations
  */
-export const cleanupDeletedConversations = (): number => {
+export const cleanupDeletedConversations = async (): Promise<number> => {
 	const conversations = conversationsAtom.get();
-	const deletedCount = conversations.filter((c) => c.status === "deleted").length;
+	const deletedConversations = conversations.filter((c) => c.status === "deleted");
+	const deletedCount = deletedConversations.length;
 	
 	if (deletedCount > 0) {
+		// Delete images from IndexedDB for each deleted conversation
+		for (const conv of deletedConversations) {
+			try {
+				await deleteConversationImages(conv.id);
+			} catch (error) {
+				console.error("Failed to delete conversation images:", conv.id, error);
+			}
+		}
+
 		const remaining = conversations.filter((c) => c.status !== "deleted");
 		conversationsAtom.set(remaining);
 		persist();
@@ -637,9 +725,16 @@ export const importConversations = async (
 /**
  * Clear all conversations
  */
-export const clearAllConversations = (): void => {
+export const clearAllConversations = async (): Promise<void> => {
 	conversationsAtom.set([]);
 	setActiveChat(null, true);
 	clearMessages();
 	persist();
+
+	// Clear all images from IndexedDB
+	try {
+		await clearAllImages();
+	} catch (error) {
+		console.error("Failed to clear all images:", error);
+	}
 };
