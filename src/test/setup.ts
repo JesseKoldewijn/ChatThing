@@ -3,6 +3,7 @@ import * as matchers from "vitest-axe/matchers";
 import { expect } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+import "fake-indexeddb/auto";
 
 // Extend vitest with axe matchers
 expect.extend(matchers);
@@ -89,13 +90,17 @@ class IntersectionObserverMock {
 	root = null;
 	rootMargin = "";
 	thresholds: number[] = [];
-	constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {
+	constructor(
+		_callback: IntersectionObserverCallback,
+		_options?: IntersectionObserverInit
+	) {
 		// Parameters are intentionally unused - this is a mock
 		void _callback;
 		void _options;
 	}
 }
-globalThis.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
+globalThis.IntersectionObserver =
+	IntersectionObserverMock as unknown as typeof IntersectionObserver;
 
 // Mock pointer capture methods (required by Radix UI Select)
 if (typeof Element !== "undefined") {
@@ -109,84 +114,8 @@ if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
 	Element.prototype.scrollIntoView = vi.fn();
 }
 
-// Mock IndexedDB for image storage tests
-const indexedDBMock = (() => {
-	let stores: Record<string, Record<string, unknown>> = {};
-	
-	const createMockObjectStore = (name: string) => {
-		if (!stores[name]) stores[name] = {};
-		return {
-			put: vi.fn((value: { id: string }) => {
-				stores[name][value.id] = value;
-				return { onsuccess: null, onerror: null };
-			}),
-			get: vi.fn((key: string) => {
-				const result = stores[name][key] || null;
-				return { 
-					result,
-					onsuccess: null, 
-					onerror: null,
-				};
-			}),
-			delete: vi.fn((key: string) => {
-				delete stores[name][key];
-				return { onsuccess: null, onerror: null };
-			}),
-			clear: vi.fn(() => {
-				stores[name] = {};
-				return { onsuccess: null, onerror: null };
-			}),
-			createIndex: vi.fn(),
-			index: vi.fn(() => ({
-				openCursor: vi.fn(() => ({
-					onsuccess: null,
-					onerror: null,
-					result: null,
-				})),
-			})),
-		};
-	};
-
-	const createMockTransaction = () => ({
-		objectStore: vi.fn((name: string) => createMockObjectStore(name)),
-	});
-
-	const createMockDB = () => ({
-		objectStoreNames: { contains: vi.fn(() => true) },
-		createObjectStore: vi.fn((name: string) => createMockObjectStore(name)),
-		transaction: vi.fn(() => createMockTransaction()),
-	});
-
-	return {
-		open: vi.fn(() => {
-			const request = {
-				result: createMockDB(),
-				onsuccess: null as (() => void) | null,
-				onerror: null as (() => void) | null,
-				onupgradeneeded: null as ((event: unknown) => void) | null,
-			};
-			// Simulate async success
-			setTimeout(() => {
-				if (request.onsuccess) request.onsuccess();
-			}, 0);
-			return request;
-		}),
-		deleteDatabase: vi.fn(),
-		_reset: () => {
-			stores = {};
-		},
-	};
-})();
-
-Object.defineProperty(globalThis, "indexedDB", {
-	value: indexedDBMock,
-	writable: true,
-});
-
-// Reset localStorage and IndexedDB between tests
+// Reset localStorage between tests
 afterEach(() => {
 	localStorageMock.clear();
-	indexedDBMock._reset();
 	vi.clearAllMocks();
 });
-

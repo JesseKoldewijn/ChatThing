@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">90.9% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>10/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">90.9% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>10/11</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -134,20 +134,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -156,20 +149,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -193,13 +193,13 @@ interface MessageListProps {
 }
 &nbsp;
 export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) =&gt; {
-	const <span class="cstat-no" title="statement not covered" >messages = useStore(messagesAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >currentStream = useStore(currentStreamAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >isStreaming = useStore(isStreamingAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >scrollRef = useRef&lt;HTMLDivElement&gt;(null);</span>
+	const messages = useStore(messagesAtom);
+	const currentStream = useStore(currentStreamAtom);
+	const isStreaming = useStore(isStreamingAtom);
+	const scrollRef = useRef&lt;HTMLDivElement&gt;(null);
 &nbsp;
 	// Auto-scroll to bottom on new messages or stream updates
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >	useEffect(() =&gt; {</span></span>
+	useEffect(() =&gt; {
 		if (scrollRef.current) {
 <span class="cstat-no" title="statement not covered" >			scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });</span>
 		}
@@ -208,7 +208,7 @@ export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) =
 	// When streaming starts, add an assistant message placeholder
 	// This is handled in the chat hook, but we show the streaming content
 	// Use a stable timestamp for the streaming message to avoid React purity issues
-	const streamingMessage = <span class="cstat-no" title="statement not covered" >isStreaming &amp;&amp; currentStream ? {</span>
+	const streamingMessage = isStreaming &amp;&amp; currentStream ? {
 		id: "streaming",
 		transactionId: "streaming",
 		role: "assistant" as const,
@@ -217,18 +217,18 @@ export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) =
 	} : null;
 &nbsp;
 	// Combine real messages with streaming message
-	const allMessages = <span class="cstat-no" title="statement not covered" >streamingMessage </span>
-		? [...messages.<span class="fstat-no" title="function not covered" >filter(m</span> =&gt; <span class="cstat-no" title="statement not covered" >m.id !== "streaming"),</span> streamingMessage]
+	const allMessages = streamingMessage 
+		? [...messages.filter(m =&gt; m.id !== "streaming"), streamingMessage]
 		: messages;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	return (</span>
+	return (
 		&lt;MessageListUI
 			isEmpty={messages.length === 0 &amp;&amp; !isStreaming}
 			isLoading={isStreaming &amp;&amp; !currentStream}
 			scrollRef={scrollRef}
 		&gt;
-			{allMessages.<span class="fstat-no" title="function not covered" >map((m</span>essage) =&gt; (
-<span class="cstat-no" title="statement not covered" >				&lt;MessageItem</span>
+			{allMessages.map((message) =&gt; (
+				&lt;MessageItem
 					key={message.id}
 					message={message}
 					isStreaming={message.id === "streaming"}
@@ -247,7 +247,7 @@ export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) =
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:42:55.266Z
+                at 2025-12-15T21:31:28.168Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

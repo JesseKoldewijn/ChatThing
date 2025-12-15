@@ -111,6 +111,7 @@ export const ConversationSidebarUI = ({
 		return (
 			<div
 				key={conversation.id}
+				data-testid={`conversation-item-${conversation.id}`}
 				className={cn(
 					"group relative flex items-center rounded-lg px-3 py-3 cursor-pointer min-h-[52px]",
 					"hover:bg-sidebar-accent active:bg-sidebar-accent",
@@ -169,6 +170,7 @@ export const ConversationSidebarUI = ({
 						<Button
 							variant="ghost"
 							size="icon"
+							data-testid={`conversation-menu-${conversation.id}`}
 							className={cn(
 								"h-10 w-10 shrink-0 transition-opacity",
 								"opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
@@ -188,6 +190,7 @@ export const ConversationSidebarUI = ({
 						{/* Rename - only for active/archived */}
 						{!isDeleted && (
 							<DropdownMenuItem
+								data-testid={`conversation-rename-${conversation.id}`}
 								className="py-2.5 text-sm"
 								onClick={(e) => {
 									e.stopPropagation();
@@ -203,6 +206,7 @@ export const ConversationSidebarUI = ({
 						{/* Archive/Unarchive - only for active/archived */}
 						{!isDeleted && (
 							<DropdownMenuItem
+								data-testid={`conversation-${isArchived ? "unarchive" : "archive"}-${conversation.id}`}
 								className="py-2.5 text-sm"
 								onClick={(e) => {
 									e.stopPropagation();
@@ -233,6 +237,7 @@ export const ConversationSidebarUI = ({
 						{/* Restore - only for deleted */}
 						{isDeleted && (
 							<DropdownMenuItem
+								data-testid={`conversation-restore-${conversation.id}`}
 								className="py-2.5 text-sm"
 								onClick={(e) => {
 									e.stopPropagation();
@@ -249,6 +254,7 @@ export const ConversationSidebarUI = ({
 
 						{/* Delete */}
 						<DropdownMenuItem
+							data-testid={`conversation-delete-${conversation.id}`}
 							className="py-2.5 text-sm text-destructive focus:text-destructive"
 							onClick={(e) => {
 								e.stopPropagation();
@@ -286,6 +292,7 @@ export const ConversationSidebarUI = ({
 			<div className="mb-1">
 				{isCollapsible ? (
 					<button
+						data-testid={`section-toggle-${title.toLowerCase()}`}
 						onClick={onToggle}
 						className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px]"
 					>
@@ -324,9 +331,10 @@ export const ConversationSidebarUI = ({
 		<div className="flex h-full flex-col">
 			{/* Header */}
 			<div className="flex h-14 items-center justify-between border-b px-3">
-				<h2 className="font-semibold text-sidebar-foreground">Chats</h2>
+				<h2 data-testid="sidebar-title" className="font-semibold text-sidebar-foreground">Chats</h2>
 				<div className="flex items-center gap-0.5">
 					<Button
+						data-testid="new-chat-button"
 						variant="ghost"
 						size="icon"
 						onClick={onNewChat}
@@ -336,6 +344,7 @@ export const ConversationSidebarUI = ({
 					</Button>
 					{onClose && (
 						<Button
+							data-testid="close-sidebar-button"
 							variant="ghost"
 							size="icon"
 							onClick={onClose}
