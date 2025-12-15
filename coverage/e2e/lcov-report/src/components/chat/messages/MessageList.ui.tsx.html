@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -202,8 +202,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -225,21 +225,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">90x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -249,7 +242,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">169x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -327,8 +327,8 @@ export interface MessageListUIProps {
 /**
  * Animated typing indicator with bouncing dots
  */
-const <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >TypingIndicator = () =&gt; (</span></span>
-<span class="cstat-no" title="statement not covered" >	&lt;div className="flex items-center gap-1"&gt;</span>
+const TypingIndicator = () =&gt; (
+	&lt;div className="flex items-center gap-1"&gt;
 		&lt;span className="text-sm text-muted-foreground"&gt;Thinking&lt;/span&gt;
 		&lt;div className="flex gap-0.5"&gt;
 			&lt;span
@@ -350,14 +350,14 @@ const <span class="cstat-no" title="statement not covered" ><span class="fstat-n
 /**
  * Shimmer loading bar animation
  */
-const <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >ShimmerBar = ({</span></span>
+const ShimmerBar = ({
 	width,
-	delay = <span class="branch-0 cbranch-no" title="branch not covered" >0,</span>
+	delay = 0,
 }: {
 	width: string;
 	delay?: number;
 }) =&gt; (
-<span class="cstat-no" title="statement not covered" >	&lt;div</span>
+	&lt;div
 		className="h-3 rounded-full bg-muted-foreground/10 overflow-hidden"
 		style={{ width }}
 	&gt;
@@ -371,14 +371,14 @@ const <span class="cstat-no" title="statement not covered" ><span class="fstat-n
 export const MessageListUI = ({
 	children,
 	isEmpty,
-	isLoading = <span class="branch-0 cbranch-no" title="branch not covered" >false,</span>
+	isLoading = false,
 	scrollRef,
 }: MessageListUIProps) =&gt; {
-<span class="cstat-no" title="statement not covered" >	return (</span>
-		&lt;ScrollArea className="h-full w-full"&gt;
+	return (
+		&lt;ScrollArea data-testid="message-list" className="h-full w-full"&gt;
 			&lt;div ref={scrollRef} className="flex min-h-full min-w-0 flex-col"&gt;
 				{isEmpty &amp;&amp; !isLoading ? (
-					&lt;div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center"&gt;
+					&lt;div data-testid="empty-chat-state" className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center"&gt;
 						&lt;div className="relative mb-6"&gt;
 							&lt;div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 shadow-inner"&gt;
 								&lt;Sparkles className="h-10 w-10 text-primary" /&gt;
@@ -387,20 +387,20 @@ export const MessageListUI = ({
 								&lt;Bot className="h-4 w-4 text-muted-foreground" /&gt;
 							&lt;/div&gt;
 						&lt;/div&gt;
-						&lt;h2 className="mb-2 text-2xl font-semibold tracking-tight"&gt;
+						&lt;h2 data-testid="empty-chat-title" className="mb-2 text-2xl font-semibold tracking-tight"&gt;
 							How can I help you today?
 						&lt;/h2&gt;
-						&lt;p className="max-w-md text-muted-foreground"&gt;
+						&lt;p data-testid="empty-chat-description" className="max-w-md text-muted-foreground"&gt;
 							Start a conversation by typing a message below. I'm
 							here to assist with questions, ideas, or anything
 							else you'd like to explore.
 						&lt;/p&gt;
 					&lt;/div&gt;
 				) : (
-					&lt;div className="flex-1 min-w-0 py-4"&gt;
+					&lt;div data-testid="message-list-content" className="flex-1 min-w-0 py-4"&gt;
 						{children}
 						{isLoading &amp;&amp; (
-							&lt;div className="flex gap-3 px-4 py-4"&gt;
+							&lt;div data-testid="ai-typing-indicator" className="flex gap-3 px-4 py-4"&gt;
 								{/* AI Avatar with pulse animation */}
 								&lt;div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted"&gt;
 									&lt;Bot className="h-4 w-4 text-muted-foreground" /&gt;
@@ -445,7 +445,7 @@ export const MessageListUI = ({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:44.197Z
+                at 2025-12-15T20:43:01.882Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

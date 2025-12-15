@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>5/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">77.77% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>7/9</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>5/6</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -223,7 +223,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -233,7 +233,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -243,7 +243,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -261,9 +261,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -359,7 +359,7 @@ export interface ErrorBannerUIProps {
 	onDismiss?: () =&gt; void;
 }
 &nbsp;
-const categoryIcons: Record&lt;ErrorCategory, React.ComponentType&lt;{ className?: string }&gt;&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+const categoryIcons: Record&lt;ErrorCategory, React.ComponentType&lt;{ className?: string }&gt;&gt; = {
 	network: Wifi,
 	rate_limit: Clock,
 	context: FileWarning,
@@ -369,7 +369,7 @@ const categoryIcons: Record&lt;ErrorCategory, React.ComponentType&lt;{ className
 	unknown: HelpCircle,
 };
 &nbsp;
-const categoryColors: Record&lt;ErrorCategory, string&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+const categoryColors: Record&lt;ErrorCategory, string&gt; = {
 	network: "border-orange-500/50 bg-orange-500/10",
 	rate_limit: "border-yellow-500/50 bg-yellow-500/10",
 	context: "border-blue-500/50 bg-blue-500/10",
@@ -379,7 +379,7 @@ const categoryColors: Record&lt;ErrorCategory, string&gt; = <span class="cstat-n
 	unknown: "border-muted-foreground/50 bg-muted",
 };
 &nbsp;
-const categoryIconColors: Record&lt;ErrorCategory, string&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+const categoryIconColors: Record&lt;ErrorCategory, string&gt; = {
 	network: "text-orange-500",
 	rate_limit: "text-yellow-500",
 	context: "text-blue-500",
@@ -397,9 +397,9 @@ export const ErrorBannerUI = ({
 	onRetry,
 	onDismiss,
 }: ErrorBannerUIProps) =&gt; {
-	const Icon = <span class="cstat-no" title="statement not covered" >categoryIcons[category];</span>
+	const Icon = categoryIcons[category];
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	return (</span>
+	return (
 		&lt;div
 			className={cn(
 				"mx-4 mb-4 rounded-lg border-2 p-4",
@@ -433,7 +433,7 @@ export const ErrorBannerUI = ({
 						)}
 &nbsp;
 						{category === "context" &amp;&amp; (
-							&lt;Button
+<span class="branch-1 cbranch-no" title="branch not covered" >							&lt;Button</span>
 								size="sm"
 								variant="outline"
 								onClick={() =&gt; {
@@ -447,7 +447,7 @@ export const ErrorBannerUI = ({
 						)}
 &nbsp;
 						{category === "rate_limit" &amp;&amp; (
-							&lt;span className="text-xs text-muted-foreground"&gt;
+<span class="branch-1 cbranch-no" title="branch not covered" >							&lt;span className="text-xs text-muted-foreground"&gt;</span>
 								Please wait a few seconds before retrying
 							&lt;/span&gt;
 						)}
@@ -478,7 +478,7 @@ export const ErrorBannerUI = ({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:44.197Z
+                at 2025-12-15T20:43:01.882Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

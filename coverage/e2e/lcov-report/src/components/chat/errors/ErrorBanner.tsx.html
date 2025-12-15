@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>6/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>1/2</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>6/9</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -98,30 +98,30 @@
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">88x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">88x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">88x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">81x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -139,30 +139,30 @@ import { ErrorBannerUI } from "./ErrorBanner.ui";
 import { currentErrorAtom, clearError } from "@/lib/stores/errors";
 &nbsp;
 export const ErrorBanner = () =&gt; {
-	const <span class="cstat-no" title="statement not covered" >error = useStore(currentErrorAtom);</span>
+	const error = useStore(currentErrorAtom);
 &nbsp;
-	const <span class="cstat-no" title="statement not covered" >handleRetry = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
+	const handleRetry = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span>
 		if (error?.retryAction) {
 <span class="cstat-no" title="statement not covered" >			clearError();</span>
 <span class="cstat-no" title="statement not covered" >			error.retryAction();</span>
 		}
 	}, [error]);
 &nbsp;
-	const <span class="cstat-no" title="statement not covered" >handleDismiss = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
+	const handleDismiss = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >		clearError();</span>
 	}, []);
 &nbsp;
 	if (!error) {
-<span class="cstat-no" title="statement not covered" >		return null;</span>
+		return null;
 	}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	return (</span>
+	return (
 		&lt;ErrorBannerUI
 			title={error.title}
 			message={error.message}
 			category={error.category}
 			isRetryable={error.isRetryable}
-			onRetry={error.retryAction ? handleRetry : undefined}
+			onRetry={error.retryAction ? handleRetry : <span class="branch-1 cbranch-no" title="branch not covered" >undefined}</span>
 			onDismiss={handleDismiss}
 		/&gt;
 	);
@@ -175,7 +175,7 @@ export const ErrorBanner = () =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:44.197Z
+                at 2025-12-15T20:43:01.882Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

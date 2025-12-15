@@ -65,6 +65,7 @@ export const MessageItemUI = ({
 				</div>
 			)}
 			<div
+				data-testid={`message-${role}`}
 				className={cn(
 					"group flex w-full min-w-0 gap-3 px-4 py-4 overflow-hidden",
 					isUser ? "flex-row-reverse" : "flex-row"
@@ -72,6 +73,7 @@ export const MessageItemUI = ({
 			>
 				{/* Avatar */}
 				<div
+					data-testid={`message-avatar-${role}`}
 					className={cn(
 						"flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
 						isUser
@@ -94,7 +96,7 @@ export const MessageItemUI = ({
 					)}
 				>
 					{/* Sender label */}
-					<span className="px-1 text-xs font-medium text-muted-foreground">
+					<span data-testid={`message-sender-${role}`} className="px-1 text-xs font-medium text-muted-foreground">
 						{isUser ? "You" : "AI"}
 					</span>
 
@@ -148,6 +150,7 @@ export const MessageItemUI = ({
 
 					{/* Message content */}
 					<div
+						data-testid={`message-bubble-${role}`}
 						className={cn(
 							"min-w-0 max-w-full overflow-hidden rounded-2xl px-4 py-3",
 							isUser
@@ -156,6 +159,7 @@ export const MessageItemUI = ({
 						)}
 					>
 						<div
+							data-testid={`message-content-${role}`}
 							className={cn(
 								"prose prose-sm max-w-full *:max-w-full",
 								isUser ? "prose-invert" : "dark:prose-invert"
@@ -169,19 +173,20 @@ export const MessageItemUI = ({
 								</p>
 							)}
 							{isStreaming && (
-								<span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-current align-middle" />
+								<span data-testid="streaming-cursor" className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-current align-middle" />
 							)}
 						</div>
 					</div>
 
 					{/* Action buttons - visible on hover for assistant messages */}
 					{!isUser && !isStreaming && content && (
-						<div className="flex items-center gap-0.5 px-1 opacity-0 transition-opacity group-hover:opacity-100">
+						<div data-testid="message-actions" className="flex items-center gap-0.5 px-1 opacity-0 transition-opacity group-hover:opacity-100">
 							<TooltipProvider delayDuration={0}>
 								{onCopy && (
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Button
+												data-testid="copy-message-button"
 												variant="ghost"
 												size="icon"
 												className="h-7 w-7 text-muted-foreground hover:text-foreground"
@@ -206,6 +211,7 @@ export const MessageItemUI = ({
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Button
+												data-testid="regenerate-button"
 												variant="ghost"
 												size="icon"
 												className="h-7 w-7 text-muted-foreground hover:text-foreground"

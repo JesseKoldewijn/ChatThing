@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">22.22% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/36</span>
+                <span class='fraction'>0/36</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">22.22% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/36</span>
+                <span class='fraction'>0/36</span>
             </div>
         
             
@@ -197,43 +197,43 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -330,7 +330,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useNavigate, useSearch, useRouter } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { useCallback } from <span class="cstat-no" title="statement not covered" >"react";</span>
 &nbsp;
 /**
  * Search params for the chat page
@@ -347,26 +347,26 @@ export interface ChatSearchParams {
  * Hook for navigation actions using TanStack Router
  */
 export function useNavigation() {
-	const navigate = useNavigate();
-	const router = useRouter();
+	const navigate = <span class="cstat-no" title="statement not covered" >useNavigate();</span>
+	const router = <span class="cstat-no" title="statement not covered" >useRouter();</span>
 &nbsp;
-	const goToChat = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span>
+	const goToChat = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >		navigate({ to: "/" });</span>
 	}, [navigate]);
 &nbsp;
-	const goToSettings = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span>
+	const goToSettings = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >		navigate({ to: "/settings" });</span>
 	}, [navigate]);
 &nbsp;
-	const goToUsage = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span>
+	const goToUsage = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >		navigate({ to: "/usage" });</span>
 	}, [navigate]);
 &nbsp;
-	const goBack = <span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span>
+	const goBack = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >useCallback(() =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >		router.history.back();</span>
 	}, [router]);
 &nbsp;
-	return {
+<span class="cstat-no" title="statement not covered" >	return {</span>
 		goToChat,
 		goToSettings,
 		goToUsage,
@@ -469,7 +469,7 @@ export function useChatSearchParams() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:44.197Z
+                at 2025-12-15T20:43:01.882Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

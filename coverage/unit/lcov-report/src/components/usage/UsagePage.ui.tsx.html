@@ -30,9 +30,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">63.63% </span>
+                <span class="strong">61.53% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>14/22</span>
+                <span class='fraction'>16/26</span>
             </div>
         
             
@@ -786,7 +786,21 @@
 <a name='L721'></a><a href='#L721'>721</a>
 <a name='L722'></a><a href='#L722'>722</a>
 <a name='L723'></a><a href='#L723'>723</a>
-<a name='L724'></a><a href='#L724'>724</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L724'></a><a href='#L724'>724</a>
+<a name='L725'></a><a href='#L725'>725</a>
+<a name='L726'></a><a href='#L726'>726</a>
+<a name='L727'></a><a href='#L727'>727</a>
+<a name='L728'></a><a href='#L728'>728</a>
+<a name='L729'></a><a href='#L729'>729</a>
+<a name='L730'></a><a href='#L730'>730</a>
+<a name='L731'></a><a href='#L731'>731</a>
+<a name='L732'></a><a href='#L732'>732</a>
+<a name='L733'></a><a href='#L733'>733</a>
+<a name='L734'></a><a href='#L734'>734</a>
+<a name='L735'></a><a href='#L735'>735</a>
+<a name='L736'></a><a href='#L736'>736</a>
+<a name='L737'></a><a href='#L737'>737</a>
+<a name='L738'></a><a href='#L738'>738</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -847,6 +861,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -887,7 +903,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1182,6 +1201,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1404,6 +1427,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1446,6 +1473,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">63x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1575,14 +1603,17 @@ const HeroStat = ({
 	value,
 	subLabel,
 	gradient,
+	testId,
 }: {
 	icon: React.ElementType;
 	label: string;
 	value: string | number;
 	subLabel?: string;
 	gradient: string;
+	testId?: string;
 }) =&gt; (
 	&lt;div
+		data-testid={testId}
 		className={cn(
 			"relative overflow-hidden rounded-2xl p-5",
 			"bg-linear-to-br",
@@ -1596,7 +1627,7 @@ const HeroStat = ({
 					{label}
 				&lt;/span&gt;
 			&lt;/div&gt;
-			&lt;p className="text-4xl font-bold tracking-tight text-white"&gt;
+			&lt;p data-testid={testId ? `${testId}-value` : <span class="branch-1 cbranch-no" title="branch not covered" >undefined} c</span>lassName="text-4xl font-bold tracking-tight text-white"&gt;
 				{value}
 			&lt;/p&gt;
 			{subLabel &amp;&amp; (
@@ -1615,18 +1646,20 @@ const CompactStat = ({
 	value,
 	icon: Icon,
 	color,
+	testId,
 }: {
 	label: string;
 	value: string | number;
 	icon: React.ElementType;
 	color: string;
+	testId?: string;
 }) =&gt; (
-	&lt;div className="flex items-center gap-3 rounded-xl border bg-card/50 px-4 py-3"&gt;
+	&lt;div data-testid={testId} className="flex items-center gap-3 rounded-xl border bg-card/50 px-4 py-3"&gt;
 		&lt;div className={cn("rounded-lg p-2", color)}&gt;
 			&lt;Icon className="h-4 w-4" /&gt;
 		&lt;/div&gt;
 		&lt;div className="min-w-0 flex-1"&gt;
-			&lt;p className="text-lg font-semibold tabular-nums text-foreground"&gt;
+			&lt;p data-testid={testId ? `${testId}-value` : <span class="branch-1 cbranch-no" title="branch not covered" >undefined} c</span>lassName="text-lg font-semibold tabular-nums text-foreground"&gt;
 				{value}
 			&lt;/p&gt;
 			&lt;p className="text-[11px] text-muted-foreground"&gt;{label}&lt;/p&gt;
@@ -1843,10 +1876,11 @@ export const UsagePageUI = ({
 		summary.totalToolCalls &gt; 0;
 &nbsp;
 	return (
-		&lt;div className="flex h-screen flex-col bg-background"&gt;
+		&lt;div data-testid="usage-page" className="flex h-screen flex-col bg-background"&gt;
 			{/* Header */}
-			&lt;header className="flex h-14 shrink-0 items-center gap-3 border-b px-4"&gt;
+			&lt;header data-testid="usage-header" className="flex h-14 shrink-0 items-center gap-3 border-b px-4"&gt;
 				&lt;Button
+					data-testid="usage-back-button"
 					variant="ghost"
 					size="icon"
 					onClick={onBack}
@@ -1859,10 +1893,10 @@ export const UsagePageUI = ({
 						&lt;TrendingUp className="h-4 w-4 text-white" /&gt;
 					&lt;/div&gt;
 					&lt;div&gt;
-						&lt;h1 className="text-base font-semibold leading-none"&gt;
+						&lt;h1 data-testid="usage-title" className="text-base font-semibold leading-none"&gt;
 							Usage Analytics
 						&lt;/h1&gt;
-						&lt;p className="text-[11px] text-muted-foreground"&gt;
+						&lt;p data-testid="usage-subtitle" className="text-[11px] text-muted-foreground"&gt;
 							Track your AI interactions
 						&lt;/p&gt;
 					&lt;/div&gt;
@@ -1873,17 +1907,18 @@ export const UsagePageUI = ({
 			&lt;ScrollArea className="flex-1"&gt;
 				&lt;div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8"&gt;
 					{/* Hero Stats */}
-					&lt;section&gt;
+					&lt;section data-testid="usage-section-overview"&gt;
 						&lt;div className="mb-4 flex items-center gap-2"&gt;
-							&lt;h2 className="text-sm font-semibold text-foreground"&gt;
+							&lt;h2 data-testid="usage-overview-title" className="text-sm font-semibold text-foreground"&gt;
 								Overview
 							&lt;/h2&gt;
-							&lt;span className="text-xs text-muted-foreground"&gt;
+							&lt;span data-testid="usage-estimated-tokens-note" className="text-xs text-muted-foreground"&gt;
 								(estimated tokens)
 							&lt;/span&gt;
 						&lt;/div&gt;
 						&lt;div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"&gt;
 							&lt;HeroStat
+								testId="hero-stat-total-tokens"
 								icon={Zap}
 								label="Total Tokens"
 								value={totalTokens.toLocaleString()}
@@ -1891,6 +1926,7 @@ export const UsagePageUI = ({
 								gradient="from-violet-600 to-purple-700"
 							/&gt;
 							&lt;HeroStat
+								testId="hero-stat-conversations"
 								icon={MessageSquare}
 								label="Conversations"
 								value={summary.totalMessages}
@@ -1898,6 +1934,7 @@ export const UsagePageUI = ({
 								gradient="from-blue-600 to-cyan-600"
 							/&gt;
 							&lt;HeroStat
+								testId="hero-stat-tool-calls"
 								icon={Wrench}
 								label="Tool Calls"
 								value={summary.totalToolCalls}
@@ -1915,26 +1952,30 @@ export const UsagePageUI = ({
 					&lt;/section&gt;
 &nbsp;
 					{/* Secondary Stats */}
-					&lt;section className="grid grid-cols-2 gap-3 sm:grid-cols-4"&gt;
+					&lt;section data-testid="usage-section-secondary-stats" className="grid grid-cols-2 gap-3 sm:grid-cols-4"&gt;
 						&lt;CompactStat
+							testId="compact-stat-messages"
 							icon={MessageSquare}
 							label="Messages Sent"
 							value={summary.totalMessages}
 							color="bg-blue-500/10 text-blue-500"
 						/&gt;
 						&lt;CompactStat
+							testId="compact-stat-responses"
 							icon={Bot}
 							label="AI Responses"
 							value={summary.totalResponses}
 							color="bg-emerald-500/10 text-emerald-500"
 						/&gt;
 						&lt;CompactStat
+							testId="compact-stat-input-tokens"
 							icon={BarChart3}
 							label="Input Tokens"
 							value={summary.totalInputTokens.toLocaleString()}
 							color="bg-cyan-500/10 text-cyan-500"
 						/&gt;
 						&lt;CompactStat
+							testId="compact-stat-output-tokens"
 							icon={BarChart3}
 							label="Output Tokens"
 							value={summary.totalOutputTokens.toLocaleString()}
@@ -1943,30 +1984,30 @@ export const UsagePageUI = ({
 					&lt;/section&gt;
 &nbsp;
 					{/* Chart Section */}
-					&lt;section className="rounded-2xl border bg-card"&gt;
+					&lt;section data-testid="usage-section-chart" className="rounded-2xl border bg-card"&gt;
 						&lt;div className="flex items-center justify-between border-b px-5 py-4"&gt;
 							&lt;div&gt;
-								&lt;h2 className="text-sm font-semibold text-foreground"&gt;
+								&lt;h2 data-testid="chart-title" className="text-sm font-semibold text-foreground"&gt;
 									Activity Over Time
 								&lt;/h2&gt;
-								&lt;p className="text-xs text-muted-foreground"&gt;
+								&lt;p data-testid="chart-subtitle" className="text-xs text-muted-foreground"&gt;
 									Last 30 days of usage
 								&lt;/p&gt;
 							&lt;/div&gt;
-							&lt;div className="flex items-center gap-4 text-xs"&gt;
-								&lt;div className="flex items-center gap-1.5"&gt;
+							&lt;div data-testid="chart-legend" className="flex items-center gap-4 text-xs"&gt;
+								&lt;div data-testid="chart-legend-messages" className="flex items-center gap-1.5"&gt;
 									&lt;div className="h-2 w-2 rounded-full bg-blue-500" /&gt;
 									&lt;span className="text-muted-foreground"&gt;
 										Messages
 									&lt;/span&gt;
 								&lt;/div&gt;
-								&lt;div className="flex items-center gap-1.5"&gt;
+								&lt;div data-testid="chart-legend-responses" className="flex items-center gap-1.5"&gt;
 									&lt;div className="h-2 w-2 rounded-full bg-emerald-500" /&gt;
 									&lt;span className="text-muted-foreground"&gt;
 										Responses
 									&lt;/span&gt;
 								&lt;/div&gt;
-								&lt;div className="flex items-center gap-1.5"&gt;
+								&lt;div data-testid="chart-legend-tools" className="flex items-center gap-1.5"&gt;
 									&lt;div className="h-2 w-2 rounded-full bg-amber-500" /&gt;
 									&lt;span className="text-muted-foreground"&gt;
 										Tools
@@ -2099,10 +2140,10 @@ export const UsagePageUI = ({
 									&lt;/ResponsiveContainer&gt;
 								&lt;/div&gt;
 							) : (
-								&lt;div className="flex h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground"&gt;
+								&lt;div data-testid="chart-empty-state" className="flex h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground"&gt;
 									&lt;BarChart3 className="h-10 w-10 opacity-20" /&gt;
-									&lt;p className="text-sm"&gt;No usage data yet&lt;/p&gt;
-									&lt;p className="text-xs opacity-70"&gt;
+									&lt;p data-testid="empty-state-message" className="text-sm"&gt;No usage data yet&lt;/p&gt;
+									&lt;p data-testid="empty-state-hint" className="text-xs opacity-70"&gt;
 										Start chatting to see your metrics
 									&lt;/p&gt;
 								&lt;/div&gt;
@@ -2111,18 +2152,18 @@ export const UsagePageUI = ({
 					&lt;/section&gt;
 &nbsp;
 					{/* Data Table Section */}
-					&lt;section className="rounded-2xl border bg-card"&gt;
+					&lt;section data-testid="usage-section-table" className="rounded-2xl border bg-card"&gt;
 						&lt;div className="border-b px-5 py-4"&gt;
-							&lt;h2 className="text-sm font-semibold text-foreground"&gt;
+							&lt;h2 data-testid="table-title" className="text-sm font-semibold text-foreground"&gt;
 								Daily Breakdown
 							&lt;/h2&gt;
-							&lt;p className="text-xs text-muted-foreground"&gt;
+							&lt;p data-testid="table-subtitle" className="text-xs text-muted-foreground"&gt;
 								Detailed usage by day
 							&lt;/p&gt;
 						&lt;/div&gt;
 						{tableData.length &gt; 0 ? (
 							&lt;div className="overflow-x-auto"&gt;
-								&lt;table className="w-full text-sm"&gt;
+								&lt;table data-testid="usage-table" className="w-full text-sm"&gt;
 									&lt;thead&gt;
 										{table
 											.getHeaderGroups()
@@ -2186,9 +2227,9 @@ export const UsagePageUI = ({
 								&lt;/table&gt;
 							&lt;/div&gt;
 						) : (
-							&lt;div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground"&gt;
-								&lt;p className="text-sm"&gt;No data to display&lt;/p&gt;
-								&lt;p className="text-xs opacity-70"&gt;
+							&lt;div data-testid="table-empty-state" className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground"&gt;
+								&lt;p data-testid="table-empty-message" className="text-sm"&gt;No data to display&lt;/p&gt;
+								&lt;p data-testid="table-empty-hint" className="text-xs opacity-70"&gt;
 									Usage will appear here as you chat
 								&lt;/p&gt;
 							&lt;/div&gt;
@@ -2197,23 +2238,24 @@ export const UsagePageUI = ({
 &nbsp;
 					{/* Danger Zone */}
 					{hasData &amp;&amp; (
-						&lt;section className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5"&gt;
+						&lt;section data-testid="usage-section-danger-zone" className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5"&gt;
 							&lt;div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"&gt;
 								&lt;div className="flex items-start gap-3"&gt;
 									&lt;div className="rounded-lg bg-destructive/10 p-2"&gt;
 										&lt;Trash2 className="h-4 w-4 text-destructive" /&gt;
 									&lt;/div&gt;
 									&lt;div&gt;
-										&lt;h3 className="text-sm font-semibold text-destructive"&gt;
+										&lt;h3 data-testid="clear-data-title" className="text-sm font-semibold text-destructive"&gt;
 											Clear All Usage Data
 										&lt;/h3&gt;
-										&lt;p className="text-xs text-muted-foreground"&gt;
+										&lt;p data-testid="clear-data-description" className="text-xs text-muted-foreground"&gt;
 											This will permanently delete all
 											tracked metrics
 										&lt;/p&gt;
 									&lt;/div&gt;
 								&lt;/div&gt;
 								&lt;Button
+									data-testid="clear-data-button"
 									variant="destructive"
 									size="sm"
 									onClick={onClearData}
@@ -2239,7 +2281,7 @@ export const UsagePageUI = ({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:40.878Z
+                at 2025-12-15T20:42:55.266Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

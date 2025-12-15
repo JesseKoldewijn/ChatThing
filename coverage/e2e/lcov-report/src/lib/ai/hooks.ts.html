@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">34.21% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/37</span>
+                <span class='fraction'>13/38</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>2/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">34.21% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/37</span>
+                <span class='fraction'>13/38</span>
             </div>
         
             
@@ -184,6 +184,7 @@
 <a name='L119'></a><a href='#L119'>119</a>
 <a name='L120'></a><a href='#L120'>120</a>
 <a name='L121'></a><a href='#L121'>121</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -202,42 +203,41 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">87x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -323,22 +323,22 @@ import {
 } from "./compat";
 &nbsp;
 // Compatibility state atoms
-export const <span class="cstat-no" title="statement not covered" >compatibilityAtom = atom&lt;CompatibilityResult | null&gt;(null);</span>
-export const <span class="cstat-no" title="statement not covered" >compatibilityCheckingAtom = atom&lt;boolean&gt;(true);</span>
+export const compatibilityAtom = atom&lt;CompatibilityResult | null&gt;(null);
+export const compatibilityCheckingAtom = atom&lt;boolean&gt;(true);
 &nbsp;
 /**
  * useCompatibility hook for checking and monitoring Prompt API compatibility
  * @returns Compatibility status and recheck function
  */
 export const useCompatibility = () =&gt; {
-	const <span class="cstat-no" title="statement not covered" >compatibility = useStore(compatibilityAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >isChecking = useStore(compatibilityCheckingAtom);</span>
+	const compatibility = useStore(compatibilityAtom);
+	const isChecking = useStore(compatibilityCheckingAtom);
 &nbsp;
-	const <span class="cstat-no" title="statement not covered" >checkCompatibility = useCallback(<span class="fstat-no" title="function not covered" >async () =&gt; {</span></span>
-<span class="cstat-no" title="statement not covered" >		compatibilityCheckingAtom.set(true);</span>
+	const checkCompatibility = useCallback(async () =&gt; {
+		compatibilityCheckingAtom.set(true);
 		try {
-			const result = <span class="cstat-no" title="statement not covered" >await compatibilityCheck();</span>
-<span class="cstat-no" title="statement not covered" >			compatibilityAtom.set(result);</span>
+			const result = await compatibilityCheck();
+			compatibilityAtom.set(result);
 		} catch (error) {
 <span class="cstat-no" title="statement not covered" >			compatibilityAtom.set({</span>
 				isCompatible: false,
@@ -348,16 +348,16 @@ export const useCompatibility = () =&gt; {
 				instructions: "An error occurred while checking compatibility.",
 			});
 		} finally {
-<span class="cstat-no" title="statement not covered" >			compatibilityCheckingAtom.set(false);</span>
+			compatibilityCheckingAtom.set(false);
 		}
 	}, []);
 &nbsp;
 	// Run compatibility check on mount
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >	useEffect(() =&gt; {</span></span>
-<span class="cstat-no" title="statement not covered" >		checkCompatibility();</span>
+	useEffect(() =&gt; {
+		checkCompatibility();
 	}, [checkCompatibility]);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	return {</span>
+	return {
 		compatibility,
 		isChecking,
 		recheck: () =&gt; {
@@ -375,13 +375,13 @@ export const useCompatibility = () =&gt; {
  * @returns {Object} - An object containing the loading state, error state, stream data, and data state.
  */
 export const usePrompt = () =&gt; {
-	const <span class="cstat-no" title="statement not covered" >loading = useStore(loadingAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >error = useStore(errorAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >streamData = useStore(streamDataAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >data = useStore(dataAtom);</span>
-	const <span class="cstat-no" title="statement not covered" >compatibility = useStore(compatibilityAtom);</span>
+	const loading = <span class="cstat-no" title="statement not covered" >useStore(loadingAtom);</span>
+	const error = <span class="cstat-no" title="statement not covered" >useStore(errorAtom);</span>
+	const streamData = <span class="cstat-no" title="statement not covered" >useStore(streamDataAtom);</span>
+	const data = <span class="cstat-no" title="statement not covered" >useStore(dataAtom);</span>
+	const compatibility = <span class="cstat-no" title="statement not covered" >useStore(compatibilityAtom);</span>
 &nbsp;
-	const <span class="cstat-no" title="statement not covered" >streamAsyncCallback = useCallback(</span>
+	const streamAsyncCallback = <span class="cstat-no" title="statement not covered" >useCallback(</span>
 <span class="fstat-no" title="function not covered" >		async (p</span>rompt: string, options?: BuiltInAIChatSettings) =&gt; {
 			try {
 				// Check cached compatibility first
@@ -430,7 +430,7 @@ export const usePrompt = () =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:44.197Z
+                at 2025-12-15T20:43:01.882Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

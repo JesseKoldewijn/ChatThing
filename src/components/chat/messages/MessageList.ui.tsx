@@ -60,10 +60,10 @@ export const MessageListUI = ({
 	scrollRef,
 }: MessageListUIProps) => {
 	return (
-		<ScrollArea className="h-full w-full">
+		<ScrollArea data-testid="message-list" className="h-full w-full">
 			<div ref={scrollRef} className="flex min-h-full min-w-0 flex-col">
 				{isEmpty && !isLoading ? (
-					<div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+					<div data-testid="empty-chat-state" className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
 						<div className="relative mb-6">
 							<div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 shadow-inner">
 								<Sparkles className="h-10 w-10 text-primary" />
@@ -72,20 +72,20 @@ export const MessageListUI = ({
 								<Bot className="h-4 w-4 text-muted-foreground" />
 							</div>
 						</div>
-						<h2 className="mb-2 text-2xl font-semibold tracking-tight">
+						<h2 data-testid="empty-chat-title" className="mb-2 text-2xl font-semibold tracking-tight">
 							How can I help you today?
 						</h2>
-						<p className="max-w-md text-muted-foreground">
+						<p data-testid="empty-chat-description" className="max-w-md text-muted-foreground">
 							Start a conversation by typing a message below. I'm
 							here to assist with questions, ideas, or anything
 							else you'd like to explore.
 						</p>
 					</div>
 				) : (
-					<div className="flex-1 min-w-0 py-4">
+					<div data-testid="message-list-content" className="flex-1 min-w-0 py-4">
 						{children}
 						{isLoading && (
-							<div className="flex gap-3 px-4 py-4">
+							<div data-testid="ai-typing-indicator" className="flex gap-3 px-4 py-4">
 								{/* AI Avatar with pulse animation */}
 								<div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
 									<Bot className="h-4 w-4 text-muted-foreground" />

@@ -60,14 +60,15 @@ export const ChatInputUI = ({
 	const canSubmit = value.trim() || pendingImages.length > 0;
 
 	return (
-		<div className="shrink-0 border-t bg-background p-4">
+		<div data-testid="chat-input" className="shrink-0 border-t bg-background p-4">
 			<div className="mx-auto max-w-3xl">
 				{/* Pending images preview */}
 				{pendingImages.length > 0 && (
-					<div className="mb-3 flex flex-wrap gap-2">
+					<div data-testid="pending-images" className="mb-3 flex flex-wrap gap-2">
 						{pendingImages.map((image) => (
 							<div
 								key={image.id}
+								data-testid={`pending-image-${image.id}`}
 								className="group relative h-20 w-20 overflow-hidden rounded-lg border-2 border-border bg-muted"
 							>
 								<img
@@ -77,6 +78,7 @@ export const ChatInputUI = ({
 								/>
 								<button
 									type="button"
+									data-testid={`remove-image-${image.id}`}
 									onClick={() => onRemoveImage?.(image.id)}
 									className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md"
 									aria-label="Remove image"
@@ -97,6 +99,7 @@ export const ChatInputUI = ({
 					{/* Hidden file input */}
 					<input
 						ref={fileInputRef}
+						data-testid="image-file-input"
 						type="file"
 						accept="image/jpeg,image/png,image/gif,image/webp"
 						multiple
@@ -107,6 +110,7 @@ export const ChatInputUI = ({
 					{/* Image upload button */}
 					<Button
 						type="button"
+						data-testid="attach-image-button"
 						size="icon"
 						variant="outline"
 						onClick={handleImageButtonClick}
@@ -120,6 +124,7 @@ export const ChatInputUI = ({
 					{/* Text input */}
 					<div className="relative flex-1">
 						<Textarea
+							data-testid="chat-textarea"
 							value={value}
 							onChange={(e) => onChange(e.target.value)}
 							onKeyDown={handleKeyDown}
@@ -143,6 +148,7 @@ export const ChatInputUI = ({
 					{isLoading ? (
 						<Button
 							type="button"
+							data-testid="stop-button"
 							size="icon"
 							variant="destructive"
 							onClick={onStop}
@@ -153,6 +159,7 @@ export const ChatInputUI = ({
 					) : (
 						<Button
 							type="button"
+							data-testid="send-button"
 							size="icon"
 							onClick={onSubmit}
 							disabled={isDisabled || !canSubmit}
@@ -167,7 +174,7 @@ export const ChatInputUI = ({
 					)}
 				</div>
 
-				<p className="mt-2 text-center text-xs text-muted-foreground">
+				<p data-testid="chat-input-hint" className="mt-2 text-center text-xs text-muted-foreground">
 					Press{" "}
 					<kbd className="rounded bg-muted px-1 py-0.5">Enter</kbd> to
 					send,{" "}

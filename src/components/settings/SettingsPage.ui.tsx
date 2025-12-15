@@ -100,14 +100,17 @@ const SettingsSection = ({
 	description,
 	children,
 	variant = "default",
+	testId,
 }: {
 	icon: React.ElementType;
 	title: string;
 	description?: string;
 	children: React.ReactNode;
 	variant?: "default" | "danger";
+	testId?: string;
 }) => (
 	<div
+		data-testid={testId}
 		className={cn(
 			"rounded-xl border p-4 sm:p-5",
 			variant === "danger"
@@ -179,10 +182,11 @@ export const SettingsPageUI = ({
 	const totalConversations = activeCount + archivedCount + deletedCount;
 
 	return (
-		<div className="flex h-screen flex-col bg-background">
+		<div data-testid="settings-page" className="flex h-screen flex-col bg-background">
 			{/* Header */}
-			<header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
+			<header data-testid="settings-header" className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
 				<Button
+					data-testid="settings-back-button"
 					variant="ghost"
 					size="icon"
 					onClick={onBack}
@@ -190,7 +194,7 @@ export const SettingsPageUI = ({
 				>
 					<ArrowLeft className="h-5 w-5" />
 				</Button>
-				<h1 className="text-lg font-semibold">Settings</h1>
+				<h1 data-testid="settings-title" className="text-lg font-semibold">Settings</h1>
 			</header>
 
 			{/* Content */}
@@ -201,6 +205,7 @@ export const SettingsPageUI = ({
 						icon={Sun}
 						title="Appearance"
 						description="Choose your preferred color theme"
+						testId="settings-section-appearance"
 					>
 						<div className="flex flex-wrap gap-2">
 							{[
@@ -222,6 +227,7 @@ export const SettingsPageUI = ({
 							].map(({ value, icon: ThemeIcon, label }) => (
 								<button
 									key={value}
+									data-testid={`theme-button-${value}`}
 									onClick={() => onThemeChange(value)}
 									className={cn(
 										"flex flex-1 min-w-[90px] items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
@@ -242,6 +248,7 @@ export const SettingsPageUI = ({
 						icon={Thermometer}
 						title="Temperature Units"
 						description="Choose how temperatures are displayed"
+						testId="settings-section-temperature"
 					>
 						<div className="flex flex-wrap gap-2">
 							{[
@@ -263,6 +270,7 @@ export const SettingsPageUI = ({
 							].map(({ value, label, description }) => (
 								<button
 									key={value}
+									data-testid={`temp-unit-button-${value}`}
 									onClick={() => onTemperatureUnitChange(value)}
 									className={cn(
 										"flex flex-1 min-w-[90px] flex-col items-center justify-center gap-0.5 rounded-lg border px-4 py-2.5 transition-all",
@@ -290,10 +298,12 @@ export const SettingsPageUI = ({
 						icon={Globe}
 						title="Timezone"
 						description="Set your preferred timezone for date/time display"
+						testId="settings-section-timezone"
 					>
 						<div className="space-y-3">
 							{/* Auto option */}
 							<button
+								data-testid="timezone-auto-button"
 								onClick={() => onTimezoneChange("auto")}
 								className={cn(
 									"flex w-full items-center justify-between rounded-lg border px-4 py-3 transition-all",
@@ -329,7 +339,7 @@ export const SettingsPageUI = ({
 									value={timezone === "auto" ? "" : timezone}
 									onValueChange={(value) => onTimezoneChange(value)}
 								>
-									<SelectTrigger className="w-full bg-background text-foreground">
+									<SelectTrigger data-testid="timezone-select-trigger" className="w-full bg-background text-foreground">
 										<SelectValue placeholder="Select timezone..." />
 									</SelectTrigger>
 									<SelectContent>
@@ -349,6 +359,7 @@ export const SettingsPageUI = ({
 						icon={Clock}
 						title="Auto-Archive"
 						description="Archive inactive chats automatically"
+						testId="settings-section-auto-archive"
 					>
 						<div className="space-y-4">
 							{/* Toggle row */}
@@ -357,6 +368,7 @@ export const SettingsPageUI = ({
 									Auto-archive inactive chats
 								</span>
 								<button
+									data-testid="auto-archive-toggle"
 									onClick={() =>
 										onArchiveThresholdChange({
 											value:
@@ -449,27 +461,28 @@ export const SettingsPageUI = ({
 						icon={MessageSquare}
 						title="Chat History"
 						description="Manage your conversation data"
+						testId="settings-section-chat-history"
 					>
 						{/* Stats */}
 						<div className="mb-4 grid grid-cols-3 gap-2">
-							<div className="rounded-lg bg-muted/50 p-3 text-center">
-								<div className="text-lg font-semibold text-foreground">
+							<div data-testid="stat-active" className="rounded-lg bg-muted/50 p-3 text-center">
+								<div data-testid="stat-active-count" className="text-lg font-semibold text-foreground">
 									{activeCount}
 								</div>
 								<div className="text-[10px] text-muted-foreground">
 									Active
 								</div>
 							</div>
-							<div className="rounded-lg bg-amber-500/10 p-3 text-center">
-								<div className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+							<div data-testid="stat-archived" className="rounded-lg bg-amber-500/10 p-3 text-center">
+								<div data-testid="stat-archived-count" className="text-lg font-semibold text-amber-600 dark:text-amber-400">
 									{archivedCount}
 								</div>
 								<div className="text-[10px] text-muted-foreground">
 									Archived
 								</div>
 							</div>
-							<div className="rounded-lg bg-destructive/10 p-3 text-center">
-								<div className="text-lg font-semibold text-destructive">
+							<div data-testid="stat-deleted" className="rounded-lg bg-destructive/10 p-3 text-center">
+								<div data-testid="stat-deleted-count" className="text-lg font-semibold text-destructive">
 									{deletedCount}
 								</div>
 								<div className="text-[10px] text-muted-foreground">
@@ -485,11 +498,13 @@ export const SettingsPageUI = ({
 							accept=".json"
 							className="hidden"
 							onChange={handleFileSelect}
+							data-testid="import-file-input"
 						/>
 
 						{/* Actions */}
 						<div className="flex flex-wrap gap-2">
 							<Button
+								data-testid="export-button"
 								variant="outline"
 								size="sm"
 								onClick={onExport}
@@ -501,6 +516,7 @@ export const SettingsPageUI = ({
 							</Button>
 
 							<Button
+								data-testid="import-button"
 								variant="outline"
 								size="sm"
 								onClick={() => fileInputRef.current?.click()}
@@ -527,9 +543,10 @@ export const SettingsPageUI = ({
 						icon={Archive}
 						title="Trash"
 						description="Manage deleted conversations"
+						testId="settings-section-trash"
 					>
 						<div className="flex items-center justify-between">
-							<div className="text-sm text-muted-foreground">
+							<div data-testid="trash-status" className="text-sm text-muted-foreground">
 								{deletedCount === 0 ? (
 									"Trash is empty"
 								) : (
@@ -540,6 +557,7 @@ export const SettingsPageUI = ({
 								)}
 							</div>
 							<Button
+								data-testid="empty-trash-button"
 								variant="outline"
 								size="sm"
 								onClick={onCleanupDeleted}
@@ -558,13 +576,15 @@ export const SettingsPageUI = ({
 						title="Danger Zone"
 						description="Irreversible actions"
 						variant="danger"
+						testId="settings-section-danger-zone"
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-							<div className="text-sm text-muted-foreground">
+							<div data-testid="delete-all-description" className="text-sm text-muted-foreground">
 								Delete all {totalConversations} conversation
 								{totalConversations !== 1 ? "s" : ""}
 							</div>
 							<Button
+								data-testid="delete-all-button"
 								variant="destructive"
 								size="sm"
 								onClick={onClearAll}

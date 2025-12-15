@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.76% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>1/21</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.76% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>1/21</span>
             </div>
         
             
@@ -149,7 +149,7 @@
 <a name='L84'></a><a href='#L84'>84</a>
 <a name='L85'></a><a href='#L85'>85</a>
 <a name='L86'></a><a href='#L86'>86</a>
-<a name='L87'></a><a href='#L87'>87</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L87'></a><a href='#L87'>87</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -164,8 +164,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -247,14 +247,14 @@ import {
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
 &nbsp;
 export const CompatibilityError = () =&gt; {
-	const { compatibility, isChecking, <span class="cstat-no" title="statement not covered" >recheck } = useCompatibility();</span>
-	const { <span class="cstat-no" title="statement not covered" >forceCompat } = useChatSearchParams();</span>
-	const [isDownloading, <span class="cstat-no" title="statement not covered" >setIsDownloading] = useState(false);</span>
-	const [downloadProgress, <span class="cstat-no" title="statement not covered" >setDownloadProgress] =</span>
-		useState&lt;DownloadProgress | null&gt;(null);
-	const [downloadError, <span class="cstat-no" title="statement not covered" >setDownloadError] = useState&lt;string | null&gt;(null);</span>
+	const { compatibility, isChecking, recheck } = <span class="cstat-no" title="statement not covered" >useCompatibility();</span>
+	const { forceCompat } = <span class="cstat-no" title="statement not covered" >useChatSearchParams();</span>
+	const [isDownloading, setIsDownloading] = <span class="cstat-no" title="statement not covered" >useState(false);</span>
+	const [downloadProgress, setDownloadProgress] =
+<span class="cstat-no" title="statement not covered" >		useState&lt;DownloadProgress | null&gt;(null);</span>
+	const [downloadError, setDownloadError] = <span class="cstat-no" title="statement not covered" >useState&lt;string | null&gt;(null);</span>
 &nbsp;
-	const <span class="cstat-no" title="statement not covered" >handleRequestDownload = useCallback(<span class="fstat-no" title="function not covered" >async () =&gt; {</span></span>
+	const handleRequestDownload = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >async () =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >		setIsDownloading(true);</span>
 <span class="cstat-no" title="statement not covered" >		setDownloadProgress(null);</span>
 <span class="cstat-no" title="statement not covered" >		setDownloadError(null);</span>
@@ -282,8 +282,8 @@ export const CompatibilityError = () =&gt; {
 	// When forceCompat is enabled and we don't have real compatibility data (or it's compatible),
 	// show a mock "unsupported" state for testing purposes
 	if (forceCompat &amp;&amp; (!compatibility || compatibility.isCompatible)) {
-		const <span class="cstat-no" title="statement not covered" >browserInfo = detectBrowser();</span>
-		const <span class="cstat-no" title="statement not covered" >instructions = generateInstructions(browserInfo, "unsupported");</span>
+		const browserInfo = <span class="cstat-no" title="statement not covered" >detectBrowser();</span>
+		const instructions = <span class="cstat-no" title="statement not covered" >generateInstructions(browserInfo, "unsupported");</span>
 <span class="cstat-no" title="statement not covered" >		return (</span>
 			&lt;CompatibilityErrorUI
 				availability="unsupported"
@@ -328,7 +328,7 @@ export const CompatibilityError = () =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T20:04:44.197Z
+                at 2025-12-15T20:43:01.882Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

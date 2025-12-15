@@ -64,14 +64,17 @@ const HeroStat = ({
 	value,
 	subLabel,
 	gradient,
+	testId,
 }: {
 	icon: React.ElementType;
 	label: string;
 	value: string | number;
 	subLabel?: string;
 	gradient: string;
+	testId?: string;
 }) => (
 	<div
+		data-testid={testId}
 		className={cn(
 			"relative overflow-hidden rounded-2xl p-5",
 			"bg-linear-to-br",
@@ -85,7 +88,7 @@ const HeroStat = ({
 					{label}
 				</span>
 			</div>
-			<p className="text-4xl font-bold tracking-tight text-white">
+			<p data-testid={testId ? `${testId}-value` : undefined} className="text-4xl font-bold tracking-tight text-white">
 				{value}
 			</p>
 			{subLabel && (
@@ -104,18 +107,20 @@ const CompactStat = ({
 	value,
 	icon: Icon,
 	color,
+	testId,
 }: {
 	label: string;
 	value: string | number;
 	icon: React.ElementType;
 	color: string;
+	testId?: string;
 }) => (
-	<div className="flex items-center gap-3 rounded-xl border bg-card/50 px-4 py-3">
+	<div data-testid={testId} className="flex items-center gap-3 rounded-xl border bg-card/50 px-4 py-3">
 		<div className={cn("rounded-lg p-2", color)}>
 			<Icon className="h-4 w-4" />
 		</div>
 		<div className="min-w-0 flex-1">
-			<p className="text-lg font-semibold tabular-nums text-foreground">
+			<p data-testid={testId ? `${testId}-value` : undefined} className="text-lg font-semibold tabular-nums text-foreground">
 				{value}
 			</p>
 			<p className="text-[11px] text-muted-foreground">{label}</p>
@@ -332,10 +337,11 @@ export const UsagePageUI = ({
 		summary.totalToolCalls > 0;
 
 	return (
-		<div className="flex h-screen flex-col bg-background">
+		<div data-testid="usage-page" className="flex h-screen flex-col bg-background">
 			{/* Header */}
-			<header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+			<header data-testid="usage-header" className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
 				<Button
+					data-testid="usage-back-button"
 					variant="ghost"
 					size="icon"
 					onClick={onBack}
@@ -348,10 +354,10 @@ export const UsagePageUI = ({
 						<TrendingUp className="h-4 w-4 text-white" />
 					</div>
 					<div>
-						<h1 className="text-base font-semibold leading-none">
+						<h1 data-testid="usage-title" className="text-base font-semibold leading-none">
 							Usage Analytics
 						</h1>
-						<p className="text-[11px] text-muted-foreground">
+						<p data-testid="usage-subtitle" className="text-[11px] text-muted-foreground">
 							Track your AI interactions
 						</p>
 					</div>
@@ -362,17 +368,18 @@ export const UsagePageUI = ({
 			<ScrollArea className="flex-1">
 				<div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
 					{/* Hero Stats */}
-					<section>
+					<section data-testid="usage-section-overview">
 						<div className="mb-4 flex items-center gap-2">
-							<h2 className="text-sm font-semibold text-foreground">
+							<h2 data-testid="usage-overview-title" className="text-sm font-semibold text-foreground">
 								Overview
 							</h2>
-							<span className="text-xs text-muted-foreground">
+							<span data-testid="usage-estimated-tokens-note" className="text-xs text-muted-foreground">
 								(estimated tokens)
 							</span>
 						</div>
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							<HeroStat
+								testId="hero-stat-total-tokens"
 								icon={Zap}
 								label="Total Tokens"
 								value={totalTokens.toLocaleString()}
@@ -380,6 +387,7 @@ export const UsagePageUI = ({
 								gradient="from-violet-600 to-purple-700"
 							/>
 							<HeroStat
+								testId="hero-stat-conversations"
 								icon={MessageSquare}
 								label="Conversations"
 								value={summary.totalMessages}
@@ -387,6 +395,7 @@ export const UsagePageUI = ({
 								gradient="from-blue-600 to-cyan-600"
 							/>
 							<HeroStat
+								testId="hero-stat-tool-calls"
 								icon={Wrench}
 								label="Tool Calls"
 								value={summary.totalToolCalls}
@@ -404,26 +413,30 @@ export const UsagePageUI = ({
 					</section>
 
 					{/* Secondary Stats */}
-					<section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+					<section data-testid="usage-section-secondary-stats" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 						<CompactStat
+							testId="compact-stat-messages"
 							icon={MessageSquare}
 							label="Messages Sent"
 							value={summary.totalMessages}
 							color="bg-blue-500/10 text-blue-500"
 						/>
 						<CompactStat
+							testId="compact-stat-responses"
 							icon={Bot}
 							label="AI Responses"
 							value={summary.totalResponses}
 							color="bg-emerald-500/10 text-emerald-500"
 						/>
 						<CompactStat
+							testId="compact-stat-input-tokens"
 							icon={BarChart3}
 							label="Input Tokens"
 							value={summary.totalInputTokens.toLocaleString()}
 							color="bg-cyan-500/10 text-cyan-500"
 						/>
 						<CompactStat
+							testId="compact-stat-output-tokens"
 							icon={BarChart3}
 							label="Output Tokens"
 							value={summary.totalOutputTokens.toLocaleString()}
@@ -432,30 +445,30 @@ export const UsagePageUI = ({
 					</section>
 
 					{/* Chart Section */}
-					<section className="rounded-2xl border bg-card">
+					<section data-testid="usage-section-chart" className="rounded-2xl border bg-card">
 						<div className="flex items-center justify-between border-b px-5 py-4">
 							<div>
-								<h2 className="text-sm font-semibold text-foreground">
+								<h2 data-testid="chart-title" className="text-sm font-semibold text-foreground">
 									Activity Over Time
 								</h2>
-								<p className="text-xs text-muted-foreground">
+								<p data-testid="chart-subtitle" className="text-xs text-muted-foreground">
 									Last 30 days of usage
 								</p>
 							</div>
-							<div className="flex items-center gap-4 text-xs">
-								<div className="flex items-center gap-1.5">
+							<div data-testid="chart-legend" className="flex items-center gap-4 text-xs">
+								<div data-testid="chart-legend-messages" className="flex items-center gap-1.5">
 									<div className="h-2 w-2 rounded-full bg-blue-500" />
 									<span className="text-muted-foreground">
 										Messages
 									</span>
 								</div>
-								<div className="flex items-center gap-1.5">
+								<div data-testid="chart-legend-responses" className="flex items-center gap-1.5">
 									<div className="h-2 w-2 rounded-full bg-emerald-500" />
 									<span className="text-muted-foreground">
 										Responses
 									</span>
 								</div>
-								<div className="flex items-center gap-1.5">
+								<div data-testid="chart-legend-tools" className="flex items-center gap-1.5">
 									<div className="h-2 w-2 rounded-full bg-amber-500" />
 									<span className="text-muted-foreground">
 										Tools
@@ -588,10 +601,10 @@ export const UsagePageUI = ({
 									</ResponsiveContainer>
 								</div>
 							) : (
-								<div className="flex h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground">
+								<div data-testid="chart-empty-state" className="flex h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground">
 									<BarChart3 className="h-10 w-10 opacity-20" />
-									<p className="text-sm">No usage data yet</p>
-									<p className="text-xs opacity-70">
+									<p data-testid="empty-state-message" className="text-sm">No usage data yet</p>
+									<p data-testid="empty-state-hint" className="text-xs opacity-70">
 										Start chatting to see your metrics
 									</p>
 								</div>
@@ -600,18 +613,18 @@ export const UsagePageUI = ({
 					</section>
 
 					{/* Data Table Section */}
-					<section className="rounded-2xl border bg-card">
+					<section data-testid="usage-section-table" className="rounded-2xl border bg-card">
 						<div className="border-b px-5 py-4">
-							<h2 className="text-sm font-semibold text-foreground">
+							<h2 data-testid="table-title" className="text-sm font-semibold text-foreground">
 								Daily Breakdown
 							</h2>
-							<p className="text-xs text-muted-foreground">
+							<p data-testid="table-subtitle" className="text-xs text-muted-foreground">
 								Detailed usage by day
 							</p>
 						</div>
 						{tableData.length > 0 ? (
 							<div className="overflow-x-auto">
-								<table className="w-full text-sm">
+								<table data-testid="usage-table" className="w-full text-sm">
 									<thead>
 										{table
 											.getHeaderGroups()
@@ -675,9 +688,9 @@ export const UsagePageUI = ({
 								</table>
 							</div>
 						) : (
-							<div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
-								<p className="text-sm">No data to display</p>
-								<p className="text-xs opacity-70">
+							<div data-testid="table-empty-state" className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
+								<p data-testid="table-empty-message" className="text-sm">No data to display</p>
+								<p data-testid="table-empty-hint" className="text-xs opacity-70">
 									Usage will appear here as you chat
 								</p>
 							</div>
@@ -686,23 +699,24 @@ export const UsagePageUI = ({
 
 					{/* Danger Zone */}
 					{hasData && (
-						<section className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
+						<section data-testid="usage-section-danger-zone" className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
 							<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 								<div className="flex items-start gap-3">
 									<div className="rounded-lg bg-destructive/10 p-2">
 										<Trash2 className="h-4 w-4 text-destructive" />
 									</div>
 									<div>
-										<h3 className="text-sm font-semibold text-destructive">
+										<h3 data-testid="clear-data-title" className="text-sm font-semibold text-destructive">
 											Clear All Usage Data
 										</h3>
-										<p className="text-xs text-muted-foreground">
+										<p data-testid="clear-data-description" className="text-xs text-muted-foreground">
 											This will permanently delete all
 											tracked metrics
 										</p>
 									</div>
 								</div>
 								<Button
+									data-testid="clear-data-button"
 									variant="destructive"
 									size="sm"
 									onClick={onClearData}

@@ -21,10 +21,14 @@ export const ChatContainerUI = ({
 	onCloseSidebar,
 }: ChatContainerUIProps) => {
 	return (
-		<div className="flex h-screen w-full overflow-hidden bg-background">
+		<div
+			data-testid="chat-container"
+			className="flex h-screen w-full overflow-hidden bg-background"
+		>
 			{/* Sidebar */}
 			{sidebar && (
 				<aside
+					data-testid="chat-sidebar"
 					className={cn(
 						"flex h-full w-72 shrink-0 flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
 						// On mobile: fixed positioning, slide in/out
@@ -42,6 +46,7 @@ export const ChatContainerUI = ({
 			{/* Mobile overlay - click to close */}
 			{sidebar && isSidebarOpen && (
 				<div
+					data-testid="chat-sidebar-overlay"
 					className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
 					onClick={onCloseSidebar}
 					aria-hidden="true"
@@ -49,24 +54,47 @@ export const ChatContainerUI = ({
 			)}
 
 			{/* Main chat area */}
-			<main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+			<main
+				data-testid="chat-main"
+				className="flex min-w-0 flex-1 flex-col overflow-hidden"
+			>
 				{/* Header - fixed height to prevent shift */}
 				{header && (
-					<header className="flex h-14 shrink-0 items-center border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4">
+					<header
+						data-testid="chat-header"
+						className="flex h-14 shrink-0 items-center border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4"
+					>
 						{header}
 					</header>
 				)}
 
 				{/* Message list - flexible area */}
-				<div className="min-w-0 flex-1 overflow-hidden">
+				<div
+					data-testid="chat-message-list-container"
+					className="min-w-0 flex-1 overflow-hidden"
+				>
 					{messageList}
 				</div>
 
 				{/* Error banner - above input, fixed height when visible */}
-				{errorBanner && <div className="shrink-0">{errorBanner}</div>}
+				{errorBanner && (
+					<div
+						data-testid="chat-error-banner-container"
+						className="shrink-0"
+					>
+						{errorBanner}
+					</div>
+				)}
 
 				{/* Input - fixed at bottom */}
-				{input && <div className="shrink-0">{input}</div>}
+				{input && (
+					<div
+						data-testid="chat-input-container"
+						className="shrink-0"
+					>
+						{input}
+					</div>
+				)}
 			</main>
 		</div>
 	);
