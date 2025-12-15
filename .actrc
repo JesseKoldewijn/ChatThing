@@ -1,0 +1,5 @@
+# Act configuration for local GitHub Actions testing
+# See: https://github.com/nektos/act
+
+# Use a specific platform (optional, defaults to ubuntu-latest)
+-P ubuntu-latest=catthehacker/ubuntu:act-latest

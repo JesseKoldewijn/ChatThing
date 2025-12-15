@@ -13,6 +13,7 @@ export default defineConfig({
 	test: {
 		setupFiles: ["./src/test/setup.e2e.ts"],
 		include: ["src/**/*.e2e.test.{ts,tsx}"],
+		exclude: ["src/**/*.integration.test.{ts,tsx}", "node_modules"],
 		globals: true,
 		browser: {
 			enabled: true,
@@ -27,19 +28,20 @@ export default defineConfig({
 			include: ["src/**/*.{ts,tsx}"],
 			exclude: [
 				"src/**/*.test.{ts,tsx}",
+				"src/**/*.integration.test.{ts,tsx}",
 				"src/**/*.e2e.test.{ts,tsx}",
 				"src/test/**",
 				"src/main.tsx",
 				"src/entry-*.tsx",
 			],
-			// Thresholds disabled until more tests are added
-			// Enable when coverage improves:
-			// thresholds: {
-			// 	lines: 80,
-			// 	functions: 80,
-			// 	branches: 80,
-			// 	statements: 80,
-			// },
+			// Enable all to ensure browser context code is instrumented
+			all: true,
+			// Allow coverage collection in browser context
+			allowExternal: false,
+			// Enable per-file coverage to better track browser execution
+			perFile: true,
+			// Ensure coverage is collected even for files that are imported but not directly executed
+			skipFull: false,
 		},
 	},
 });

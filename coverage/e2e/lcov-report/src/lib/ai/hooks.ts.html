@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">34.21% </span>
+                <span class="strong">7.89% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>13/38</span>
+                <span class='fraction'>3/38</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/4</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">34.21% </span>
+                <span class="strong">7.89% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>13/38</span>
+                <span class='fraction'>3/38</span>
             </div>
         
             
@@ -184,7 +184,7 @@
 <a name='L119'></a><a href='#L119'>119</a>
 <a name='L120'></a><a href='#L120'>120</a>
 <a name='L121'></a><a href='#L121'>121</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -211,14 +211,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">87x</span>
-<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">87x</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -228,16 +228,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">87x</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -331,14 +331,14 @@ export const compatibilityCheckingAtom = atom&lt;boolean&gt;(true);
  * @returns Compatibility status and recheck function
  */
 export const useCompatibility = () =&gt; {
-	const compatibility = useStore(compatibilityAtom);
-	const isChecking = useStore(compatibilityCheckingAtom);
+	const compatibility = <span class="cstat-no" title="statement not covered" >useStore(compatibilityAtom);</span>
+	const isChecking = <span class="cstat-no" title="statement not covered" >useStore(compatibilityCheckingAtom);</span>
 &nbsp;
-	const checkCompatibility = useCallback(async () =&gt; {
-		compatibilityCheckingAtom.set(true);
+	const checkCompatibility = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >async () =&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >		compatibilityCheckingAtom.set(true);</span>
 		try {
-			const result = await compatibilityCheck();
-			compatibilityAtom.set(result);
+			const result = <span class="cstat-no" title="statement not covered" >await compatibilityCheck();</span>
+<span class="cstat-no" title="statement not covered" >			compatibilityAtom.set(result);</span>
 		} catch (error) {
 <span class="cstat-no" title="statement not covered" >			compatibilityAtom.set({</span>
 				isCompatible: false,
@@ -348,16 +348,16 @@ export const useCompatibility = () =&gt; {
 				instructions: "An error occurred while checking compatibility.",
 			});
 		} finally {
-			compatibilityCheckingAtom.set(false);
+<span class="cstat-no" title="statement not covered" >			compatibilityCheckingAtom.set(false);</span>
 		}
 	}, []);
 &nbsp;
 	// Run compatibility check on mount
-	useEffect(() =&gt; {
-		checkCompatibility();
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >	useEffect(() =&gt; {</span></span>
+<span class="cstat-no" title="statement not covered" >		checkCompatibility();</span>
 	}, [checkCompatibility]);
 &nbsp;
-	return {
+<span class="cstat-no" title="statement not covered" >	return {</span>
 		compatibility,
 		isChecking,
 		recheck: () =&gt; {
@@ -430,7 +430,7 @@ export const usePrompt = () =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T21:31:40.495Z
+                at 2025-12-15T23:14:53.782Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

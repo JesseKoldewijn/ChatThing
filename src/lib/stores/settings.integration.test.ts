@@ -1,0 +1,125 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+	themeAtom,
+	temperatureUnitAtom,
+	timezoneAtom,
+	outputLanguageAtom,
+	archiveThresholdAtom,
+	setTheme,
+	setTemperatureUnit,
+	setTimezone,
+	setArchiveThreshold,
+	getSystemTimezone,
+	getResolvedTimezone,
+	thresholdToHours,
+	formatThreshold,
+} from "./settings";
+
+describe("Settings Store Integration", () => {
+	beforeEach(() => {
+		themeAtom.set("system");
+		temperatureUnitAtom.set("auto");
+		timezoneAtom.set("auto");
+		outputLanguageAtom.set("en");
+		archiveThresholdAtom.set({ value: 2, unit: "days" });
+		localStorage.clear();
+	});
+
+	describe("theme persistence", () => {
+		it("should persist theme changes to localStorage", () => {
+			setTheme("dark");
+			expect(themeAtom.get()).toBe("dark");
+			expect(localStorage.getItem("theme")).toBe("dark");
+
+			setTheme("light");
+			expect(themeAtom.get()).toBe("light");
+			expect(localStorage.getItem("theme")).toBe("light");
+		});
+
+		it("should handle all theme options", () => {
+			const themes = ["light", "dark", "system"] as const;
+			themes.forEach((theme) => {
+				setTheme(theme);
+				expect(themeAtom.get()).toBe(theme);
+			});
+		});
+	});
+
+	describe("temperature unit persistence", () => {
+		it("should persist temperature unit changes", () => {
+			setTemperatureUnit("celsius");
+			expect(temperatureUnitAtom.get()).toBe("celsius");
+			expect(localStorage.getItem("temperature-unit")).toBe("celsius");
+
+			setTemperatureUnit("fahrenheit");
+			expect(temperatureUnitAtom.get()).toBe("fahrenheit");
+			expect(localStorage.getItem("temperature-unit")).toBe("fahrenheit");
+		});
+	});
+
+	describe("timezone integration", () => {
+		it("should resolve timezone correctly", () => {
+			timezoneAtom.set("auto");
+			const resolved = getResolvedTimezone();
+			expect(resolved).toBe(getSystemTimezone());
+
+			setTimezone("America/New_York");
+			expect(getResolvedTimezone()).toBe("America/New_York");
+		});
+
+		it("should persist timezone changes", () => {
+			setTimezone("Europe/London");
+			expect(timezoneAtom.get()).toBe("Europe/London");
+			expect(localStorage.getItem("timezone")).toBe("Europe/London");
+		});
+	});
+
+	describe("archive threshold integration", () => {
+		it("should convert threshold to hours correctly", () => {
+			setArchiveThreshold({ value: 1, unit: "days" });
+			expect(thresholdToHours(archiveThresholdAtom.get())).toBe(24);
+
+			setArchiveThreshold({ value: 2, unit: "weeks" });
+			expect(thresholdToHours(archiveThresholdAtom.get())).toBe(336); // 2 * 7 * 24
+
+			setArchiveThreshold({ value: 1, unit: "months" });
+			expect(thresholdToHours(archiveThresholdAtom.get())).toBe(720); // 30 * 24
+		});
+
+		it("should format threshold for display", () => {
+			setArchiveThreshold({ value: 7, unit: "days" });
+			const formatted = formatThreshold(archiveThresholdAtom.get());
+			expect(formatted).toContain("7");
+			expect(formatted).toContain("day");
+		});
+
+		it("should persist archive threshold", () => {
+			setArchiveThreshold({ value: 30, unit: "days" });
+			expect(archiveThresholdAtom.get().value).toBe(30);
+			expect(archiveThresholdAtom.get().unit).toBe("days");
+		});
+	});
+
+	describe("output language", () => {
+		it("should update output language atom", () => {
+			// The outputLanguageAtom doesn't persist to localStorage
+			// It's auto-detected from browser language on mount via onMount hook
+			// The onMount hook runs once when the atom is first accessed
+			// After that, we can manually set it
+			const initialValue = outputLanguageAtom.get();
+			
+			// Set to a different language
+			outputLanguageAtom.set("es");
+			expect(outputLanguageAtom.get()).toBe("es");
+			
+			// Set to another language
+			outputLanguageAtom.set("ja");
+			expect(outputLanguageAtom.get()).toBe("ja");
+			
+			// Set back to initial or another value
+			outputLanguageAtom.set("en");
+			expect(outputLanguageAtom.get()).toBe("en");
+		});
+	});
+});
+

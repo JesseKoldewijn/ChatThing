@@ -14,11 +14,14 @@
 		"test": "vitest",
 		"test:run": "vitest run",
 		"test:coverage": "vitest run --coverage",
+		"test:integration": "vitest --config vitest.config.integration.ts",
+		"test:integration:run": "vitest run --config vitest.config.integration.ts",
+		"test:integration:coverage": "vitest run --config vitest.config.integration.ts --coverage",
 		"test:e2e": "vitest --config vitest.config.e2e.ts",
 		"test:e2e:run": "vitest run --config vitest.config.e2e.ts",
 		"test:e2e:coverage": "vitest run --config vitest.config.e2e.ts --coverage",
-		"test:all": "$npm_execpath test:run && $npm_execpath test:e2e:run",
-		"test:all:coverage": "$npm_execpath test:coverage && $npm_execpath test:e2e:coverage",
+		"test:all": "$npm_execpath test:run && $npm_execpath test:integration:run && $npm_execpath test:e2e:run",
+		"test:all:coverage": "$npm_execpath test:coverage && $npm_execpath test:integration:coverage && $npm_execpath test:e2e:coverage",
 		"test:badges": "node scripts/generate-badges.js"
 	},
 	"dependencies": {

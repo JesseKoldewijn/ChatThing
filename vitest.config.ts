@@ -13,7 +13,11 @@ export default defineConfig({
 		environment: "happy-dom",
 		setupFiles: ["./src/test/setup.ts"],
 		include: ["src/**/*.test.{ts,tsx}"],
-		exclude: ["src/**/*.e2e.test.{ts,tsx}", "node_modules"],
+		exclude: [
+			"src/**/*.e2e.test.{ts,tsx}",
+			"src/**/*.integration.test.{ts,tsx}",
+			"node_modules",
+		],
 		globals: true,
 		coverage: {
 			provider: "v8",
@@ -22,6 +26,7 @@ export default defineConfig({
 			include: ["src/**/*.{ts,tsx}"],
 			exclude: [
 				"src/**/*.test.{ts,tsx}",
+				"src/**/*.integration.test.{ts,tsx}",
 				"src/**/*.e2e.test.{ts,tsx}",
 				"src/test/**",
 				"src/main.tsx",

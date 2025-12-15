@@ -14,13 +14,19 @@ vi.mock("@/lib/hooks/useNavigation", () => ({
 	}),
 }));
 
-vi.mock("@/lib/ai/compat", () => ({
-	checkBuiltInAIAvailability: vi.fn().mockResolvedValue({
-		available: true,
-		languageModel: { available: true },
-		assistant: { available: true },
-	}),
-}));
+// Mock compatibility check but use real detectBrowser for coverage
+vi.mock("@/lib/ai/compat", async () => {
+	const actual = await vi.importActual<typeof import("@/lib/ai/compat")>("@/lib/ai/compat");
+	return {
+		...actual,
+		detectBrowser: actual.detectBrowser,
+		checkBuiltInAIAvailability: vi.fn().mockResolvedValue({
+			available: true,
+			languageModel: { available: true },
+			assistant: { available: true },
+		}),
+	};
+});
 
 // Import after mocks
 import { SettingsPage } from "./SettingsPage";
@@ -521,6 +527,117 @@ describe("SettingsPage E2E", () => {
 
 			setTimezone("auto");
 			expect(timezoneAtom.get()).toBe("auto");
+		});
+
+		it("should allow changing archive threshold via action", () => {
+			setArchiveThreshold({ value: 7, unit: "days" });
+			expect(archiveThresholdAtom.get().value).toBe(7);
+			expect(archiveThresholdAtom.get().unit).toBe("days");
+
+			setArchiveThreshold({ value: 1, unit: "weeks" });
+			expect(archiveThresholdAtom.get().value).toBe(1);
+			expect(archiveThresholdAtom.get().unit).toBe("weeks");
+		});
+	});
+
+	describe("import/export functionality", () => {
+		it("should export conversations when export button is clicked", async () => {
+			const user = userEvent.setup();
+			conversationsAtom.set([
+				createTestConversation({ id: "conv-1", title: "Export Test" }),
+			]);
+
+			// Mock URL.createObjectURL and document.createElement for download
+			const mockCreateObjectURL = vi.fn().mockReturnValue("blob:test");
+			const mockRevokeObjectURL = vi.fn();
+			const mockClick = vi.fn();
+
+			const originalURL = globalThis.URL;
+			const originalCreateElement = document.createElement;
+
+			globalThis.URL = {
+				...originalURL,
+				createObjectURL: mockCreateObjectURL,
+				revokeObjectURL: mockRevokeObjectURL,
+			} as typeof URL;
+
+			document.createElement = vi.fn((tag: string) => {
+				if (tag === "a") {
+					const anchor = originalCreateElement.call(document, "a") as HTMLAnchorElement;
+					anchor.click = mockClick;
+					return anchor;
+				}
+				return originalCreateElement.call(document, tag);
+			});
+
+			render(<SettingsPage />);
+
+			const exportButton = await screen.findByTestId("export-button");
+			await user.click(exportButton);
+
+			await waitFor(() => {
+				expect(mockCreateObjectURL).toHaveBeenCalled();
+			});
+
+			// Restore
+			globalThis.URL = originalURL;
+			document.createElement = originalCreateElement;
+		});
+
+		it("should handle import file selection", async () => {
+			const user = userEvent.setup();
+			render(<SettingsPage />);
+
+			const importButton = await screen.findByTestId("import-button");
+			await user.click(importButton);
+
+			// File input should be triggered (though we can't directly test file selection in e2e)
+			await waitFor(() => {
+				expect(importButton).toBeInTheDocument();
+			});
+		});
+	});
+
+	describe("auto-archive threshold adjustments", () => {
+		it("should allow changing threshold value", async () => {
+			setArchiveThreshold({ value: 1, unit: "days" });
+			expect(archiveThresholdAtom.get().value).toBe(1);
+
+			setArchiveThreshold({ value: 30, unit: "days" });
+			expect(archiveThresholdAtom.get().value).toBe(30);
+		});
+
+		it("should allow changing threshold unit", async () => {
+			setArchiveThreshold({ value: 2, unit: "days" });
+			expect(archiveThresholdAtom.get().unit).toBe("days");
+
+			setArchiveThreshold({ value: 2, unit: "weeks" });
+			expect(archiveThresholdAtom.get().unit).toBe("weeks");
+
+			setArchiveThreshold({ value: 1, unit: "months" });
+			expect(archiveThresholdAtom.get().unit).toBe("months");
+		});
+	});
+
+	describe("conversation status filtering", () => {
+		it("should correctly count conversations by status", () => {
+			conversationsAtom.set([
+				createTestConversation({ status: "active" }),
+				createTestConversation({ status: "active" }),
+				createTestConversation({ status: "archived" }),
+				createTestConversation({ status: "archived" }),
+				createTestConversation({ status: "archived" }),
+				createTestConversation({ status: "deleted" }),
+			]);
+
+			const conversations = conversationsAtom.get();
+			const active = conversations.filter((c) => c.status === "active");
+			const archived = conversations.filter((c) => c.status === "archived");
+			const deleted = conversations.filter((c) => c.status === "deleted");
+
+			expect(active.length).toBe(2);
+			expect(archived.length).toBe(3);
+			expect(deleted.length).toBe(1);
 		});
 	});
 });

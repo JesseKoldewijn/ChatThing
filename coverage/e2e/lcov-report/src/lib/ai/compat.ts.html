@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.29% </span>
+                <span class="strong">12.98% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/77</span>
+                <span class='fraction'>10/77</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">11.9% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/42</span>
+                <span class='fraction'>5/42</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.36% </span>
+                <span class="strong">13.69% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/73</span>
+                <span class='fraction'>10/73</span>
             </div>
         
             
@@ -564,7 +564,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -627,9 +627,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -641,9 +641,9 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -654,10 +654,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1086,9 +1086,9 @@ export const detectBrowser = (): BrowserInfo =&gt; {
 		};
 	}
 &nbsp;
-	const ua = <span class="cstat-no" title="statement not covered" >navigator.userAgent;</span>
-	let vendor: BrowserVendor = <span class="cstat-no" title="statement not covered" >"unknown";</span>
-	let version = <span class="cstat-no" title="statement not covered" >"0";</span>
+	const ua = navigator.userAgent;
+	let vendor: BrowserVendor = "unknown";
+	let version = "0";
 &nbsp;
 	// Order matters - Edge includes "Chrome" in UA, so check Edge first
 	if (ua.includes("Edg/")) {
@@ -1100,9 +1100,9 @@ export const detectBrowser = (): BrowserInfo =&gt; {
 		const match = <span class="cstat-no" title="statement not covered" >ua.match(/(?:OPR|Opera)\/(\d+)/);</span>
 <span class="cstat-no" title="statement not covered" >		version = match?.[1] ?? "0";</span>
 	} else if (ua.includes("Chrome/")) {
-<span class="cstat-no" title="statement not covered" >		vendor = "chrome";</span>
-		const match = <span class="cstat-no" title="statement not covered" >ua.match(/Chrome\/(\d+)/);</span>
-<span class="cstat-no" title="statement not covered" >		version = match?.[1] ?? "0";</span>
+		vendor = "chrome";
+		const match = ua.match(/Chrome\/(\d+)/);
+		version = match?.[1] ?? <span class="branch-1 cbranch-no" title="branch not covered" >"0";</span>
 	} else if (ua.includes("Firefox/")) {
 <span class="cstat-no" title="statement not covered" >		vendor = "firefox";</span>
 		const match = <span class="cstat-no" title="statement not covered" >ua.match(/Firefox\/(\d+)/);</span>
@@ -1113,14 +1113,14 @@ export const detectBrowser = (): BrowserInfo =&gt; {
 <span class="cstat-no" title="statement not covered" >		version = match?.[1] ?? "0";</span>
 	}
 &nbsp;
-	const config = <span class="cstat-no" title="statement not covered" >BROWSER_CONFIGS[vendor];</span>
-	const versionNum = <span class="cstat-no" title="statement not covered" >parseInt(version, 10);</span>
+	const config = BROWSER_CONFIGS[vendor];
+	const versionNum = parseInt(version, 10);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	return {</span>
+	return {
 		vendor,
 		version,
-		supportsPromptApi: config ? versionNum &gt;= config.minVersion : false,
-		minRequiredVersion: config?.minVersion ?? 0,
+		supportsPromptApi: config ? versionNum &gt;= config.minVersion : <span class="branch-1 cbranch-no" title="branch not covered" >false,</span>
+		minRequiredVersion: config?.minVersion ?? <span class="branch-1 cbranch-no" title="branch not covered" >0,</span>
 	};
 };
 &nbsp;
@@ -1447,7 +1447,7 @@ declare global {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-15T21:31:40.495Z
+                at 2025-12-15T23:14:53.782Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

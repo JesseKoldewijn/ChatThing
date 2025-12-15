@@ -1,7 +1,15 @@
 # ChatThing
 
-![Unit Test Coverage](./coverage/unit/badge.svg)
-![E2E Test Coverage](./coverage/e2e/badge.svg)
+## 📊 Test Coverage
+
+| Coverage Type | Percentage |
+|--------------|------------|
+| **Total** | ![Total Coverage](./coverage/badge.svg) |
+| **Unit Tests** | ![Unit Test Coverage](./coverage/unit/badge.svg) |
+| **Integration Tests** | ![Integration Test Coverage](./coverage/integration/badge.svg) |
+| **E2E Tests** | ![E2E Test Coverage](./coverage/e2e/badge.svg) |
+
+> **Note**: Total coverage represents the union of all covered lines across all test types. A line is considered covered if it's executed by any test type (unit, integration, or e2e).
 
 A sleek AI chat application that runs entirely in your browser using Chrome's built-in Prompt API. No API keys, no cloud costs, no data leaving your device — just local AI conversations powered by Gemini Nano (Chrome) or Phi mini (Edge).
 

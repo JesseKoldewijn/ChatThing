@@ -1,0 +1,24 @@
+{
+  "total": {
+    "statements": {
+      "total": 1702,
+      "covered": 1280,
+      "pct": 75.20564042303172
+    },
+    "branches": {
+      "total": 845,
+      "covered": 605,
+      "pct": 71.59763313609467
+    },
+    "functions": {
+      "total": 279,
+      "covered": 190,
+      "pct": 68.10035842293907
+    },
+    "lines": {
+      "total": 1614,
+      "covered": 1235,
+      "pct": 76.5179677819083
+    }
+  }
+}

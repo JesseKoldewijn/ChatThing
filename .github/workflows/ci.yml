@@ -5,6 +5,13 @@ on:
         branches: ["*"]
     pull_request:
         branches: ["*"]
+    workflow_dispatch:
+        inputs:
+            dry_run:
+                description: "Dry run mode (skip coverage commit)"
+                required: false
+                default: "false"
+                type: boolean
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
@@ -64,6 +71,29 @@ jobs:
                       coverage/unit/coverage-summary.json
                       coverage/unit/lcov.info
 
+    test-integration:
+        name: Integration Tests
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Volta
+              uses: volta-cli/action@v4
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Run integration tests with coverage
+              run: yarn test:integration:coverage
+
+            - name: Upload integration coverage artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-integration
+                  path: |
+                      coverage/integration/coverage-summary.json
+                      coverage/integration/lcov.info
+
     test-e2e:
         name: E2E Tests
         runs-on: ubuntu-latest
@@ -93,8 +123,8 @@ jobs:
     upload-coverage:
         name: Upload Coverage
         runs-on: ubuntu-latest
-        needs: [test, test-e2e]
-        if: github.event_name == 'push'
+        needs: [test, test-integration, test-e2e]
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && !env.ACT
         permissions:
             contents: write
         concurrency:
@@ -112,6 +142,12 @@ jobs:
                   name: coverage-unit
                   path: coverage/unit/
 
+            - name: Download integration coverage
+              uses: actions/download-artifact@v4
+              with:
+                  name: coverage-integration
+                  path: coverage/integration/
+
             - name: Download E2E coverage
               uses: actions/download-artifact@v4
               with:
@@ -127,11 +163,55 @@ jobs:
             - name: Generate coverage badges
               run: yarn test:badges
 
+            - name: Check dry run mode
+              id: dry_run
+              env:
+                ACT: ${{ env.ACT || '' }}
+              run: |
+                  if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+                    echo "dry_run=true" >> $GITHUB_OUTPUT
+                    echo "✅ Dry run mode: Manual workflow dispatch with dry_run=true"
+                  elif [ -n "${ACT:-}" ] && [ "${ACT}" != "false" ]; then
+                    echo "dry_run=true" >> $GITHUB_OUTPUT
+                    echo "✅ Dry run mode: Running with act (ACT=${ACT})"
+                  else
+                    echo "dry_run=false" >> $GITHUB_OUTPUT
+                    echo "ℹ️  Normal mode: Will commit coverage badges"
+                  fi
+
+            - name: Show coverage summary (dry run)
+              if: steps.dry_run.outputs.dry_run == 'true'
+              run: |
+                  echo "## Coverage Summary (Dry Run)" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "| Coverage Type | Percentage |" >> $GITHUB_STEP_SUMMARY
+                  echo "|--------------|------------|" >> $GITHUB_STEP_SUMMARY
+                  if [ -f coverage/badge.svg ]; then
+                    echo "| **Total** | Generated |" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  if [ -f coverage/unit/badge.svg ]; then
+                    echo "| **Unit Tests** | Generated |" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  if [ -f coverage/integration/badge.svg ]; then
+                    echo "| **Integration Tests** | Generated |" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  if [ -f coverage/e2e/badge.svg ]; then
+                    echo "| **E2E Tests** | Generated |" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "✅ Coverage badges generated successfully (dry run - not committed)" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "Generated files:" >> $GITHUB_STEP_SUMMARY
+                  ls -la coverage/*/badge.svg coverage/badge.svg 2>/dev/null || true
+
             - name: Commit and push coverage
+              if: steps.dry_run.outputs.dry_run == 'false' && github.event_name == 'push'
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git add coverage/badge.svg coverage/coverage-summary.json
                   git add coverage/unit/badge.svg coverage/unit/coverage-summary.json
+                  git add coverage/integration/badge.svg coverage/integration/coverage-summary.json
                   git add coverage/e2e/badge.svg coverage/e2e/coverage-summary.json
                   if git diff --staged --quiet; then
                     echo "No coverage changes to commit"
@@ -139,7 +219,9 @@ jobs:
                     git stash --include-untracked
                     git pull --rebase origin ${{ github.ref_name }}
                     git stash pop
+                    git add coverage/badge.svg coverage/coverage-summary.json
                     git add coverage/unit/badge.svg coverage/unit/coverage-summary.json
+                    git add coverage/integration/badge.svg coverage/integration/coverage-summary.json
                     git add coverage/e2e/badge.svg coverage/e2e/coverage-summary.json
                     git commit -m "chore: update coverage reports [skip ci]"
                     git push
@@ -148,7 +230,7 @@ jobs:
     build:
         name: Build
         runs-on: ubuntu-latest
-        needs: [lint, typecheck, test]
+        needs: [lint, typecheck, test, test-integration, test-e2e]
         steps:
             - uses: actions/checkout@v4
 
