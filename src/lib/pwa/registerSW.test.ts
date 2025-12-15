@@ -212,13 +212,13 @@ describe("registerServiceWorker", () => {
 
 		// Trigger updatefound event
 		if (updateFoundHandler) {
-			updateFoundHandler();
+			(updateFoundHandler as () => void)();
 		}
 
 		// Simulate state change to installed
 		if (stateChangeHandler) {
 			Object.defineProperty(mockWorker, "state", { value: "installed", writable: true });
-			stateChangeHandler();
+			(stateChangeHandler as () => void)();
 		}
 
 		expect(consoleSpy).toHaveBeenCalledWith(
@@ -266,7 +266,7 @@ describe("registerServiceWorker", () => {
 
 		// Trigger controller change
 		if (controllerChangeHandler) {
-			controllerChangeHandler();
+			(controllerChangeHandler as () => void)();
 		}
 
 		expect(reloadSpy).toHaveBeenCalled();

@@ -64,6 +64,7 @@ import { MessageItem } from "./MessageItem";
 import { removeAssistantMessagesFromTransaction } from "@/lib/stores/chat";
 import { getImages } from "@/lib/stores/imageStorage";
 import { useStore } from "@nanostores/react";
+import type { ReadableAtom } from "nanostores";
 
 let mockMessages: Array<{ id: string; role: string; content: string; transactionId: string }> = [];
 let mockLastUserMessage: { content: string; transactionId: string } | null = null;
@@ -167,9 +168,10 @@ describe("MessageItem", () => {
 			];
 			mockLastUserMessage = { content: "Question", transactionId: "tx-1" };
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return mockMessages;
-				if (atom.name === "lastUserMessageAtom") return mockLastUserMessage;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return mockMessages;
+				if (a.name === "lastUserMessageAtom") return mockLastUserMessage;
 				return null;
 			});
 
@@ -193,9 +195,10 @@ describe("MessageItem", () => {
 			];
 			mockLastUserMessage = { content: "Question", transactionId: "tx-1" };
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return mockMessages;
-				if (atom.name === "lastUserMessageAtom") return mockLastUserMessage;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return mockMessages;
+				if (a.name === "lastUserMessageAtom") return mockLastUserMessage;
 				return null;
 			});
 

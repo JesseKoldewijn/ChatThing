@@ -768,20 +768,22 @@ describe("ChatContainer E2E", () => {
 				messages: [
 					{
 						id: "msg-1",
-						role: "user",
+						role: "user" as const,
 						content: "Hello",
-						createdAt: Date.now(),
+						transactionId: "tx-1",
+						timestamp: Date.now(),
 					},
 					{
 						id: "msg-2",
-						role: "assistant",
+						role: "assistant" as const,
 						content: "Hi there!",
-						createdAt: Date.now(),
+						transactionId: "tx-1",
+						timestamp: Date.now(),
 					},
 				],
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				status: "active",
+				status: "active" as const,
 			};
 
 			await act(async () => {
@@ -919,22 +921,22 @@ describe("ChatContainer E2E", () => {
 				id: "conv-1",
 				title: "First Chat",
 				messages: [
-					{ id: "msg-1", role: "user", content: "Hello 1", createdAt: Date.now() },
+					{ id: "msg-1", role: "user" as const, content: "Hello 1", transactionId: "tx-1", timestamp: Date.now() },
 				],
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				status: "active",
+				status: "active" as const,
 			};
 
 			const conv2 = {
 				id: "conv-2",
 				title: "Second Chat",
 				messages: [
-					{ id: "msg-2", role: "user", content: "Hello 2", createdAt: Date.now() },
+					{ id: "msg-2", role: "user" as const, content: "Hello 2", transactionId: "tx-2", timestamp: Date.now() },
 				],
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				status: "active",
+				status: "active" as const,
 			};
 
 			// Set up conversations before rendering to avoid act warnings

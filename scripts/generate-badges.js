@@ -11,6 +11,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 
 /**
+ * Check if running in CI environment
+ */
+function isCI() {
+	return (
+		process.env.CI === "true" ||
+		process.env.GITHUB_ACTIONS === "true" ||
+		process.env.CIRCLECI === "true" ||
+		process.env.GITLAB_CI === "true" ||
+		process.env.JENKINS_URL !== undefined ||
+		process.env.TRAVIS === "true"
+	);
+}
+
+/**
  * Get color based on coverage percentage
  */
 function getColor(percentage) {
@@ -54,7 +68,30 @@ function generateBadge(label, percentage) {
 }
 
 /**
+ * Display coverage summary for a specific test type
+ */
+function displayCoverageSummary(type, total) {
+	const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+	console.log(`\n📊 ${typeLabel} Test Coverage:`);
+	console.log("─".repeat(50));
+	console.log(
+		`  Statements: ${total.statements.covered}/${total.statements.total} (${total.statements.pct.toFixed(1)}%)`
+	);
+	console.log(
+		`  Branches:   ${total.branches.covered}/${total.branches.total} (${total.branches.pct.toFixed(1)}%)`
+	);
+	console.log(
+		`  Functions:  ${total.functions.covered}/${total.functions.total} (${total.functions.pct.toFixed(1)}%)`
+	);
+	console.log(
+		`  Lines:      ${total.lines.covered}/${total.lines.total} (${total.lines.pct.toFixed(1)}%)`
+	);
+	console.log("─".repeat(50));
+}
+
+/**
  * Process a coverage directory
+ * Reads from coverage/ and writes badges to .badges/ (CI) or coverage/ (local)
  */
 function processCoverage(type) {
 	const coverageDir = path.join(rootDir, "coverage", type);
@@ -74,6 +111,9 @@ function processCoverage(type) {
 			return null;
 		}
 
+		// Display coverage summary
+		displayCoverageSummary(type, total);
+
 		// Use lines coverage as the primary metric
 		const percentage = total.lines.pct;
 		const labelMap = {
@@ -84,7 +124,17 @@ function processCoverage(type) {
 		const label = labelMap[type] || `${type} coverage`;
 
 		const badge = generateBadge(label, percentage);
-		const badgePath = path.join(coverageDir, "badge.svg");
+		
+		// Write badge to .badges/ in CI, coverage/ locally
+		const inCI = isCI();
+		const badgeDir = inCI
+			? path.join(rootDir, ".badges")
+			: path.join(coverageDir);
+		
+		if (!fs.existsSync(badgeDir)) {
+			fs.mkdirSync(badgeDir, { recursive: true });
+		}
+		const badgePath = path.join(badgeDir, inCI ? `${type}.svg` : "badge.svg");
 
 		fs.writeFileSync(badgePath, badge);
 		console.log(
@@ -232,23 +282,40 @@ const totalCoverage = calculateTotalCoverage();
 
 if (totalCoverage) {
 	const totalPercentage = totalCoverage.lines.pct;
+	
+	// Display total coverage summary
+	console.log(`\n📊 Total Coverage (Union of all test types):`);
+	console.log("─".repeat(50));
+	console.log(
+		`  Statements: ${totalCoverage.statements.covered}/${totalCoverage.statements.total} (${totalCoverage.statements.pct.toFixed(1)}%)`
+	);
+	console.log(
+		`  Branches:   ${totalCoverage.branches.covered}/${totalCoverage.branches.total} (${totalCoverage.branches.pct.toFixed(1)}%)`
+	);
+	console.log(
+		`  Functions:  ${totalCoverage.functions.covered}/${totalCoverage.functions.total} (${totalCoverage.functions.pct.toFixed(1)}%)`
+	);
+	console.log(
+		`  Lines:      ${totalCoverage.lines.covered}/${totalCoverage.lines.total} (${totalCoverage.lines.pct.toFixed(1)}%)`
+	);
+	console.log("─".repeat(50));
+	
 	const badge = generateBadge("total coverage", totalPercentage);
-	const badgePath = path.join(rootDir, "coverage", "badge.svg");
+	
+	// Write badge to .badges/ in CI, coverage/ locally
+	const inCI = isCI();
+	const badgeDir = inCI
+		? path.join(rootDir, ".badges")
+		: path.join(rootDir, "coverage");
+	
+	if (!fs.existsSync(badgeDir)) {
+		fs.mkdirSync(badgeDir, { recursive: true });
+	}
+	const badgePath = path.join(badgeDir, inCI ? "total.svg" : "badge.svg");
 
 	fs.writeFileSync(badgePath, badge);
 	console.log(
 		`✅ Generated total coverage badge: ${totalPercentage.toFixed(1)}%`
-	);
-
-	// Also save total coverage summary for reference
-	const totalSummaryPath = path.join(
-		rootDir,
-		"coverage",
-		"coverage-summary.json"
-	);
-	fs.writeFileSync(
-		totalSummaryPath,
-		JSON.stringify({ total: totalCoverage }, null, 2)
 	);
 }
 

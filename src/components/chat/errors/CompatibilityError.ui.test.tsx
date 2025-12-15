@@ -115,7 +115,7 @@ describe("CompatibilityErrorUI", () => {
 					errorMessage="Currently downloading model"
 					instructions={null}
 					isDownloading={true}
-					downloadProgress={{ loaded: 50, total: 100 }}
+					downloadProgress={{ loaded: 50, total: 100, percentage: 50 }}
 				/>
 			);
 
@@ -248,7 +248,7 @@ describe("CompatibilityErrorUI", () => {
 					errorMessage="Downloading in progress"
 					instructions={null}
 					isDownloading={true}
-					downloadProgress={{ loaded: 500000000, total: 1000000000 }}
+					downloadProgress={{ loaded: 500000000, total: 1000000000, percentage: 50 }}
 				/>
 			);
 
@@ -264,7 +264,7 @@ describe("CompatibilityErrorUI", () => {
 					errorMessage="Starting download"
 					instructions={null}
 					isDownloading={true}
-					downloadProgress={{ loaded: 0, total: 0 }}
+					downloadProgress={{ loaded: 0, total: 0, percentage: 0 }}
 				/>
 			);
 

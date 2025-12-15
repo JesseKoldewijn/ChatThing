@@ -559,7 +559,7 @@ describe("SettingsPage E2E", () => {
 				...originalURL,
 				createObjectURL: mockCreateObjectURL,
 				revokeObjectURL: mockRevokeObjectURL,
-			} as typeof URL;
+			} as unknown as typeof URL;
 
 			document.createElement = vi.fn((tag: string) => {
 				if (tag === "a") {

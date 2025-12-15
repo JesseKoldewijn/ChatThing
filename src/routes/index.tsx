@@ -11,17 +11,33 @@ interface ChatSearchParams {
 }
 
 export const Route = createFileRoute("/")({
-	validateSearch: (search: Record<string, unknown>): ChatSearchParams => ({
-		chat: typeof search.chat === "string" ? search.chat : undefined,
-		sidebar: search.sidebar === true || search.sidebar === "true",
-		archived: search.archived === true || search.archived === "true",
-		deleted: search.deleted === true || search.deleted === "true",
-		forceCompat: search.forceCompat === true || search.forceCompat === "true",
-	}),
+	validateSearch: (search: Record<string, unknown>): ChatSearchParams => {
+		const result: ChatSearchParams = {
+			chat: typeof search.chat === "string" ? search.chat : undefined,
+		};
+
+		if ("sidebar" in search) {
+			result.sidebar =
+				search.sidebar === true || search.sidebar === "true";
+		}
+		if ("archived" in search) {
+			result.archived =
+				search.archived === true || search.archived === "true";
+		}
+		if ("deleted" in search) {
+			result.deleted =
+				search.deleted === true || search.deleted === "true";
+		}
+		if ("forceCompat" in search) {
+			result.forceCompat =
+				search.forceCompat === true || search.forceCompat === "true";
+		}
+
+		return result;
+	},
 	component: IndexPage,
 });
 
 function IndexPage() {
 	return <ChatContainer />;
 }
-

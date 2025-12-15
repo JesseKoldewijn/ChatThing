@@ -115,7 +115,7 @@ describe("Conversations Store Integration", () => {
 
 		it("should clear existing messages when creating new conversation", () => {
 			messagesAtom.set([
-				{ id: "msg-1", role: "user", content: "Old message", createdAt: Date.now() },
+				{ id: "msg-1", role: "user", content: "Old message", transactionId: "tx-1", timestamp: Date.now() },
 			]);
 
 			createConversation();
@@ -138,7 +138,7 @@ describe("Conversations Store Integration", () => {
 			// Create first conversation with messages
 			const conv1 = createConversation("First");
 			messagesAtom.set([
-				{ id: "msg-1", role: "user", content: "Hello", createdAt: Date.now() },
+				{ id: "msg-1", role: "user", content: "Hello", transactionId: "tx-1", timestamp: Date.now() },
 			]);
 			await saveCurrentConversation();
 

@@ -132,6 +132,9 @@ const TEMPERATURE_UNIT_KEY = "temperature-unit";
 // Storage key for timezone
 const TIMEZONE_KEY = "timezone";
 
+// Storage key for output language
+const OUTPUT_LANGUAGE_KEY = "output-language";
+
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
 
@@ -197,6 +200,21 @@ const loadArchiveThresholdFromStorage = () => {
 	}
 };
 
+/**
+ * Load output language from localStorage (called after hydration)
+ */
+const loadOutputLanguageFromStorage = () => {
+	if (!isBrowser) return;
+	const stored = localStorage.getItem(OUTPUT_LANGUAGE_KEY) as PromptApiLanguage | null;
+	if (stored && PROMPT_API_SUPPORTED_LANGUAGES.includes(stored)) {
+		outputLanguageAtom.set(stored);
+	} else {
+		// Fall back to browser detection if no stored preference
+		const detected = detectBrowserLanguage();
+		outputLanguageAtom.set(detected);
+	}
+};
+
 // Initialize theme - defer localStorage read until after hydration
 onMount(themeAtom, () => {
 	if (!isBrowser) return;
@@ -218,11 +236,25 @@ onMount(themeAtom, () => {
 	return unsubscribe;
 });
 
-// Initialize output language from browser detection on mount
+// Initialize output language - defer localStorage read until after hydration
 onMount(outputLanguageAtom, () => {
-	// Language detection doesn't cause hydration issues since it's the same on server/client
-	const detected = detectBrowserLanguage();
-	outputLanguageAtom.set(detected);
+	if (!isBrowser) return;
+	
+	// If already hydrated, load immediately
+	if (isHydratedAtom.get()) {
+		loadOutputLanguageFromStorage();
+		return;
+	}
+	
+	// Otherwise, wait for hydration to complete
+	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
+		if (hydrated) {
+			loadOutputLanguageFromStorage();
+			unsubscribe();
+		}
+	});
+	
+	return unsubscribe;
 });
 
 // Initialize temperature unit - defer localStorage read until after hydration
@@ -326,6 +358,16 @@ export const setArchiveThreshold = (threshold: ArchiveThreshold) => {
 	// Also update legacy atom for compatibility
 	const hours = thresholdToHours(validThreshold);
 	archiveThresholdDaysAtom.set(Math.ceil(hours / 24));
+};
+
+export const setOutputLanguage = (language: PromptApiLanguage) => {
+	if (!PROMPT_API_SUPPORTED_LANGUAGES.includes(language)) {
+		return;
+	}
+	outputLanguageAtom.set(language);
+	if (isBrowser) {
+		localStorage.setItem(OUTPUT_LANGUAGE_KEY, language);
+	}
 };
 
 // Legacy function for compatibility

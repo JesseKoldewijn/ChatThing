@@ -8,6 +8,7 @@ import {
 	setTheme,
 	setTemperatureUnit,
 	setTimezone,
+	setOutputLanguage,
 	setArchiveThreshold,
 	getSystemTimezone,
 	getResolvedTimezone,
@@ -101,25 +102,18 @@ describe("Settings Store Integration", () => {
 	});
 
 	describe("output language", () => {
-		it("should update output language atom", () => {
-			// The outputLanguageAtom doesn't persist to localStorage
-			// It's auto-detected from browser language on mount via onMount hook
-			// The onMount hook runs once when the atom is first accessed
-			// After that, we can manually set it
-			const initialValue = outputLanguageAtom.get();
-			
-			// Set to a different language
-			outputLanguageAtom.set("es");
+		it("should persist output language changes", () => {
+			setOutputLanguage("es");
 			expect(outputLanguageAtom.get()).toBe("es");
-			
-			// Set to another language
-			outputLanguageAtom.set("ja");
+			expect(localStorage.getItem("output-language")).toBe("es");
+
+			setOutputLanguage("ja");
 			expect(outputLanguageAtom.get()).toBe("ja");
-			
-			// Set back to initial or another value
-			outputLanguageAtom.set("en");
+			expect(localStorage.getItem("output-language")).toBe("ja");
+
+			setOutputLanguage("en");
 			expect(outputLanguageAtom.get()).toBe("en");
+			expect(localStorage.getItem("output-language")).toBe("en");
 		});
 	});
 });
-

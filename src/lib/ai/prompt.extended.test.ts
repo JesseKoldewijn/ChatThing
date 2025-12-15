@@ -220,7 +220,7 @@ describe("prompt module", () => {
 				yield { type: "finish", finishReason: "stop" };
 			})() as AsyncIterableIterator<unknown> & { [Symbol.asyncIterator](): AsyncIterableIterator<unknown> };
 
-			const result = await promptStreamReader(mockStream as Parameters<typeof promptStreamReader>[0]);
+			const result = await promptStreamReader(mockStream as unknown as Parameters<typeof promptStreamReader>[0]);
 
 			expect(result).toHaveLength(3);
 			expect(result[0]).toEqual({ type: "text-delta", textDelta: "Hello" });
@@ -232,7 +232,7 @@ describe("prompt module", () => {
 				// Empty stream
 			})() as AsyncIterableIterator<unknown> & { [Symbol.asyncIterator](): AsyncIterableIterator<unknown> };
 
-			const result = await promptStreamReader(mockStream as Parameters<typeof promptStreamReader>[0]);
+			const result = await promptStreamReader(mockStream as unknown as Parameters<typeof promptStreamReader>[0]);
 
 			expect(result).toHaveLength(0);
 		});
@@ -244,7 +244,7 @@ describe("prompt module", () => {
 				yield { type: "text-delta", textDelta: "The weather is nice!" };
 			})() as AsyncIterableIterator<unknown> & { [Symbol.asyncIterator](): AsyncIterableIterator<unknown> };
 
-			const result = await promptStreamReader(mockStream as Parameters<typeof promptStreamReader>[0]);
+			const result = await promptStreamReader(mockStream as unknown as Parameters<typeof promptStreamReader>[0]);
 
 			expect(result).toHaveLength(3);
 			expect(result[0].type).toBe("tool-call");

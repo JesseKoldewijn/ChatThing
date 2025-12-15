@@ -55,7 +55,15 @@ export function useChatSearchParams() {
 	const setActiveChat = useCallback(
 		(chatId: string | undefined) => {
 			navigate({
-				search: (prev) => ({ ...prev, chat: chatId }),
+				search: (prev) => {
+					const newSearch = { ...prev };
+					if (chatId) {
+						newSearch.chat = chatId;
+					} else {
+						delete newSearch.chat;
+					}
+					return newSearch;
+				},
 				replace: true,
 			});
 		},
@@ -64,7 +72,16 @@ export function useChatSearchParams() {
 
 	const toggleSidebar = useCallback(() => {
 		navigate({
-			search: (prev) => ({ ...prev, sidebar: !prev.sidebar }),
+			search: (prev) => {
+				const newValue = !(prev.sidebar ?? false);
+				const newSearch = { ...prev };
+				if (newValue) {
+					newSearch.sidebar = true;
+				} else {
+					delete newSearch.sidebar;
+				}
+				return newSearch;
+			},
 			replace: true,
 		});
 	}, [navigate]);
@@ -72,7 +89,15 @@ export function useChatSearchParams() {
 	const setSidebar = useCallback(
 		(open: boolean) => {
 			navigate({
-				search: (prev) => ({ ...prev, sidebar: open || undefined }),
+				search: (prev) => {
+					const newSearch = { ...prev };
+					if (open) {
+						newSearch.sidebar = true;
+					} else {
+						delete newSearch.sidebar;
+					}
+					return newSearch;
+				},
 				replace: true,
 			});
 		},
@@ -81,7 +106,16 @@ export function useChatSearchParams() {
 
 	const toggleShowArchived = useCallback(() => {
 		navigate({
-			search: (prev) => ({ ...prev, archived: !prev.archived }),
+			search: (prev) => {
+				const newValue = !(prev.archived ?? false);
+				const newSearch = { ...prev };
+				if (newValue) {
+					newSearch.archived = true;
+				} else {
+					delete newSearch.archived;
+				}
+				return newSearch;
+			},
 			replace: true,
 		});
 	}, [navigate]);
@@ -89,7 +123,15 @@ export function useChatSearchParams() {
 	const setShowArchived = useCallback(
 		(show: boolean) => {
 			navigate({
-				search: (prev) => ({ ...prev, archived: show || undefined }),
+				search: (prev) => {
+					const newSearch = { ...prev };
+					if (show) {
+						newSearch.archived = true;
+					} else {
+						delete newSearch.archived;
+					}
+					return newSearch;
+				},
 				replace: true,
 			});
 		},
@@ -98,7 +140,16 @@ export function useChatSearchParams() {
 
 	const toggleShowDeleted = useCallback(() => {
 		navigate({
-			search: (prev) => ({ ...prev, deleted: !prev.deleted }),
+			search: (prev) => {
+				const newValue = !(prev.deleted ?? false);
+				const newSearch = { ...prev };
+				if (newValue) {
+					newSearch.deleted = true;
+				} else {
+					delete newSearch.deleted;
+				}
+				return newSearch;
+			},
 			replace: true,
 		});
 	}, [navigate]);
@@ -106,7 +157,15 @@ export function useChatSearchParams() {
 	const setShowDeleted = useCallback(
 		(show: boolean) => {
 			navigate({
-				search: (prev) => ({ ...prev, deleted: show || undefined }),
+				search: (prev) => {
+					const newSearch = { ...prev };
+					if (show) {
+						newSearch.deleted = true;
+					} else {
+						delete newSearch.deleted;
+					}
+					return newSearch;
+				},
 				replace: true,
 			});
 		},

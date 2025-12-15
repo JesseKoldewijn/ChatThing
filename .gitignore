@@ -16,6 +16,9 @@ dist-ssr
 __snapshots__
 __screenshots__
 
+# Coverage reports (badges are generated in CI and stored in .badges/)
+coverage/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

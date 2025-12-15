@@ -19,10 +19,20 @@ vi.mock("@/lib/stores/chat", () => ({
 
 // Mock MessageItem component
 vi.mock("./MessageItem", () => ({
-	MessageItem: ({ message, isStreaming }: { message: { id: string; content: string }; isStreaming: boolean }) => (
+	MessageItem: ({
+		message,
+		isStreaming,
+	}: {
+		message: { id: string; content: string };
+		isStreaming: boolean;
+	}) => (
 		<div data-testid={`message-${message.id}`}>
-			<span data-testid={`message-content-${message.id}`}>{message.content}</span>
-			{isStreaming && <span data-testid="streaming-indicator">Streaming</span>}
+			<span data-testid={`message-content-${message.id}`}>
+				{message.content}
+			</span>
+			{isStreaming && (
+				<span data-testid="streaming-indicator">Streaming</span>
+			)}
 		</div>
 	),
 }));
@@ -49,8 +59,15 @@ vi.mock("./MessageList.ui", () => ({
 
 import { MessageList } from "./MessageList";
 import { useStore } from "@nanostores/react";
+import type { ReadableAtom } from "nanostores";
 
-let mockMessages: Array<{ id: string; role: string; content: string; transactionId: string; timestamp: number }> = [];
+let mockMessages: Array<{
+	id: string;
+	role: string;
+	content: string;
+	transactionId: string;
+	timestamp: number;
+}> = [];
 let mockCurrentStream = "";
 let mockIsStreaming = false;
 
@@ -64,10 +81,11 @@ describe("MessageList", () => {
 
 	describe("rendering", () => {
 		it("should render empty state when no messages", () => {
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return [];
-				if (atom.name === "currentStreamAtom") return "";
-				if (atom.name === "isStreamingAtom") return false;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return [];
+				if (a.name === "currentStreamAtom") return "";
+				if (a.name === "isStreamingAtom") return false;
 				return null;
 			});
 
@@ -77,14 +95,27 @@ describe("MessageList", () => {
 
 		it("should render messages", () => {
 			mockMessages = [
-				{ id: "msg-1", role: "user", content: "Hello", transactionId: "tx-1", timestamp: 1000 },
-				{ id: "msg-2", role: "assistant", content: "Hi there", transactionId: "tx-1", timestamp: 1001 },
+				{
+					id: "msg-1",
+					role: "user",
+					content: "Hello",
+					transactionId: "tx-1",
+					timestamp: 1000,
+				},
+				{
+					id: "msg-2",
+					role: "assistant",
+					content: "Hi there",
+					transactionId: "tx-1",
+					timestamp: 1001,
+				},
 			];
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return mockMessages;
-				if (atom.name === "currentStreamAtom") return "";
-				if (atom.name === "isStreamingAtom") return false;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return mockMessages;
+				if (a.name === "currentStreamAtom") return "";
+				if (a.name === "isStreamingAtom") return false;
 				return null;
 			});
 
@@ -97,10 +128,11 @@ describe("MessageList", () => {
 			mockIsStreaming = true;
 			mockCurrentStream = "";
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return [];
-				if (atom.name === "currentStreamAtom") return "";
-				if (atom.name === "isStreamingAtom") return true;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return [];
+				if (a.name === "currentStreamAtom") return "";
+				if (a.name === "isStreamingAtom") return true;
 				return null;
 			});
 
@@ -111,10 +143,11 @@ describe("MessageList", () => {
 		it("should not be empty when streaming", () => {
 			mockIsStreaming = true;
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return [];
-				if (atom.name === "currentStreamAtom") return "";
-				if (atom.name === "isStreamingAtom") return true;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return [];
+				if (a.name === "currentStreamAtom") return "";
+				if (a.name === "isStreamingAtom") return true;
 				return null;
 			});
 
@@ -128,46 +161,59 @@ describe("MessageList", () => {
 			mockCurrentStream = "Streaming response...";
 			mockIsStreaming = true;
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return [];
-				if (atom.name === "currentStreamAtom") return "Streaming response...";
-				if (atom.name === "isStreamingAtom") return true;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return [];
+				if (a.name === "currentStreamAtom") return "Streaming response...";
+				if (a.name === "isStreamingAtom") return true;
 				return null;
 			});
 
 			render(<MessageList />);
 			expect(screen.getByTestId("message-streaming")).toBeInTheDocument();
-			expect(screen.getByTestId("streaming-indicator")).toBeInTheDocument();
+			expect(
+				screen.getByTestId("streaming-indicator")
+			).toBeInTheDocument();
 		});
 
 		it("should show streaming content", () => {
 			mockCurrentStream = "This is being streamed";
 			mockIsStreaming = true;
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return [];
-				if (atom.name === "currentStreamAtom") return "This is being streamed";
-				if (atom.name === "isStreamingAtom") return true;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return [];
+				if (a.name === "currentStreamAtom") return "This is being streamed";
+				if (a.name === "isStreamingAtom") return true;
 				return null;
 			});
 
 			render(<MessageList />);
-			expect(screen.getByTestId("message-content-streaming")).toHaveTextContent("This is being streamed");
+			expect(
+				screen.getByTestId("message-content-streaming")
+			).toHaveTextContent("This is being streamed");
 		});
 	});
 
 	describe("combined messages", () => {
 		it("should combine real messages with streaming message", () => {
 			mockMessages = [
-				{ id: "msg-1", role: "user", content: "Question", transactionId: "tx-1", timestamp: 1000 },
+				{
+					id: "msg-1",
+					role: "user",
+					content: "Question",
+					transactionId: "tx-1",
+					timestamp: 1000,
+				},
 			];
 			mockCurrentStream = "Answer in progress";
 			mockIsStreaming = true;
 
-			vi.mocked(useStore).mockImplementation((atom: { name?: string }) => {
-				if (atom.name === "messagesAtom") return mockMessages;
-				if (atom.name === "currentStreamAtom") return "Answer in progress";
-				if (atom.name === "isStreamingAtom") return true;
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { name?: string };
+				if (a.name === "messagesAtom") return mockMessages;
+				if (a.name === "currentStreamAtom") return "Answer in progress";
+				if (a.name === "isStreamingAtom") return true;
 				return null;
 			});
 
@@ -177,4 +223,3 @@ describe("MessageList", () => {
 		});
 	});
 });
-

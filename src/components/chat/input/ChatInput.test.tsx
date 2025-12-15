@@ -96,6 +96,7 @@ import {
 	fileToImageAttachment,
 } from "@/lib/stores/chat";
 import { useStore } from "@nanostores/react";
+import type { ReadableAtom } from "nanostores";
 
 describe("ChatInput", () => {
 	beforeEach(() => {
@@ -109,9 +110,10 @@ describe("ChatInput", () => {
 		});
 
 		it("should show loading state when streaming", () => {
-			vi.mocked(useStore).mockImplementation((atom: { _mockValue?: unknown }) => {
-				if (atom._mockValue === false) return true; // isStreamingAtom
-				return atom._mockValue ?? "";
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { _mockValue?: unknown };
+				if (a._mockValue === false) return true; // isStreamingAtom
+				return a._mockValue ?? "";
 			});
 
 			render(<ChatInput onSend={vi.fn()} />);
@@ -180,12 +182,13 @@ describe("ChatInput", () => {
 
 	describe("image removal", () => {
 		it("should call removePendingImage when remove is triggered", async () => {
-			vi.mocked(useStore).mockImplementation((atom: { _mockValue?: unknown }) => {
+			vi.mocked(useStore).mockImplementation((atom: ReadableAtom) => {
+				const a = atom as ReadableAtom & { _mockValue?: unknown };
 				// Return pending images when queried
-				if (Array.isArray(atom._mockValue)) {
+				if (Array.isArray(a._mockValue)) {
 					return [{ id: "img-1", data: "test", mimeType: "image/png" }];
 				}
-				return atom._mockValue ?? "";
+				return a._mockValue ?? "";
 			});
 
 			render(<ChatInput onSend={vi.fn()} />);
