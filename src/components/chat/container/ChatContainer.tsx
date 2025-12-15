@@ -124,7 +124,7 @@ const formatTemperature = (
 };
 
 export const ChatContainer = () => {
-	const { sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar } =
+	const { sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, forceCompat } =
 		useChatSearchParams();
 	const activeConversationId = useStore(activeConversationIdAtom);
 	const aiSettings = useStore(aiSettingsAtom);
@@ -413,8 +413,8 @@ export const ChatContainer = () => {
 	// The compatibility check runs in the background.
 	// If incompatible, we'll show the error once the check completes.
 
-	// Show compatibility error if not compatible
-	if (compatibility && !compatibility.isCompatible) {
+	// Show compatibility error if not compatible or if forceCompat query param is set (for testing)
+	if (forceCompat || (compatibility && !compatibility.isCompatible)) {
 		return <CompatibilityError />;
 	}
 

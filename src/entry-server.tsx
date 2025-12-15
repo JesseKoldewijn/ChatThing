@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { createAppRouter } from "./router";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type PipeableStream = ReturnType<typeof renderToPipeableStream>;
 
 export interface StreamRenderResult {

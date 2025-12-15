@@ -1,6 +1,14 @@
 import { atom, onMount } from "nanostores";
-import { messagesAtom, clearMessages, type Message, saveImagesToIndexedDB } from "./chat";
-import { generateConversationTitle, needsTitleGeneration } from "@/lib/ai/titleGenerator";
+import {
+	messagesAtom,
+	clearMessages,
+	type Message,
+	saveImagesToIndexedDB,
+} from "./chat";
+import {
+	generateConversationTitle,
+	needsTitleGeneration,
+} from "@/lib/ai/titleGenerator";
 import { archiveThresholdAtom, thresholdToHours } from "./settings";
 import { isHydratedAtom } from "./hydration";
 import { deleteConversationImages, clearAllImages } from "./imageStorage";
@@ -14,9 +22,8 @@ export const activeChatIdAtom = atom<string | null>(null);
 /**
  * Set the active chat ID
  * @param id - The chat ID to set as active, or null to clear
- * @param _replace - Unused, kept for backward compatibility
  */
-export const setActiveChat = (id: string | null, _replace = false) => {
+export const setActiveChat = (id: string | null) => {
 	activeChatIdAtom.set(id);
 };
 
@@ -63,13 +70,13 @@ const loadMessagesForChat = (chatId: string | null) => {
 
 	const conversations = conversationsAtom.get();
 	const conversation = conversations.find((c) => c.id === chatId);
-	
+
 	if (conversation) {
 		// Always load the conversation's messages
 		messagesAtom.set(conversation.messages);
 	} else {
 		// Invalid chat ID - clear it from URL and show new chat
-		setActiveChat(null, true);
+		setActiveChat(null);
 		clearMessages();
 	}
 };
@@ -80,9 +87,9 @@ const loadMessagesForChat = (chatId: string | null) => {
  */
 const initializeConversations = () => {
 	if (!isBrowser) return;
-	
+
 	const stored = localStorage.getItem(STORAGE_KEY);
-	
+
 	if (stored) {
 		try {
 			const parsed = JSON.parse(stored) as Conversation[];
@@ -109,7 +116,7 @@ const initializeConversations = () => {
 // Load conversations from localStorage on mount - defer until after hydration
 onMount(conversationsAtom, () => {
 	if (!isBrowser) return;
-	
+
 	// If already hydrated, initialize immediately
 	if (isHydratedAtom.get()) {
 		initializeConversations();
@@ -137,7 +144,7 @@ onMount(conversationsAtom, () => {
 			if (activeChatIdAtom.get() !== newChatId) return;
 			// Skip if programmatic switch started while we were waiting
 			if (programmaticSwitchInProgress) return;
-			
+
 			// Save the previous conversation before switching
 			// Only do this for browser navigation (back/forward), not programmatic switches
 			if (previousChatId) {
@@ -180,7 +187,9 @@ const prepareMessagesForStorage = async (
 				);
 
 				// Merge saved images with already-stored images
-				const alreadyStored = msg.images.filter((img) => img.storedInDb);
+				const alreadyStored = msg.images.filter(
+					(img) => img.storedInDb
+				);
 				const allImages = [...alreadyStored, ...savedImages];
 
 				preparedMessages.push({
@@ -209,7 +218,10 @@ const saveCurrentConversationById = async (chatId: string) => {
 
 	if (index !== -1 && messages.length > 0) {
 		// Prepare messages (save images to IndexedDB)
-		const preparedMessages = await prepareMessagesForStorage(messages, chatId);
+		const preparedMessages = await prepareMessagesForStorage(
+			messages,
+			chatId
+		);
 
 		const updated = [...conversations];
 		updated[index] = {
@@ -226,9 +238,9 @@ const saveCurrentConversationById = async (chatId: string) => {
 // Images are stored in IndexedDB, so localStorage only contains metadata
 const persist = () => {
 	if (!isBrowser) return;
-	
+
 	const conversations = conversationsAtom.get();
-	
+
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
 	} catch (error) {
@@ -240,7 +252,7 @@ const persist = () => {
 		) {
 			console.error(
 				"Storage quota exceeded. This shouldn't happen with hybrid storage. " +
-				"Consider clearing old conversations."
+					"Consider clearing old conversations."
 			);
 		} else {
 			console.error("Failed to persist conversations:", error);
@@ -251,10 +263,13 @@ const persist = () => {
 /**
  * Check if a conversation should be auto-archived based on inactivity
  */
-const shouldAutoArchive = (conversation: Conversation, thresholdHours: number): boolean => {
+const shouldAutoArchive = (
+	conversation: Conversation,
+	thresholdHours: number
+): boolean => {
 	if (thresholdHours <= 0) return false; // Disabled
 	if (conversation.status !== "active") return false;
-	
+
 	const thresholdMs = thresholdHours * 60 * 60 * 1000;
 	const timeSinceUpdate = Date.now() - conversation.updatedAt;
 	return timeSinceUpdate > thresholdMs;
@@ -270,7 +285,7 @@ export const runAutoArchive = (): number => {
 
 	const conversations = conversationsAtom.get();
 	let archivedCount = 0;
-	
+
 	const updated = conversations.map((conv) => {
 		if (shouldAutoArchive(conv, thresholdHours)) {
 			archivedCount++;
@@ -298,7 +313,7 @@ export const createConversation = (title?: string): Conversation => {
 		status: "active",
 	};
 	conversationsAtom.set([conversation, ...conversationsAtom.get()]);
-	
+
 	// Set flag to prevent the subscriber from interfering
 	programmaticSwitchInProgress = true;
 	previousChatId = conversation.id;
@@ -307,7 +322,7 @@ export const createConversation = (title?: string): Conversation => {
 	queueMicrotask(() => {
 		programmaticSwitchInProgress = false;
 	});
-	
+
 	persist();
 	return conversation;
 };
@@ -341,7 +356,10 @@ export const saveCurrentConversation = async () => {
 
 	if (index !== -1) {
 		// Prepare messages (save images to IndexedDB)
-		const preparedMessages = await prepareMessagesForStorage(messages, activeId);
+		const preparedMessages = await prepareMessagesForStorage(
+			messages,
+			activeId
+		);
 
 		const updated = [...conversations];
 		const currentConversation = updated[index];
@@ -361,7 +379,10 @@ export const saveCurrentConversation = async () => {
  * Asynchronously generate a title for a conversation using AI
  * This is an internal function - use triggerTitleGeneration for external calls
  */
-const generateTitleAsync = async (conversationId: string, firstMessage: string) => {
+const generateTitleAsync = async (
+	conversationId: string,
+	firstMessage: string
+) => {
 	// Prevent duplicate generation
 	if (titleGenerationInProgress.has(conversationId)) return;
 	titleGenerationInProgress.add(conversationId);
@@ -377,11 +398,13 @@ const generateTitleAsync = async (conversationId: string, firstMessage: string) 
 
 	try {
 		const title = await generateConversationTitle(firstMessage);
-		
+
 		// Update the conversation with the generated title
 		const currentConversations = conversationsAtom.get();
-		const currentIndex = currentConversations.findIndex((c) => c.id === conversationId);
-		
+		const currentIndex = currentConversations.findIndex(
+			(c) => c.id === conversationId
+		);
+
 		if (currentIndex !== -1) {
 			const updated = [...currentConversations];
 			updated[currentIndex] = {
@@ -394,14 +417,17 @@ const generateTitleAsync = async (conversationId: string, firstMessage: string) 
 		}
 	} catch (error) {
 		console.error("Failed to generate conversation title:", error);
-		
+
 		// On error, use fallback title from first message
 		const currentConversations = conversationsAtom.get();
-		const currentIndex = currentConversations.findIndex((c) => c.id === conversationId);
-		
+		const currentIndex = currentConversations.findIndex(
+			(c) => c.id === conversationId
+		);
+
 		if (currentIndex !== -1) {
 			const updated = [...currentConversations];
-			const fallbackTitle = firstMessage.slice(0, 30).trim() + 
+			const fallbackTitle =
+				firstMessage.slice(0, 30).trim() +
 				(firstMessage.length > 30 ? "..." : "");
 			updated[currentIndex] = {
 				...updated[currentIndex],
@@ -420,12 +446,19 @@ const generateTitleAsync = async (conversationId: string, firstMessage: string) 
  * Trigger title generation for a conversation immediately
  * Called when the first message is sent to generate title in parallel with AI response
  */
-export const triggerTitleGeneration = (conversationId: string, firstMessage: string): void => {
+export const triggerTitleGeneration = (
+	conversationId: string,
+	firstMessage: string
+): void => {
 	const conversations = conversationsAtom.get();
 	const conversation = conversations.find((c) => c.id === conversationId);
-	
+
 	// Only generate if conversation exists and needs a title
-	if (conversation && needsTitleGeneration(conversation.title) && !titleGenerationInProgress.has(conversationId)) {
+	if (
+		conversation &&
+		needsTitleGeneration(conversation.title) &&
+		!titleGenerationInProgress.has(conversationId)
+	) {
 		generateTitleAsync(conversationId, firstMessage);
 	}
 };
@@ -456,7 +489,7 @@ export const deleteConversation = (id: string) => {
 		if (activeConversations.length > 0) {
 			switchConversation(activeConversations[0].id);
 		} else {
-			setActiveChat(null, true);
+			setActiveChat(null);
 			clearMessages();
 		}
 	}
@@ -484,7 +517,7 @@ export const archiveConversation = (id: string) => {
 		if (activeConversations.length > 0) {
 			switchConversation(activeConversations[0].id);
 		} else {
-			setActiveChat(null, true);
+			setActiveChat(null);
 			clearMessages();
 		}
 	}
@@ -545,11 +578,13 @@ export const permanentlyDeleteConversation = async (id: string) => {
 
 	// If we deleted the active conversation, switch to another or clear
 	if (activeChatIdAtom.get() === id) {
-		const activeConversations = conversations.filter((c) => c.status === "active");
+		const activeConversations = conversations.filter(
+			(c) => c.status === "active"
+		);
 		if (activeConversations.length > 0) {
 			switchConversation(activeConversations[0].id);
 		} else {
-			setActiveChat(null, true);
+			setActiveChat(null);
 			clearMessages();
 		}
 	}
@@ -562,16 +597,22 @@ export const permanentlyDeleteConversation = async (id: string) => {
  */
 export const cleanupDeletedConversations = async (): Promise<number> => {
 	const conversations = conversationsAtom.get();
-	const deletedConversations = conversations.filter((c) => c.status === "deleted");
+	const deletedConversations = conversations.filter(
+		(c) => c.status === "deleted"
+	);
 	const deletedCount = deletedConversations.length;
-	
+
 	if (deletedCount > 0) {
 		// Delete images from IndexedDB for each deleted conversation
 		for (const conv of deletedConversations) {
 			try {
 				await deleteConversationImages(conv.id);
 			} catch (error) {
-				console.error("Failed to delete conversation images:", conv.id, error);
+				console.error(
+					"Failed to delete conversation images:",
+					conv.id,
+					error
+				);
 			}
 		}
 
@@ -625,7 +666,7 @@ export interface ExportData {
  */
 export const exportConversations = (): void => {
 	const conversations = conversationsAtom.get();
-	
+
 	// Clean up conversations before export (remove transient state, exclude deleted)
 	const cleanedConversations = conversations
 		.filter((c) => c.status !== "deleted")
@@ -673,7 +714,11 @@ export const importConversations = async (
 
 		// Validate the data structure
 		if (!data.conversations || !Array.isArray(data.conversations)) {
-			return { success: false, imported: 0, error: "Invalid file format" };
+			return {
+				success: false,
+				imported: 0,
+				error: "Invalid file format",
+			};
 		}
 
 		// Validate each conversation
@@ -687,11 +732,13 @@ export const importConversations = async (
 				Array.isArray(conv.messages)
 			) {
 				// Validate status or default to active
-				const status: ConversationStatus = 
-					conv.status === "active" || conv.status === "archived" || conv.status === "deleted"
+				const status: ConversationStatus =
+					conv.status === "active" ||
+					conv.status === "archived" ||
+					conv.status === "deleted"
 						? conv.status
 						: "active";
-				
+
 				validConversations.push({
 					id: conv.id,
 					title: conv.title,
@@ -704,13 +751,17 @@ export const importConversations = async (
 		}
 
 		if (validConversations.length === 0) {
-			return { success: false, imported: 0, error: "No valid conversations found" };
+			return {
+				success: false,
+				imported: 0,
+				error: "No valid conversations found",
+			};
 		}
 
 		if (mode === "replace") {
 			// Replace all conversations
 			conversationsAtom.set(validConversations);
-			setActiveChat(null, true);
+			setActiveChat(null);
 			clearMessages();
 		} else {
 			// Merge: add new conversations, skip duplicates by ID
@@ -728,7 +779,8 @@ export const importConversations = async (
 		return {
 			success: false,
 			imported: 0,
-			error: error instanceof Error ? error.message : "Failed to parse file",
+			error:
+				error instanceof Error ? error.message : "Failed to parse file",
 		};
 	}
 };
@@ -738,7 +790,7 @@ export const importConversations = async (
  */
 export const clearAllConversations = async (): Promise<void> => {
 	conversationsAtom.set([]);
-	setActiveChat(null, true);
+	setActiveChat(null);
 	clearMessages();
 	persist();
 

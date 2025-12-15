@@ -13,6 +13,7 @@ A sleek AI chat application that runs entirely in your browser using Chrome's bu
 -   **Installable PWA** — Install ChatThing as a native-like app on any device
 -   **Image Understanding** — Attach images for multimodal conversations
 -   **Conversation History** — Persistent chat history with auto-generated titles
+-   **Usage Analytics** — Track your message counts, token usage, and tool calls
 -   **Dark/Light Themes** — System-aware theming with manual override
 -   **Offline Support** — Works offline once installed as a PWA
 -   **SSR Pre-rendered** — Fast initial loads with server-side rendering
@@ -23,15 +24,18 @@ A sleek AI chat application that runs entirely in your browser using Chrome's bu
 | Category              | Technology                             |
 | --------------------- | -------------------------------------- |
 | **Framework**         | React 19 with TypeScript               |
-| **Build Tool**        | Vite (via Rolldown)                    |
+| **Build Tool**        | Rolldown-Vite                          |
 | **Compiler**          | React Compiler (automatic memoization) |
+| **Routing**           | TanStack Router                        |
 | **Styling**           | Tailwind CSS v4                        |
 | **UI Components**     | Radix UI primitives                    |
 | **State Management**  | nanostores                             |
 | **AI Integration**    | Vercel AI SDK + @built-in-ai/core      |
 | **Markdown**          | react-markdown + remark-gfm            |
 | **Code Highlighting** | react-syntax-highlighter               |
+| **Data Visualization**| Recharts + TanStack Table              |
 | **Icons**             | Lucide React                           |
+| **Testing**           | Vitest + Playwright                    |
 | **Deployment**        | Vercel (with SSR pre-rendering)        |
 
 ## 📋 Browser Requirements
@@ -54,23 +58,22 @@ This app requires a browser with the **Prompt API** enabled:
 <details>
 <summary><strong>Chrome Setup</strong></summary>
 
-1. Open `chrome://flags/` in a new tab
-2. Search for and enable:
-    - `Prompt API for Gemini Nano`
-    - `Optimization Guide On Device Model`
-3. Restart Chrome
-4. Visit `chrome://on-device-internals/` to download the model
+1. Enable the following flags (click to open directly):
+    - [`Prompt API for Gemini Nano`](chrome://flags/#prompt-api-for-gemini-nano)
+    - [`Prompt API for Gemini Nano with Multimodal Input`](chrome://flags/#prompt-api-for-gemini-nano-multimodal-input)
+    - [`Enables optimization guide on device`](chrome://flags/#optimization-guide-on-device-model)
+2. Restart Chrome
+3. Visit [`chrome://on-device-internals/`](chrome://on-device-internals/) to download the model
 
 </details>
 
 <details>
 <summary><strong>Edge Setup</strong></summary>
 
-1. Open `edge://flags/` in a new tab
-2. Search for and enable:
-    - `Prompt API for Phi mini`
-3. Restart Edge
-4. Visit `edge://on-device-internals/` to download the model
+1. Enable the following flag (click to open directly):
+    - [`Prompt API for Phi mini`](edge://flags/#prompt-api-for-phi-mini)
+2. Restart Edge
+3. Visit [`edge://on-device-internals/`](edge://on-device-internals/) to download the model
 
 </details>
 
@@ -94,16 +97,16 @@ ChatThing can be installed as a Progressive Web App for a native-like experience
 
 ### Prerequisites
 
--   Node.js 20+
--   Yarn (recommended) or npm
+-   Node.js 22+
+-   Yarn 4+ (required — this project uses Yarn's modern PnP mode)
 -   A compatible browser with Prompt API enabled
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/jereko/chatthing.git
-cd chatthing
+git clone https://github.com/JesseKoldewijn/ChatThing.git
+cd ChatThing
 
 # Install dependencies
 yarn install
@@ -165,4 +168,5 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ## 🔗 Links
 
 -   **Live Demo**: [ai.jereko.dev](https://ai.jereko.dev)
+-   **Repository**: [github.com/JesseKoldewijn/ChatThing](https://github.com/JesseKoldewijn/ChatThing)
 -   **Chrome Prompt API Docs**: [developer.chrome.com](https://developer.chrome.com/docs/ai/built-in)

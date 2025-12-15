@@ -9,6 +9,7 @@ export interface ChatSearchParams {
 	sidebar?: boolean;
 	archived?: boolean;
 	deleted?: boolean;
+	forceCompat?: boolean;
 }
 
 /**
@@ -118,6 +119,7 @@ export function useChatSearchParams() {
 		sidebarOpen: search.sidebar ?? false,
 		showArchived: search.archived ?? false,
 		showDeleted: search.deleted ?? false,
+		forceCompat: search.forceCompat ?? false,
 		// Setters
 		setActiveChat,
 		toggleSidebar,

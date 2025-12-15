@@ -55,7 +55,12 @@ export const useCompatibility = () => {
 	return {
 		compatibility,
 		isChecking,
-		recheck: checkCompatibility,
+		recheck: () => {
+			compatibilityCheckingAtom.set(true);
+			setTimeout(() => {
+				checkCompatibility();
+			}, 1000);
+		},
 	};
 };
 
@@ -76,7 +81,10 @@ export const usePrompt = () => {
 			try {
 				// Check cached compatibility first
 				if (compatibility && !compatibility.isCompatible) {
-					throw compatibility.error ?? new Error("Prompt API is not available");
+					throw (
+						compatibility.error ??
+						new Error("Prompt API is not available")
+					);
 				}
 
 				// If no cached result, run async check
@@ -84,7 +92,10 @@ export const usePrompt = () => {
 					const result = await compatibilityCheck();
 					compatibilityAtom.set(result);
 					if (!result.isCompatible) {
-						throw result.error ?? new Error("Prompt API is not available");
+						throw (
+							result.error ??
+							new Error("Prompt API is not available")
+						);
 					}
 				}
 

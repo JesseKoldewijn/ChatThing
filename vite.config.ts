@@ -27,6 +27,12 @@ export default defineConfig({
 			VitePWA({
 				registerType: "autoUpdate",
 				includeAssets: ["icons/*.svg"],
+				// Disable auto-injection - we handle registration manually in entry-client.tsx
+				// This gives us more control over update behavior
+				injectRegister: false,
+				devOptions: {
+					enabled: false, // Disable in dev to avoid caching issues
+				},
 				manifest: {
 					name: "ChatThing",
 					short_name: "ChatThing",
@@ -82,10 +88,32 @@ export default defineConfig({
 				},
 				workbox: {
 					globPatterns: ["**/*.{js,css,html,svg,png,ico,woff,woff2}"],
+					// Skip waiting and claim clients immediately on install
+					skipWaiting: true,
+					clientsClaim: true,
+					// Clean up old caches on activation
+					cleanupOutdatedCaches: true,
+					// Use network-first for navigation to ensure fresh HTML
+					navigateFallback: "index.html",
+					navigateFallbackDenylist: [/^\/api\//],
 					runtimeCaching: [
 						{
-							urlPattern:
-								/^https:\/\/fonts\.googleapis\.com\/.*/i,
+							// Cache API responses
+							urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,
+							handler: "NetworkFirst",
+							options: {
+								cacheName: "api-cache",
+								expiration: {
+									maxEntries: 50,
+									maxAgeSeconds: 60 * 5, // 5 minutes
+								},
+								cacheableResponse: {
+									statuses: [0, 200],
+								},
+							},
+						},
+						{
+							urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
 							handler: "CacheFirst",
 							options: {
 								cacheName: "google-fonts-cache",

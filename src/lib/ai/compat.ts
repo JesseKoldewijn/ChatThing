@@ -36,7 +36,7 @@ interface BrowserConfig {
 	minVersion: number;
 	flagsUrl: string;
 	internalUrl: string;
-	requiredFlags: string[];
+	requiredFlags: { name: string; url: string }[];
 	modelName: string;
 }
 
@@ -47,8 +47,9 @@ const BROWSER_CONFIGS: Record<string, BrowserConfig> = {
 		flagsUrl: "chrome://flags/",
 		internalUrl: "chrome://on-device-internals/",
 		requiredFlags: [
-			"Prompt API for Gemini Nano",
-			"Optimization Guide On Device Model",
+			{ name: "Prompt API for Gemini Nano", url: "chrome://flags/#prompt-api-for-gemini-nano" },
+			{ name: "Prompt API for Gemini Nano with Multimodal Input", url: "chrome://flags/#prompt-api-for-gemini-nano-multimodal-input" },
+			{ name: "Enables optimization guide on device", url: "chrome://flags/#optimization-guide-on-device-model" },
 		],
 		modelName: "Gemini Nano",
 	},
@@ -57,7 +58,9 @@ const BROWSER_CONFIGS: Record<string, BrowserConfig> = {
 		minVersion: 138,
 		flagsUrl: "edge://flags/",
 		internalUrl: "edge://on-device-internals/",
-		requiredFlags: ["Prompt API for Phi mini"],
+		requiredFlags: [
+			{ name: "Prompt API for Phi mini", url: "edge://flags/#prompt-api-for-phi-mini" },
+		],
 		modelName: "Phi mini",
 	},
 	// Future browser support can be added here
@@ -200,7 +203,7 @@ const getLanguageModelApi = (): {
 /**
  * Generate user-friendly instructions based on browser and availability
  */
-const generateInstructions = (
+export const generateInstructions = (
 	browserInfo: BrowserInfo,
 	availability: PromptApiAvailability
 ): string | null => {
@@ -226,17 +229,14 @@ const generateInstructions = (
 		case "downloadable":
 			return [
 				`The ${config.modelName} model needs to be downloaded.`,
-				`1. Open ${config.internalUrl} in a new tab`,
-				`2. Check the Model Status section`,
-				`3. The download should start automatically`,
-				`4. Refresh this page once complete`,
+				"Click the button below to start the download.",
+				"This may take a few minutes depending on your connection.",
 			].join("\n");
 
 		case "downloading":
 			return [
 				`The ${config.modelName} model is currently downloading.`,
-				`Please wait for the download to complete and refresh this page.`,
-				`You can check progress at ${config.internalUrl}`,
+				"Please wait for the download to complete.",
 			].join("\n");
 
 		case "unavailable":
@@ -247,9 +247,8 @@ const generateInstructions = (
 				"• GPU with 4+ GB VRAM (recommended)",
 				"",
 				"Enable the required flags:",
-				`1. Open ${config.flagsUrl} in a new tab`,
-				...config.requiredFlags.map((flag) => `2. Enable "${flag}"`),
-				"3. Restart your browser",
+				...config.requiredFlags.map((flag, i) => `${i + 1}. Enable "${flag.name}" at ${flag.url}`),
+				`${config.requiredFlags.length + 1}. Restart your browser`,
 			].join("\n");
 
 		case "unsupported":
@@ -258,11 +257,9 @@ const generateInstructions = (
 			}
 			return [
 				"The Prompt API is not enabled. Please follow these steps:",
-				`1. Open ${config.flagsUrl} in a new tab`,
-				...config.requiredFlags.map((flag, i) => `${i + 2}. Search for and enable "${flag}"`),
-				`${config.requiredFlags.length + 2}. Restart your browser`,
-				"",
-				`After enabling, visit ${config.internalUrl} to download the model.`,
+				...config.requiredFlags.map((flag, i) => `${i + 1}. Enable "${flag.name}" at ${flag.url}`),
+				`${config.requiredFlags.length + 1}. Restart your browser`,
+				`${config.requiredFlags.length + 2}. Click the Download button to pull the AI model`,
 			].join("\n");
 
 		default:
@@ -386,10 +383,22 @@ export const quickCompatibilityCheck = (): {
 };
 
 /**
+ * Download progress event data
+ */
+export interface DownloadProgress {
+	loaded: number;
+	total: number;
+	percentage: number;
+}
+
+/**
  * Request the model download if in downloadable state
  * This initiates the download by attempting to create a session
+ * @param onProgress - Optional callback for download progress updates
  */
-export const requestModelDownload = async (): Promise<{
+export const requestModelDownload = async (
+	onProgress?: (progress: DownloadProgress) => void
+): Promise<{
 	success: boolean;
 	error: Error | null;
 }> => {
@@ -402,8 +411,21 @@ export const requestModelDownload = async (): Promise<{
 	}
 
 	try {
-		// Attempting to create a session can trigger the download
-		await api.create();
+		// Attempting to create a session triggers the download
+		// The monitor callback receives download progress events
+		await api.create({
+			monitor: (monitor: EventTarget) => {
+				monitor.addEventListener("downloadprogress", ((
+					event: CustomEvent<{ loaded: number; total: number }>
+				) => {
+					if (onProgress) {
+						const { loaded, total } = event.detail ?? (event as unknown as { loaded: number; total: number });
+						const percentage = total > 0 ? Math.round((loaded / total) * 100) : 0;
+						onProgress({ loaded, total, percentage });
+					}
+				}) as EventListener);
+			},
+		});
 		return { success: true, error: null };
 	} catch (err) {
 		return { success: false, error: err as Error };
@@ -415,16 +437,22 @@ declare global {
 	interface Window {
 		LanguageModel?: {
 			availability: () => Promise<string>;
-			create: (options?: unknown) => Promise<unknown>;
+			create: (options?: {
+				monitor?: (monitor: EventTarget) => void;
+			}) => Promise<unknown>;
 		};
 		ai?: {
 			languageModel?: {
 				availability: () => Promise<string>;
-				create: (options?: unknown) => Promise<unknown>;
+				create: (options?: {
+					monitor?: (monitor: EventTarget) => void;
+				}) => Promise<unknown>;
 			};
 			assistant?: {
 				availability: () => Promise<string>;
-				create: (options?: unknown) => Promise<unknown>;
+				create: (options?: {
+					monitor?: (monitor: EventTarget) => void;
+				}) => Promise<unknown>;
 			};
 		};
 	}

@@ -35,3 +35,10 @@ if (hasPrerenderedContent) {
 requestIdleCallback(() => {
 	markHydrated();
 }, { timeout: 100 });
+
+// Register service worker for PWA (production only)
+if (import.meta.env.PROD) {
+	import("@/lib/pwa/registerSW").then(({ registerServiceWorker }) => {
+		registerServiceWorker();
+	});
+}

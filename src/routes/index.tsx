@@ -7,6 +7,7 @@ interface ChatSearchParams {
 	sidebar?: boolean; // Sidebar open state
 	archived?: boolean; // Show archived chats
 	deleted?: boolean; // Show deleted chats
+	forceCompat?: boolean; // Force show compatibility UI (for testing)
 }
 
 export const Route = createFileRoute("/")({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/")({
 		sidebar: search.sidebar === true || search.sidebar === "true",
 		archived: search.archived === true || search.archived === "true",
 		deleted: search.deleted === true || search.deleted === "true",
+		forceCompat: search.forceCompat === true || search.forceCompat === "true",
 	}),
 	component: IndexPage,
 });
