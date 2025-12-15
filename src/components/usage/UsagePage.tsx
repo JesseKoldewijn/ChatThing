@@ -7,9 +7,10 @@ import {
 	getRecentDailyUsage,
 	clearUsageData,
 } from "@/lib/stores/usage";
-import { goBack } from "@/lib/stores/navigation";
+import { useNavigation } from "@/lib/hooks/useNavigation";
 
 export const UsagePage = () => {
+	const { goBack } = useNavigation();
 	// Subscribe to daily usage changes - this triggers re-render when data changes
 	const dailyUsage = useStore(dailyUsageAtom);
 
@@ -60,7 +61,7 @@ export const UsagePage = () => {
 
 	const handleBack = useCallback(() => {
 		goBack();
-	}, []);
+	}, [goBack]);
 
 	const handleClearData = useCallback(() => {
 		if (

@@ -15,12 +15,7 @@ import {
 	restoreConversation,
 	permanentlyDeleteConversation,
 } from "@/lib/stores/conversations";
-import {
-	showArchivedAtom,
-	showDeletedAtom,
-	toggleShowArchived,
-	toggleShowDeleted,
-} from "@/lib/stores/navigation";
+import { useChatSearchParams } from "@/lib/hooks/useNavigation";
 
 // Desktop breakpoint (lg)
 const DESKTOP_BREAKPOINT = 1024;
@@ -36,8 +31,8 @@ interface ConversationSidebarProps {
 export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 	const conversations = useStore(conversationsAtom);
 	const activeConversationId = useStore(activeConversationIdAtom);
-	const showArchived = useStore(showArchivedAtom);
-	const showDeleted = useStore(showDeletedAtom);
+	const { showArchived, showDeleted, toggleShowArchived, toggleShowDeleted } =
+		useChatSearchParams();
 
 	// Calculate counts
 	const { archivedCount, deletedCount } = useMemo(() => ({

@@ -261,15 +261,15 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 				role: "assistant",
 				content: "Hello! How can I help you today?",
 			},
-			// Example 2: Weather request - USE tool
+			// Example 2: Weather request without location - uses user's timezone
 			{
 				role: "user",
-				content: "Weather in Reykjavik",
+				content: "What's the weather?",
 			},
 			{
 				role: "assistant",
 				content:
-					'<tool>{"name":"weather","arguments":{"location":"Reykjavik"}}</tool>',
+					'<tool>{"name":"weather","arguments":{}}</tool>',
 			},
 		];
 
@@ -317,7 +317,8 @@ export const promptAsync = async (prompt: string, options?: PromptOptions) => {
 					"- If unsure whether to use a tool, DON'T - respond conversationally instead",
 					"",
 					"TOOL CALL FORMAT (only when a tool is needed):",
-					'- Weather: <tool>{"name":"weather","arguments":{"location":"CityName"}}</tool>',
+					'- Weather (specific city): <tool>{"name":"weather","arguments":{"location":"CityName"}}</tool>',
+					'- Weather (user\'s location): <tool>{"name":"weather","arguments":{}}</tool>',
 					'- Date/time: <tool>{"name":"datetime","arguments":{}}</tool>',
 					"",
 					"When using a tool, output ONLY the tool call with no other text.",

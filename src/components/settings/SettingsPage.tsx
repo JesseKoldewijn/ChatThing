@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { SettingsPageUI } from "./SettingsPage.ui";
 import {
@@ -24,16 +24,25 @@ import {
 	cleanupDeletedConversations,
 	runAutoArchive,
 } from "@/lib/stores/conversations";
-import { goBack } from "@/lib/stores/navigation";
+import { useNavigation } from "@/lib/hooks/useNavigation";
 
 export const SettingsPage = () => {
+	const { goBack } = useNavigation();
 	const currentTheme = useStore(themeAtom);
 	const conversations = useStore(conversationsAtom);
 	const archiveThreshold = useStore(archiveThresholdAtom);
 	const temperatureUnit = useStore(temperatureUnitAtom);
 	const timezone = useStore(timezoneAtom);
-	const systemTimezone = getSystemTimezone();
 	const [isImporting, setIsImporting] = useState(false);
+	
+	// Defer system timezone detection to avoid SSR hydration mismatch
+	// null = loading state (shown during SSR and initial hydration)
+	// string = actual timezone (set after client hydration)
+	const [systemTimezone, setSystemTimezone] = useState<string | null>(null);
+	
+	useEffect(() => {
+		setSystemTimezone(getSystemTimezone());
+	}, []);
 
 	// Calculate counts by status
 	const { activeCount, archivedCount, deletedCount } = useMemo(() => ({
@@ -98,7 +107,7 @@ export const SettingsPage = () => {
 
 	const handleBack = useCallback(() => {
 		goBack();
-	}, []);
+	}, [goBack]);
 
 	return (
 		<SettingsPageUI

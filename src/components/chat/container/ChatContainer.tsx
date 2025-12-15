@@ -40,11 +40,7 @@ import {
 import { promptAsync } from "@/lib/ai/prompt";
 import { loadingAtom } from "@/lib/ai/store";
 import { useCompatibility } from "@/lib/ai/hooks";
-import {
-	sidebarOpenAtom,
-	toggleSidebar,
-	setSidebar,
-} from "@/lib/stores/navigation";
+import { useChatSearchParams } from "@/lib/hooks/useNavigation";
 
 // Abort controller for stopping streams
 let abortController: AbortController | null = null;
@@ -128,7 +124,8 @@ const formatTemperature = (
 };
 
 export const ChatContainer = () => {
-	const isSidebarOpen = useStore(sidebarOpenAtom);
+	const { sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar } =
+		useChatSearchParams();
 	const activeConversationId = useStore(activeConversationIdAtom);
 	const aiSettings = useStore(aiSettingsAtom);
 	const { compatibility } = useCompatibility();
@@ -404,11 +401,11 @@ export const ChatContainer = () => {
 
 	const handleToggleSidebar = useCallback(() => {
 		toggleSidebar();
-	}, []);
+	}, [toggleSidebar]);
 
 	const handleCloseSidebar = useCallback(() => {
 		setSidebar(false);
-	}, []);
+	}, [setSidebar]);
 
 	const markdownRenderer = createMarkdownRenderer();
 

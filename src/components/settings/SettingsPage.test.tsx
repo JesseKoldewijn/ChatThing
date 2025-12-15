@@ -1,14 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 
-// Mock navigation with all needed exports
-vi.mock("@/lib/stores/navigation", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/stores/navigation")>();
-	return {
-		...actual,
+// Mock navigation hook
+vi.mock("@/lib/hooks/useNavigation", () => ({
+	useNavigation: () => ({
 		goBack: vi.fn(),
-	};
-});
+		goToSettings: vi.fn(),
+		goToUsage: vi.fn(),
+		goToChat: vi.fn(),
+		navigate: vi.fn(),
+	}),
+}));
 
 vi.mock("@/lib/ai/compat", () => ({
 	checkBuiltInAIAvailability: vi.fn().mockResolvedValue({
@@ -67,4 +69,3 @@ describe("SettingsPage", () => {
 		});
 	});
 });
-

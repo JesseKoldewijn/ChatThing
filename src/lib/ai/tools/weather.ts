@@ -1,5 +1,6 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
+import { getResolvedTimezone } from "@/lib/stores/settings";
 
 // Open-Meteo API response types
 interface GeocodingResult {
@@ -52,6 +53,20 @@ const WEATHER_DESCRIPTIONS: Record<number, string> = {
 	96: "Thunderstorm with slight hail",
 	99: "Thunderstorm with heavy hail",
 };
+
+/**
+ * Extract a city name from a timezone string
+ * e.g., "Europe/Amsterdam" -> "Amsterdam"
+ * e.g., "America/New_York" -> "New York"
+ * e.g., "America/Argentina/Buenos_Aires" -> "Buenos Aires"
+ */
+function getCityFromTimezone(timezone: string): string {
+	// Get the last part of the timezone (the city)
+	const parts = timezone.split("/");
+	const city = parts[parts.length - 1];
+	// Replace underscores with spaces (e.g., "New_York" -> "New York")
+	return city.replace(/_/g, " ");
+}
 
 /**
  * Geocode a location name to coordinates using Open-Meteo Geocoding API
@@ -121,14 +136,18 @@ async function fetchWeather(
 }
 
 export const weatherTool = tool({
-	description: "Get the current weather in a location. Use ONLY when user explicitly asks about weather, forecast, or temperature for a specific city or place. Do NOT use for greetings or general conversation.",
+	description: "Get the current weather in a location. Use ONLY when user explicitly asks about weather, forecast, or temperature. If no location is specified, uses the user's timezone location.",
 	inputSchema: z.object({
 		location: z
 			.string()
-			.describe("The city or location to get the weather for"),
+			.optional()
+			.describe("The city or location to get the weather for. If not provided, uses the user's timezone location."),
 	}),
-	execute: async ({ location }) => {
+	execute: async ({ location: providedLocation }) => {
 		try {
+			// If no location provided, derive from user's timezone
+			const location = providedLocation || getCityFromTimezone(getResolvedTimezone());
+			
 			// First, geocode the location
 			const geo = await geocodeLocation(location);
 

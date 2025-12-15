@@ -94,9 +94,15 @@ export const ConversationSidebarUI = ({
 	};
 
 	// Filter conversations by status
-	const activeConversations = conversations.filter((c) => c.status === "active");
-	const archivedConversations = conversations.filter((c) => c.status === "archived");
-	const deletedConversations = conversations.filter((c) => c.status === "deleted");
+	const activeConversations = conversations.filter(
+		(c) => c.status === "active"
+	);
+	const archivedConversations = conversations.filter(
+		(c) => c.status === "archived"
+	);
+	const deletedConversations = conversations.filter(
+		(c) => c.status === "deleted"
+	);
 
 	const renderConversationItem = (conversation: ConversationItem) => {
 		const isArchived = conversation.status === "archived";
@@ -119,8 +125,8 @@ export const ConversationSidebarUI = ({
 						isArchived
 							? "text-amber-500"
 							: isDeleted
-								? "text-destructive"
-								: "text-muted-foreground"
+							? "text-destructive"
+							: "text-muted-foreground"
 					)}
 				/>
 				<div className="min-w-0 flex-1 overflow-hidden">
@@ -143,7 +149,11 @@ export const ConversationSidebarUI = ({
 							{conversation.title}
 						</p>
 					)}
-					<p className="text-xs text-muted-foreground">
+					{/* suppressHydrationWarning: date formatting depends on current time which differs between SSR and hydration */}
+					<p
+						className="text-xs text-muted-foreground"
+						suppressHydrationWarning
+					>
 						{formatDate(conversation.updatedAt)}
 					</p>
 				</div>
@@ -162,14 +172,19 @@ export const ConversationSidebarUI = ({
 							className={cn(
 								"h-10 w-10 shrink-0 transition-opacity",
 								"opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
-								openDropdownId === conversation.id && "lg:opacity-100"
+								openDropdownId === conversation.id &&
+									"lg:opacity-100"
 							)}
 							onClick={(e) => e.stopPropagation()}
 						>
 							<MoreVertical className="h-5 w-5" />
 						</Button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" side="bottom" className="w-48 p-1.5">
+					<DropdownMenuContent
+						align="end"
+						side="bottom"
+						className="w-48 p-1.5"
+					>
 						{/* Rename - only for active/archived */}
 						{!isDeleted && (
 							<DropdownMenuItem
@@ -193,7 +208,9 @@ export const ConversationSidebarUI = ({
 									e.stopPropagation();
 									setOpenDropdownId(null);
 									if (isArchived) {
-										onUnarchiveConversation(conversation.id);
+										onUnarchiveConversation(
+											conversation.id
+										);
 									} else {
 										onArchiveConversation(conversation.id);
 									}
@@ -301,9 +318,7 @@ export const ConversationSidebarUI = ({
 	};
 
 	const hasAnyConversations =
-		activeConversations.length > 0 ||
-		archivedCount > 0 ||
-		deletedCount > 0;
+		activeConversations.length > 0 || archivedCount > 0 || deletedCount > 0;
 
 	return (
 		<div className="flex h-full flex-col">

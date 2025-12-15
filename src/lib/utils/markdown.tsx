@@ -52,15 +52,21 @@ const loadSyntaxHighlighter = async () => {
 			{ default: cpp },
 			{ default: csharp },
 		] = await Promise.all([
-			import("react-syntax-highlighter/dist/esm/languages/prism/typescript"),
-			import("react-syntax-highlighter/dist/esm/languages/prism/javascript"),
+			import(
+				"react-syntax-highlighter/dist/esm/languages/prism/typescript"
+			),
+			import(
+				"react-syntax-highlighter/dist/esm/languages/prism/javascript"
+			),
 			import("react-syntax-highlighter/dist/esm/languages/prism/jsx"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/tsx"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/css"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/json"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/bash"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/python"),
-			import("react-syntax-highlighter/dist/esm/languages/prism/markdown"),
+			import(
+				"react-syntax-highlighter/dist/esm/languages/prism/markdown"
+			),
 			import("react-syntax-highlighter/dist/esm/languages/prism/sql"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/yaml"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/rust"),
@@ -125,13 +131,29 @@ const CodeBlock = ({ language, code }: CodeBlockProps) => {
 	const [highlighterLoaded, setHighlighterLoaded] = useState(
 		!!syntaxHighlighterCache.SyntaxHighlighter
 	);
+	// Initialize as null to avoid hydration mismatch - render fallback first
+	const [isDark, setIsDark] = useState<boolean | null>(null);
 
-	// Check if we're in dark mode
-	const isDark =
-		typeof window !== "undefined" &&
-		(document.documentElement.classList.contains("dark") ||
-			(!document.documentElement.classList.contains("light") &&
-				window.matchMedia("(prefers-color-scheme: dark)").matches));
+	// Detect dark mode after hydration to avoid SSR mismatch
+	useEffect(() => {
+		const checkDarkMode = () => {
+			const dark =
+				document.documentElement.classList.contains("dark") ||
+				(!document.documentElement.classList.contains("light") &&
+					window.matchMedia("(prefers-color-scheme: dark)").matches);
+			setIsDark(dark);
+		};
+		checkDarkMode();
+
+		// Listen for theme changes via class mutations on <html>
+		const observer = new MutationObserver(checkDarkMode);
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["class"],
+		});
+
+		return () => observer.disconnect();
+	}, []);
 
 	// Lazy load syntax highlighter on mount
 	useEffect(() => {
@@ -175,7 +197,11 @@ const CodeBlock = ({ language, code }: CodeBlockProps) => {
 
 			{/* Scrollable code content */}
 			<div className="overflow-x-auto">
-				{highlighterLoaded && SyntaxHighlighter && oneDark && oneLight ? (
+				{highlighterLoaded &&
+				SyntaxHighlighter &&
+				oneDark &&
+				oneLight &&
+				isDark !== null ? (
 					<SyntaxHighlighter
 						language={language || "text"}
 						style={isDark ? oneDark : oneLight}
@@ -243,22 +269,38 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					return <p className="mb-4 last:mb-0">{children}</p>;
 				},
 				ul({ children }) {
-					return <ul className="mb-4 list-disc pl-6 last:mb-0">{children}</ul>;
+					return (
+						<ul className="mb-4 list-disc pl-6 last:mb-0">
+							{children}
+						</ul>
+					);
 				},
 				ol({ children }) {
-					return <ol className="mb-4 list-decimal pl-6 last:mb-0">{children}</ol>;
+					return (
+						<ol className="mb-4 list-decimal pl-6 last:mb-0">
+							{children}
+						</ol>
+					);
 				},
 				li({ children }) {
 					return <li className="mb-1">{children}</li>;
 				},
 				h1({ children }) {
-					return <h1 className="mb-4 text-2xl font-bold">{children}</h1>;
+					return (
+						<h1 className="mb-4 text-2xl font-bold">{children}</h1>
+					);
 				},
 				h2({ children }) {
-					return <h2 className="mb-3 text-xl font-bold">{children}</h2>;
+					return (
+						<h2 className="mb-3 text-xl font-bold">{children}</h2>
+					);
 				},
 				h3({ children }) {
-					return <h3 className="mb-2 text-lg font-semibold">{children}</h3>;
+					return (
+						<h3 className="mb-2 text-lg font-semibold">
+							{children}
+						</h3>
+					);
 				},
 				blockquote({ children }) {
 					return (
@@ -293,14 +335,14 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					);
 				},
 				thead({ children }) {
-					return (
-						<thead className="bg-muted/50">
-							{children}
-						</thead>
-					);
+					return <thead className="bg-muted/50">{children}</thead>;
 				},
 				tbody({ children }) {
-					return <tbody className="divide-y divide-border">{children}</tbody>;
+					return (
+						<tbody className="divide-y divide-border">
+							{children}
+						</tbody>
+					);
 				},
 				tr({ children }) {
 					return (
@@ -311,37 +353,55 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 				},
 				th({ children, style }) {
 					// Handle text alignment from GFM
-					const align = style?.textAlign as "left" | "center" | "right" | undefined;
-					const alignClass = align === "center" 
-						? "text-center" 
-						: align === "right" 
-							? "text-right" 
+					const align = style?.textAlign as
+						| "left"
+						| "center"
+						| "right"
+						| undefined;
+					const alignClass =
+						align === "center"
+							? "text-center"
+							: align === "right"
+							? "text-right"
 							: "text-left";
-					
+
 					return (
-						<th className={`px-4 py-2.5 font-semibold text-foreground ${alignClass}`}>
+						<th
+							className={`px-4 py-2.5 font-semibold text-foreground ${alignClass}`}
+						>
 							{children}
 						</th>
 					);
 				},
 				td({ children, style }) {
 					// Handle text alignment from GFM
-					const align = style?.textAlign as "left" | "center" | "right" | undefined;
-					const alignClass = align === "center" 
-						? "text-center" 
-						: align === "right" 
-							? "text-right" 
+					const align = style?.textAlign as
+						| "left"
+						| "center"
+						| "right"
+						| undefined;
+					const alignClass =
+						align === "center"
+							? "text-center"
+							: align === "right"
+							? "text-right"
 							: "text-left";
-					
+
 					return (
-						<td className={`px-4 py-2.5 text-muted-foreground ${alignClass}`}>
+						<td
+							className={`px-4 py-2.5 text-muted-foreground ${alignClass}`}
+						>
 							{children}
 						</td>
 					);
 				},
 				// Strikethrough support from GFM
 				del({ children }) {
-					return <del className="text-muted-foreground line-through">{children}</del>;
+					return (
+						<del className="text-muted-foreground line-through">
+							{children}
+						</del>
+					);
 				},
 				// Task list support from GFM
 				input({ checked, disabled, ...props }) {

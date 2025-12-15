@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
@@ -9,6 +10,12 @@ const isProd = process.env.NODE_ENV === "production";
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
+		TanStackRouterVite({
+			routesDirectory: "./src/routes",
+			generatedRouteTree: "./src/routeTree.gen.ts",
+			routeFileIgnorePattern: ".test.",
+			quoteStyle: "double",
+		}),
 		react({
 			babel: {
 				plugins: [["babel-plugin-react-compiler"]],

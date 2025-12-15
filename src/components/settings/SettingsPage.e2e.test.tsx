@@ -2,14 +2,17 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-// Mock navigation with all needed exports
-vi.mock("@/lib/stores/navigation", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/stores/navigation")>();
-	return {
-		...actual,
-		goBack: vi.fn(),
-	};
-});
+// Mock navigation hook
+const mockGoBack = vi.fn();
+vi.mock("@/lib/hooks/useNavigation", () => ({
+	useNavigation: () => ({
+		goBack: mockGoBack,
+		goToSettings: vi.fn(),
+		goToUsage: vi.fn(),
+		goToChat: vi.fn(),
+		navigate: vi.fn(),
+	}),
+}));
 
 vi.mock("@/lib/ai/compat", () => ({
 	checkBuiltInAIAvailability: vi.fn().mockResolvedValue({
@@ -32,7 +35,6 @@ import {
 	setTimezone,
 } from "@/lib/stores/settings";
 import { conversationsAtom, clearAllConversations } from "@/lib/stores/conversations";
-import { goBack } from "@/lib/stores/navigation";
 
 describe("SettingsPage E2E", () => {
 	beforeEach(() => {
@@ -64,7 +66,7 @@ describe("SettingsPage E2E", () => {
 			const buttons = screen.getAllByRole("button");
 			await user.click(buttons[0]);
 
-			expect(goBack).toHaveBeenCalled();
+			expect(mockGoBack).toHaveBeenCalled();
 		});
 	});
 

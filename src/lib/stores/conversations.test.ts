@@ -24,7 +24,7 @@ import {
 	type Conversation,
 } from "./conversations";
 import { messagesAtom } from "./chat";
-import { activeChatIdAtom } from "./navigation";
+import { activeChatIdAtom } from "./conversations";
 
 describe("conversations store", () => {
 	beforeEach(() => {

@@ -38,7 +38,7 @@ export interface SettingsPageUIProps {
 	currentTheme: Theme;
 	temperatureUnit: TemperatureUnit;
 	timezone: TimezonePreference;
-	systemTimezone: string;
+	systemTimezone: string | null;
 	conversationCount: number;
 	activeCount: number;
 	archivedCount: number;
@@ -304,13 +304,17 @@ export const SettingsPageUI = ({
 							>
 								<div className="flex flex-col items-start">
 									<span className="text-sm font-medium">Auto (System)</span>
-									<span className={cn(
-										"text-xs",
-										timezone === "auto"
-											? "text-primary-foreground/70"
-											: "text-muted-foreground"
-									)}>
-										{systemTimezone}
+									<span
+										className={cn(
+											"text-xs",
+											timezone === "auto"
+												? "text-primary-foreground/70"
+												: "text-muted-foreground"
+										)}
+									>
+										{systemTimezone ?? (
+											<span className="inline-block h-4 w-24 animate-pulse rounded bg-muted" />
+										)}
 									</span>
 								</div>
 								{timezone === "auto" && (

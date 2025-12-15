@@ -4,13 +4,19 @@ import userEvent from "@testing-library/user-event";
 import { SettingsPanel } from "./SettingsPanel";
 import { SettingsPanelUI } from "./SettingsPanel.ui";
 
-// Mock navigation
-vi.mock("@/lib/stores/navigation", () => ({
-	goToSettings: vi.fn(),
-	goToUsage: vi.fn(),
-}));
+// Mock navigation hook
+const mockGoToSettings = vi.fn();
+const mockGoToUsage = vi.fn();
 
-import { goToSettings, goToUsage } from "@/lib/stores/navigation";
+vi.mock("@/lib/hooks/useNavigation", () => ({
+	useNavigation: () => ({
+		goToSettings: mockGoToSettings,
+		goToUsage: mockGoToUsage,
+		goToChat: vi.fn(),
+		goBack: vi.fn(),
+		navigate: vi.fn(),
+	}),
+}));
 
 describe("SettingsPanel", () => {
 	beforeEach(() => {
@@ -46,7 +52,7 @@ describe("SettingsPanel", () => {
 			const settingsButton = screen.getByRole("button", { name: /settings/i });
 			await user.click(settingsButton);
 
-			expect(goToSettings).toHaveBeenCalledTimes(1);
+			expect(mockGoToSettings).toHaveBeenCalledTimes(1);
 		});
 
 		it("should call goToUsage when usage button is clicked", async () => {
@@ -56,7 +62,7 @@ describe("SettingsPanel", () => {
 			const usageButton = screen.getByRole("button", { name: /usage/i });
 			await user.click(usageButton);
 
-			expect(goToUsage).toHaveBeenCalledTimes(1);
+			expect(mockGoToUsage).toHaveBeenCalledTimes(1);
 		});
 
 		it("should not call wrong handler when button is clicked", async () => {
@@ -64,12 +70,12 @@ describe("SettingsPanel", () => {
 			render(<SettingsPanel />);
 
 			await user.click(screen.getByRole("button", { name: /settings/i }));
-			expect(goToUsage).not.toHaveBeenCalled();
+			expect(mockGoToUsage).not.toHaveBeenCalled();
 
 			vi.clearAllMocks();
 
 			await user.click(screen.getByRole("button", { name: /usage/i }));
-			expect(goToSettings).not.toHaveBeenCalled();
+			expect(mockGoToSettings).not.toHaveBeenCalled();
 		});
 	});
 });
@@ -170,4 +176,3 @@ describe("SettingsPanelUI", () => {
 		});
 	});
 });
-

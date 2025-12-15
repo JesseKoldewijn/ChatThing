@@ -33,7 +33,7 @@ import {
 	type ExportData,
 } from "./conversations";
 import { messagesAtom } from "./chat";
-import { activeChatIdAtom } from "./navigation";
+import { activeChatIdAtom } from "./conversations";
 import { archiveThresholdAtom } from "./settings";
 
 describe("conversations store extended tests", () => {

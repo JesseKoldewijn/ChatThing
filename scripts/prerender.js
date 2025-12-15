@@ -38,8 +38,8 @@ async function prerender() {
 		try {
 			console.log(`  Rendering: ${route}`);
 
-			// Render the route
-			const { html: appHtml, head } = render(route);
+			// Render the route (now async with TanStack Router)
+			const { html: appHtml, head } = await render(route);
 
 			// Inject the rendered HTML into the template
 			let finalHtml = template;

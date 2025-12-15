@@ -1,13 +1,24 @@
 import { atom, onMount } from "nanostores";
 import { messagesAtom, clearMessages, type Message, saveImagesToIndexedDB } from "./chat";
 import { generateConversationTitle, needsTitleGeneration } from "@/lib/ai/titleGenerator";
-import { activeChatIdAtom, setActiveChat } from "./navigation";
 import { archiveThresholdAtom, thresholdToHours } from "./settings";
 import { isHydratedAtom } from "./hydration";
 import { deleteConversationImages, clearAllImages } from "./imageStorage";
 
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
+
+// Active conversation ID atom
+export const activeChatIdAtom = atom<string | null>(null);
+
+/**
+ * Set the active chat ID
+ * @param id - The chat ID to set as active, or null to clear
+ * @param _replace - Unused, kept for backward compatibility
+ */
+export const setActiveChat = (id: string | null, _replace = false) => {
+	activeChatIdAtom.set(id);
+};
 
 export type ConversationStatus = "active" | "archived" | "deleted";
 
@@ -25,7 +36,7 @@ export interface Conversation {
 // All conversations
 export const conversationsAtom = atom<Conversation[]>([]);
 
-// Re-export for backward compatibility
+// Alias for backward compatibility
 export { activeChatIdAtom as activeConversationIdAtom };
 
 // Track which conversations are generating titles to avoid duplicates

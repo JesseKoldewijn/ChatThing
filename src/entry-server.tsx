@@ -1,22 +1,93 @@
-import { renderToString } from "react-dom/server";
-import App from "./App";
-import { setSSRInitialRoute } from "@/lib/stores/navigation";
+import { StrictMode } from "react";
+import { renderToPipeableStream, renderToString } from "react-dom/server";
+import {
+	createMemoryHistory,
+	RouterProvider,
+} from "@tanstack/react-router";
+import { createAppRouter } from "./router";
 
-export interface RenderResult {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PipeableStream = ReturnType<typeof renderToPipeableStream>;
+
+export interface StreamRenderResult {
+	pipe: PipeableStream["pipe"];
+	abort: PipeableStream["abort"];
+}
+
+export interface StringRenderResult {
 	html: string;
 	head?: string;
 }
 
 /**
- * Render the app to a string for SSR/pre-rendering
+ * Render the app to a pipeable stream for SSR streaming
+ * @param url - The URL path to render (e.g., "/" or "/settings")
+ * @param options - Streaming options
+ */
+export function renderToStream(
+	url: string,
+	options?: {
+		onShellReady?: () => void;
+		onShellError?: (error: unknown) => void;
+		onAllReady?: () => void;
+		onError?: (error: unknown) => void;
+	}
+): StreamRenderResult {
+	// Create router with memory history for SSR
+	const router = createAppRouter();
+	const memoryHistory = createMemoryHistory({
+		initialEntries: [url],
+	});
+
+	// Update router to use memory history
+	router.update({
+		history: memoryHistory,
+	});
+
+	// Load the route before rendering
+	router.load();
+
+	const { pipe, abort } = renderToPipeableStream(
+		<StrictMode>
+			<RouterProvider router={router} />
+		</StrictMode>,
+		{
+			onShellReady: options?.onShellReady,
+			onShellError: options?.onShellError,
+			onAllReady: options?.onAllReady,
+			onError: options?.onError,
+		}
+	);
+
+	return { pipe, abort };
+}
+
+/**
+ * Render the app to a string for pre-rendering (static generation)
+ * Uses streaming internally but collects to string
  * @param url - The URL path to render (e.g., "/" or "/settings")
  */
-export function render(url: string): RenderResult {
-	// Set the initial route in the store before rendering
-	setSSRInitialRoute(url);
+export async function render(url: string): Promise<StringRenderResult> {
+	// Create router with memory history for SSR
+	const router = createAppRouter();
+	const memoryHistory = createMemoryHistory({
+		initialEntries: [url],
+	});
 
-	// Render the app with the initial route
-	const html = renderToString(<App initialRoute={url} />);
+	// Update router to use memory history
+	router.update({
+		history: memoryHistory,
+	});
+
+	// Load the route before rendering
+	await router.load();
+
+	// Render to string (for pre-rendering/static generation)
+	const html = renderToString(
+		<StrictMode>
+			<RouterProvider router={router} />
+		</StrictMode>
+	);
 
 	// Generate head content based on route
 	const head = getHeadForRoute(url);
@@ -63,4 +134,3 @@ function getHeadForRoute(url: string): string {
 export function getRoutesToPrerender(): string[] {
 	return ["/", "/settings", "/usage"];
 }
-

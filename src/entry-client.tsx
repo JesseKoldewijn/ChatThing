@@ -1,13 +1,12 @@
 import { StrictMode } from "react";
 import { hydrateRoot, createRoot } from "react-dom/client";
-import App from "./App";
-import { setSSRInitialRoute } from "@/lib/stores/navigation";
+import { RouterProvider } from "@tanstack/react-router";
+import { createAppRouter } from "./router";
+import { markHydrated } from "@/lib/stores/hydration";
 import "@/styles/globals.css";
 
-// Initialize navigation state from URL BEFORE React renders
-// This ensures sidebar state matches URL on first render (avoiding flash)
-const initialUrl = window.location.pathname + window.location.search;
-setSSRInitialRoute(initialUrl);
+// Create the router instance
+const router = createAppRouter();
 
 const rootElement = document.getElementById("root")!;
 
@@ -19,14 +18,20 @@ if (hasPrerenderedContent) {
 	hydrateRoot(
 		rootElement,
 		<StrictMode>
-			<App />
+			<RouterProvider router={router} />
 		</StrictMode>
 	);
 } else {
 	// Fallback to client-side rendering (dev mode or if pre-render failed)
 	createRoot(rootElement).render(
 		<StrictMode>
-			<App />
+			<RouterProvider router={router} />
 		</StrictMode>
 	);
 }
+
+// Mark hydration as complete after React has hydrated
+// This allows stores to safely read from localStorage
+requestIdleCallback(() => {
+	markHydrated();
+}, { timeout: 100 });
