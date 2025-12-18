@@ -79,6 +79,12 @@ export const getResolvedTimezone = (): string => {
 // AI model settings
 export const aiSettingsAtom = atom<BuiltInAIChatSettings>({});
 
+// AI Provider settings
+export type ProviderType = "prompt-api" | "open-router";
+export const providerTypeAtom = atom<ProviderType>("open-router");
+export const openRouterApiKeyAtom = atom<string>("");
+export const openRouterModelAtom = atom<string>("mistralai/devstral-2512:free");
+
 // Archive threshold units
 export type ArchiveThresholdUnit = "hours" | "days" | "weeks" | "months";
 
@@ -134,6 +140,11 @@ const TIMEZONE_KEY = "timezone";
 
 // Storage key for output language
 const OUTPUT_LANGUAGE_KEY = "output-language";
+
+// Storage keys for AI providers
+const PROVIDER_TYPE_KEY = "ai-provider-type";
+const OPENROUTER_API_KEY_KEY = "openrouter-api-key";
+const OPENROUTER_MODEL_KEY = "openrouter-model";
 
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
@@ -212,6 +223,28 @@ const loadOutputLanguageFromStorage = () => {
 		// Fall back to browser detection if no stored preference
 		const detected = detectBrowserLanguage();
 		outputLanguageAtom.set(detected);
+	}
+};
+
+/**
+ * Load AI provider settings from localStorage
+ */
+const loadAiProviderSettingsFromStorage = () => {
+	if (!isBrowser) return;
+	
+	const type = localStorage.getItem(PROVIDER_TYPE_KEY) as ProviderType | null;
+	if (type && ["prompt-api", "open-router"].includes(type)) {
+		providerTypeAtom.set(type);
+	}
+	
+	const apiKey = localStorage.getItem(OPENROUTER_API_KEY_KEY);
+	if (apiKey) {
+		openRouterApiKeyAtom.set(apiKey);
+	}
+	
+	const model = localStorage.getItem(OPENROUTER_MODEL_KEY);
+	if (model) {
+		openRouterModelAtom.set(model);
 	}
 };
 
@@ -320,6 +353,25 @@ onMount(archiveThresholdAtom, () => {
 	return unsubscribe;
 });
 
+// Initialize AI provider settings
+onMount(providerTypeAtom, () => {
+	if (!isBrowser) return;
+	
+	if (isHydratedAtom.get()) {
+		loadAiProviderSettingsFromStorage();
+		return;
+	}
+	
+	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
+		if (hydrated) {
+			loadAiProviderSettingsFromStorage();
+			unsubscribe();
+		}
+	});
+	
+	return unsubscribe;
+});
+
 // Actions
 export const setTheme = (theme: Theme) => {
 	themeAtom.set(theme);
@@ -331,6 +383,27 @@ export const setTheme = (theme: Theme) => {
 
 export const updateAiSettings = (settings: Partial<BuiltInAIChatSettings>) => {
 	aiSettingsAtom.set({ ...aiSettingsAtom.get(), ...settings });
+};
+
+export const setProviderType = (type: ProviderType) => {
+	providerTypeAtom.set(type);
+	if (isBrowser) {
+		localStorage.setItem(PROVIDER_TYPE_KEY, type);
+	}
+};
+
+export const setOpenRouterApiKey = (key: string) => {
+	openRouterApiKeyAtom.set(key);
+	if (isBrowser) {
+		localStorage.setItem(OPENROUTER_API_KEY_KEY, key);
+	}
+};
+
+export const setOpenRouterModel = (model: string) => {
+	openRouterModelAtom.set(model);
+	if (isBrowser) {
+		localStorage.setItem(OPENROUTER_MODEL_KEY, model);
+	}
 };
 
 export const setTemperatureUnit = (unit: TemperatureUnit) => {

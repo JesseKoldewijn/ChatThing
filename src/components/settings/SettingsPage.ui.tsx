@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NumberStepper } from "@/components/ui/number-stepper";
@@ -24,6 +24,11 @@ import {
 	AlertTriangle,
 	Thermometer,
 	Globe,
+	Zap,
+	Key,
+	Cpu,
+	Eye,
+	EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -32,13 +37,20 @@ import type {
 	ArchiveThresholdUnit,
 	TemperatureUnit,
 	TimezonePreference,
+	ProviderType,
 } from "@/lib/stores/settings";
+import type { OpenRouterModel } from "@/lib/ai/open-router/models";
 
 export interface SettingsPageUIProps {
 	currentTheme: Theme;
 	temperatureUnit: TemperatureUnit;
 	timezone: TimezonePreference;
 	systemTimezone: string | null;
+	providerType: ProviderType;
+	openRouterApiKey: string;
+	openRouterModel: string;
+	openRouterModels: OpenRouterModel[];
+	isLoadingModels: boolean;
 	conversationCount: number;
 	activeCount: number;
 	archivedCount: number;
@@ -48,6 +60,9 @@ export interface SettingsPageUIProps {
 	onThemeChange: (theme: Theme) => void;
 	onTemperatureUnitChange: (unit: TemperatureUnit) => void;
 	onTimezoneChange: (timezone: TimezonePreference) => void;
+	onProviderTypeChange: (type: ProviderType) => void;
+	onOpenRouterApiKeyChange: (key: string) => void;
+	onOpenRouterModelChange: (model: string) => void;
 	onArchiveThresholdChange: (threshold: ArchiveThreshold) => void;
 	onExport: () => void;
 	onImport: (file: File, mode: "merge" | "replace") => void;
@@ -154,6 +169,11 @@ export const SettingsPageUI = ({
 	temperatureUnit,
 	timezone,
 	systemTimezone,
+	providerType,
+	openRouterApiKey,
+	openRouterModel,
+	openRouterModels,
+	isLoadingModels,
 	activeCount,
 	archivedCount,
 	deletedCount,
@@ -162,6 +182,9 @@ export const SettingsPageUI = ({
 	onThemeChange,
 	onTemperatureUnitChange,
 	onTimezoneChange,
+	onProviderTypeChange,
+	onOpenRouterApiKeyChange,
+	onOpenRouterModelChange,
 	onArchiveThresholdChange,
 	onExport,
 	onImport,
@@ -170,6 +193,35 @@ export const SettingsPageUI = ({
 	onBack,
 }: SettingsPageUIProps) => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const suggestionsRef = useRef<HTMLDivElement>(null);
+	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [showApiKey, setShowApiKey] = useState(false);
+
+	const filteredModels = useMemo(() => {
+		if (!openRouterModel) return openRouterModels.slice(0, 20);
+		const search = openRouterModel.toLowerCase();
+		return openRouterModels
+			.filter(
+				(m) =>
+					m.id.toLowerCase().includes(search) ||
+					m.name.toLowerCase().includes(search)
+			)
+			.slice(0, 20);
+	}, [openRouterModels, openRouterModel]);
+
+	// Close suggestions when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				suggestionsRef.current &&
+				!suggestionsRef.current.contains(event.target as Node)
+			) {
+				setShowSuggestions(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -351,6 +403,154 @@ export const SettingsPageUI = ({
 									</SelectContent>
 								</Select>
 							</div>
+						</div>
+					</SettingsSection>
+
+					{/* AI Provider */}
+					<SettingsSection
+						icon={Zap}
+						title="AI Provider"
+						description="Choose which AI backend to use"
+						testId="settings-section-ai-provider"
+					>
+						<div className="space-y-4">
+							<div className="flex flex-wrap gap-2">
+								{[
+									{
+										value: "prompt-api" as ProviderType,
+										label: "Prompt API",
+										description: "Built-in browser AI",
+									},
+									{
+										value: "open-router" as ProviderType,
+										label: "OpenRouter",
+										description: "Cloud-based models",
+									},
+								].map(({ value, label, description }) => (
+									<button
+										key={value}
+										data-testid={`provider-button-${value}`}
+										onClick={() => onProviderTypeChange(value)}
+										className={cn(
+											"flex flex-1 min-w-[120px] flex-col items-center justify-center gap-0.5 rounded-lg border px-4 py-2.5 transition-all",
+											providerType === value
+												? "border-primary bg-primary text-primary-foreground"
+												: "border-border bg-background hover:bg-muted"
+										)}
+									>
+										<span className="text-sm font-medium">{label}</span>
+										<span className={cn(
+											"text-[10px]",
+											providerType === value
+												? "text-primary-foreground/70"
+												: "text-muted-foreground"
+										)}>
+											{description}
+										</span>
+									</button>
+								))}
+							</div>
+
+							{providerType === "open-router" && (
+								<div className="space-y-3 rounded-lg bg-muted/50 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+									<div className="space-y-1.5">
+										<label className="flex items-center gap-2 text-xs font-medium text-foreground">
+											<Key className="h-3 w-3" />
+											OpenRouter API Key
+										</label>
+										<div className="relative">
+											<input
+												type={showApiKey ? "text" : "password"}
+												value={showApiKey ? openRouterApiKey : (openRouterApiKey ? "••••••••••••••••" : "")}
+												onChange={(e) => {
+													if (showApiKey) {
+														onOpenRouterApiKeyChange(e.target.value);
+													}
+												}}
+												readOnly={!showApiKey}
+												placeholder="sk-or-v1-..."
+												className={cn(
+													"w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pr-9",
+													!showApiKey && openRouterApiKey && "cursor-pointer"
+												)}
+												onClick={() => !showApiKey && setShowApiKey(true)}
+											/>
+											<button
+												type="button"
+												onClick={() => setShowApiKey(!showApiKey)}
+												className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+												title={showApiKey ? "Hide API Key" : "Show API Key"}
+											>
+												{showApiKey ? (
+													<EyeOff className="h-4 w-4" />
+												) : (
+													<Eye className="h-4 w-4" />
+												)}
+											</button>
+										</div>
+										<p className="text-[10px] text-muted-foreground">
+											Your API key is stored locally in your browser.
+										</p>
+									</div>
+
+									<div className="space-y-1.5">
+										<label className="flex items-center gap-2 text-xs font-medium text-foreground">
+											<Cpu className="h-3 w-3" />
+											Model
+											{isLoadingModels && (
+												<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+											)}
+										</label>
+										<div className="relative" ref={suggestionsRef}>
+											<input
+												type="text"
+												value={openRouterModel}
+												onFocus={() => setShowSuggestions(true)}
+												onChange={(e) => {
+													onOpenRouterModelChange(e.target.value);
+													setShowSuggestions(true);
+												}}
+												placeholder="mistralai/devstral-2512:free"
+												className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+											/>
+											{showSuggestions && filteredModels.length > 0 && (
+												<div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in zoom-in-95">
+													<ScrollArea className="max-h-[250px]">
+														<div className="p-1">
+															{filteredModels.map((model) => (
+																<button
+																	key={model.id}
+																	onClick={() => {
+																		onOpenRouterModelChange(model.id);
+																		setShowSuggestions(false);
+																	}}
+																	className="flex w-full flex-col items-start rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+																>
+																	<span className="font-medium">
+																		{model.name}
+																	</span>
+																	<span className="text-[10px] text-muted-foreground">
+																		{model.id}
+																	</span>
+																</button>
+															))}
+														</div>
+													</ScrollArea>
+												</div>
+											)}
+										</div>
+										<p className="text-[10px] text-muted-foreground">
+											Specify the OpenRouter model identifier.
+										</p>
+									</div>
+								</div>
+							)}
+
+							{providerType === "prompt-api" && (
+								<p className="text-xs text-muted-foreground">
+									Prompt API uses the built-in AI model in your browser (Chrome/Edge v138+).
+								</p>
+							)}
 						</div>
 					</SettingsSection>
 

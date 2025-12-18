@@ -9,10 +9,11 @@ vi.mock("./imageStorage", () => ({
 	getImages: vi.fn().mockResolvedValue(new Map()),
 }));
 
-// Mock titleGenerator
-vi.mock("@/lib/ai/titleGenerator", () => ({
-	generateConversationTitle: vi.fn().mockResolvedValue("Generated Title"),
-	needsTitleGeneration: vi.fn((title: string) => title === "New Chat" || title === ""),
+// Mock AI manager
+vi.mock("@/lib/ai", () => ({
+	getAIManager: vi.fn(() => ({
+		generateTitle: vi.fn().mockResolvedValue("Generated Title"),
+	})),
 }));
 
 import {
@@ -35,6 +36,7 @@ import {
 import { messagesAtom } from "./chat";
 import { activeChatIdAtom } from "./conversations";
 import { archiveThresholdAtom } from "./settings";
+import { getAIManager } from "@/lib/ai";
 
 describe("conversations store extended tests", () => {
 	beforeEach(() => {
@@ -203,16 +205,16 @@ describe("conversations store extended tests", () => {
 				title: "New Chat",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				messages: [],
+				messages: [{ id: "m1", role: "user", content: "Hello", transactionId: "t1", timestamp: Date.now() }],
 				status: "active",
 			};
 			conversationsAtom.set([conv]);
 
-			expect(() => triggerTitleGeneration("title-1", "Hello world")).not.toThrow();
+			expect(() => triggerTitleGeneration("title-1")).not.toThrow();
 		});
 
 		it("should not trigger for non-existent conversation", () => {
-			expect(() => triggerTitleGeneration("non-existent", "Hello")).not.toThrow();
+			expect(() => triggerTitleGeneration("non-existent")).not.toThrow();
 		});
 
 		it("should not trigger if title already set", () => {
@@ -221,13 +223,28 @@ describe("conversations store extended tests", () => {
 				title: "Already Named",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				messages: [],
+				messages: [{ id: "m1", role: "user", content: "Hello", transactionId: "t1", timestamp: Date.now() }],
 				status: "active",
 			};
 			conversationsAtom.set([conv]);
 
 			// Should not throw, but also shouldn't generate
-			expect(() => triggerTitleGeneration("titled-1", "Hello")).not.toThrow();
+			expect(() => triggerTitleGeneration("titled-1")).not.toThrow();
+		});
+
+		it("should trigger if forced even if already named", () => {
+			const conv: Conversation = {
+				id: "forced-1",
+				title: "Already Named",
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+				messages: [{ id: "m1", role: "user", content: "Hello", transactionId: "t1", timestamp: Date.now() }],
+				status: "active",
+			};
+			conversationsAtom.set([conv]);
+
+			triggerTitleGeneration("forced-1", true);
+			expect(vi.mocked(getAIManager)).toHaveBeenCalled();
 		});
 	});
 

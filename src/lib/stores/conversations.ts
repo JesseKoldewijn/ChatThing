@@ -5,10 +5,7 @@ import {
 	type Message,
 	saveImagesToIndexedDB,
 } from "./chat";
-import {
-	generateConversationTitle,
-	needsTitleGeneration,
-} from "@/lib/ai/titleGenerator";
+import { getAIManager } from "@/lib/ai";
 import { archiveThresholdAtom, thresholdToHours } from "./settings";
 import { isHydratedAtom } from "./hydration";
 import { deleteConversationImages, clearAllImages } from "./imageStorage";
@@ -19,12 +16,20 @@ const isBrowser = typeof window !== "undefined";
 // Active conversation ID atom
 export const activeChatIdAtom = atom<string | null>(null);
 
+// Flag to indicate a sync from URL is in progress to avoid circular updates
+export const isSyncingFromUrlAtom = atom<boolean>(false);
+
 /**
  * Set the active chat ID
  * @param id - The chat ID to set as active, or null to clear
+ * @param syncToUrl - Whether to trigger a sync to URL (internal use)
  */
-export const setActiveChat = (id: string | null) => {
+export const setActiveChat = (id: string | null, syncToUrl = true) => {
+	isSyncingFromUrlAtom.set(!syncToUrl);
 	activeChatIdAtom.set(id);
+	queueMicrotask(() => {
+		isSyncingFromUrlAtom.set(false);
+	});
 };
 
 export type ConversationStatus = "active" | "archived" | "deleted";
@@ -328,6 +333,9 @@ export const createConversation = (title?: string): Conversation => {
 };
 
 export const switchConversation = (id: string) => {
+	// Mark that we are syncing to avoid circular updates if this was triggered by URL change
+	// But actually switchConversation is usually UI-triggered
+	
 	// Save current conversation first
 	saveCurrentConversation();
 
@@ -397,7 +405,8 @@ const generateTitleAsync = async (
 	}
 
 	try {
-		const title = await generateConversationTitle(firstMessage);
+		const manager = getAIManager();
+		const title = await manager.generateTitle(firstMessage);
 
 		// Update the conversation with the generated title
 		const currentConversations = conversationsAtom.get();
@@ -444,21 +453,29 @@ const generateTitleAsync = async (
 
 /**
  * Trigger title generation for a conversation immediately
- * Called when the first message is sent to generate title in parallel with AI response
+ * @param conversationId - The ID of the conversation
+ * @param force - If true, regenerates even if a title already exists
  */
 export const triggerTitleGeneration = (
 	conversationId: string,
-	firstMessage: string
+	force = false
 ): void => {
 	const conversations = conversationsAtom.get();
 	const conversation = conversations.find((c) => c.id === conversationId);
 
-	// Only generate if conversation exists and needs a title
-	if (
-		conversation &&
-		needsTitleGeneration(conversation.title) &&
-		!titleGenerationInProgress.has(conversationId)
-	) {
+	if (!conversation) return;
+
+	// For re-generation, we need the first message
+	const firstMessage =
+		conversation.messages.find((m) => m.role === "user")?.content || "";
+
+	if (!firstMessage) return;
+
+	// Only generate if conversation needs a title or if forced
+	const needsTitle =
+		force || !conversation.title || conversation.title === "New Chat";
+
+	if (needsTitle && !titleGenerationInProgress.has(conversationId)) {
 		generateTitleAsync(conversationId, firstMessage);
 	}
 };

@@ -11,10 +11,17 @@ import {
 	timezoneAtom,
 	setTimezone,
 	getSystemTimezone,
+	providerTypeAtom,
+	setProviderType,
+	openRouterApiKeyAtom,
+	setOpenRouterApiKey,
+	openRouterModelAtom,
+	setOpenRouterModel,
 	type Theme,
 	type ArchiveThreshold,
 	type TemperatureUnit,
 	type TimezonePreference,
+	type ProviderType,
 } from "@/lib/stores/settings";
 import {
 	conversationsAtom,
@@ -25,6 +32,7 @@ import {
 	runAutoArchive,
 } from "@/lib/stores/conversations";
 import { useNavigation } from "@/lib/hooks/useNavigation";
+import { fetchOpenRouterModels, openRouterModelsAtom, isLoadingModelsAtom } from "@/lib/ai/open-router/models";
 
 export const SettingsPage = () => {
 	const { goBack } = useNavigation();
@@ -33,6 +41,11 @@ export const SettingsPage = () => {
 	const archiveThreshold = useStore(archiveThresholdAtom);
 	const temperatureUnit = useStore(temperatureUnitAtom);
 	const timezone = useStore(timezoneAtom);
+	const providerType = useStore(providerTypeAtom);
+	const openRouterApiKey = useStore(openRouterApiKeyAtom);
+	const openRouterModel = useStore(openRouterModelAtom);
+	const openRouterModels = useStore(openRouterModelsAtom);
+	const isLoadingModels = useStore(isLoadingModelsAtom);
 	const [isImporting, setIsImporting] = useState(false);
 	
 	// Defer system timezone detection to avoid SSR hydration mismatch
@@ -42,6 +55,9 @@ export const SettingsPage = () => {
 	
 	useEffect(() => {
 		setSystemTimezone(getSystemTimezone());
+		
+		// Fetch OpenRouter models if provider is active or when page mounts
+		fetchOpenRouterModels();
 	}, []);
 
 	// Calculate counts by status
@@ -61,6 +77,18 @@ export const SettingsPage = () => {
 
 	const handleTimezoneChange = useCallback((tz: TimezonePreference) => {
 		setTimezone(tz);
+	}, []);
+
+	const handleProviderTypeChange = useCallback((type: ProviderType) => {
+		setProviderType(type);
+	}, []);
+
+	const handleOpenRouterApiKeyChange = useCallback((key: string) => {
+		setOpenRouterApiKey(key);
+	}, []);
+
+	const handleOpenRouterModelChange = useCallback((model: string) => {
+		setOpenRouterModel(model);
 	}, []);
 
 	const handleArchiveThresholdChange = useCallback((threshold: ArchiveThreshold) => {
@@ -115,6 +143,11 @@ export const SettingsPage = () => {
 			temperatureUnit={temperatureUnit}
 			timezone={timezone}
 			systemTimezone={systemTimezone}
+			providerType={providerType}
+			openRouterApiKey={openRouterApiKey}
+			openRouterModel={openRouterModel}
+			openRouterModels={openRouterModels}
+			isLoadingModels={isLoadingModels}
 			conversationCount={conversations.length}
 			activeCount={activeCount}
 			archivedCount={archivedCount}
@@ -124,6 +157,9 @@ export const SettingsPage = () => {
 			onThemeChange={handleThemeChange}
 			onTemperatureUnitChange={handleTemperatureUnitChange}
 			onTimezoneChange={handleTimezoneChange}
+			onProviderTypeChange={handleProviderTypeChange}
+			onOpenRouterApiKeyChange={handleOpenRouterApiKeyChange}
+			onOpenRouterModelChange={handleOpenRouterModelChange}
 			onArchiveThresholdChange={handleArchiveThresholdChange}
 			onExport={handleExport}
 			onImport={handleImport}

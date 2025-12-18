@@ -1,4 +1,5 @@
 import { atom } from "nanostores";
+import { providerTypeAtom } from "./settings";
 
 export type ErrorCategory = 
 	| "network"      // Network/connection issues
@@ -105,6 +106,15 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
 		};
 	}
 
+	// Image support errors
+	if (message.includes("no endpoints found that support image input") || message.includes("multimodal")) {
+		return {
+			category: "model",
+			title: "Image Input Not Supported",
+			isRetryable: false,
+		};
+	}
+
 	// API errors (generic)
 	if (
 		message.includes("api") ||
@@ -139,8 +149,19 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 		case "context":
 			return "Your message or conversation is too long. Try starting a new conversation or sending a shorter message.";
 		
-		case "model":
+		case "model": {
+			const providerType = providerTypeAtom.get();
+			const msg = error.message.toLowerCase();
+			if (msg.includes("image input") || msg.includes("multimodal")) {
+				if (providerType === "open-router") {
+					return "The selected model does not support image input. Please choose a multimodal model (like Gemini 1.5 Flash or Claude 3.5 Sonnet) to use this feature.";
+				}
+				if (providerType === "prompt-api") {
+					return "The built-in AI (Gemini Nano) requires the 'Prompt API Multimodal' flag to be enabled in Chrome (chrome://flags/#optimization-guide-on-device-multimodal) to support image input.";
+				}
+			}
 			return "The AI model is temporarily unavailable. This might be due to the model still downloading or a temporary issue. Please try again in a moment.";
+		}
 		
 		case "permission":
 			return "You don't have permission to use this feature. Please check your browser settings and ensure the Prompt API is enabled.";
