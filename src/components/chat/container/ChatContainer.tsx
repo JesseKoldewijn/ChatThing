@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { ChatContainerUI } from "./ChatContainer.ui";
 import { MessageList } from "../messages/MessageList";
@@ -20,8 +20,11 @@ import {
 import {
 	saveCurrentConversation,
 	activeConversationIdAtom,
+	setActiveChat as setActiveChatAtom,
 	createConversation,
 	triggerTitleGeneration,
+	conversationsAtom,
+	isSyncingFromUrlAtom,
 } from "@/lib/stores/conversations";
 import {
 	aiSettingsAtom,
@@ -37,10 +40,11 @@ import {
 	recordTokenUsage,
 	estimateTokens,
 } from "@/lib/stores/usage";
-import { promptAsync } from "@/lib/ai/prompt";
+import { getAIManager } from "@/lib/ai";
 import { loadingAtom } from "@/lib/ai/store";
 import { useCompatibility } from "@/lib/ai/hooks";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
+import { providerTypeAtom } from "@/lib/stores/settings";
 
 // Abort controller for stopping streams
 let abortController: AbortController | null = null;
@@ -124,11 +128,42 @@ const formatTemperature = (
 };
 
 export const ChatContainer = () => {
-	const { sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, forceCompat } =
+	const { activeChat, sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, forceCompat, setActiveChat } =
 		useChatSearchParams();
 	const activeConversationId = useStore(activeConversationIdAtom);
 	const aiSettings = useStore(aiSettingsAtom);
+	const providerType = useStore(providerTypeAtom);
 	const { compatibility } = useCompatibility();
+
+	// Sync URL -> Atom
+	useEffect(() => {
+		if (activeChat && activeChat !== activeConversationId) {
+			// Save current conversation before switching
+			saveCurrentConversation();
+			
+			// Trigger switch WITHOUT pushing back to URL (it's already there)
+			setActiveChatAtom(activeChat, false);
+			
+			// Load the messages
+			const conversations = conversationsAtom.get();
+			const conversation = conversations.find((c) => c.id === activeChat);
+			if (conversation) {
+				messagesAtom.set(conversation.messages);
+			}
+		} else if (!activeChat && activeConversationId) {
+			setActiveChatAtom(null, false);
+		}
+	}, [activeChat, activeConversationId]);
+
+	// Sync Atom -> URL
+	useEffect(() => {
+		const unsubscribe = activeConversationIdAtom.subscribe((id) => {
+			if (!isSyncingFromUrlAtom.get() && id !== activeChat) {
+				setActiveChat(id ?? undefined);
+			}
+		});
+		return unsubscribe;
+	}, [activeChat, setActiveChat]);
 
 	// Keep track of last message and images for retry functionality
 	const lastMessageRef = useRef<string>("");
@@ -188,8 +223,11 @@ export const ChatContainer = () => {
 			try {
 				abortController = new AbortController();
 
+				// Get the current manager based on settings
+				const manager = getAIManager();
+
 				// Get the stream from the AI (pass images and history)
-				const stream = await promptAsync(prompt, {
+				const stream = await manager.prompt(prompt, {
 					...aiSettings,
 					images,
 					history: currentMessages,
@@ -336,7 +374,7 @@ export const ChatContainer = () => {
 				// and to not compete with the built-in AI for concurrent requests
 				if (addUserMessage && conversationId) {
 					queueMicrotask(() => {
-						triggerTitleGeneration(conversationId, prompt);
+						triggerTitleGeneration(conversationId);
 					});
 				}
 			} catch (error) {
@@ -413,8 +451,11 @@ export const ChatContainer = () => {
 	// The compatibility check runs in the background.
 	// If incompatible, we'll show the error once the check completes.
 
-	// Show compatibility error if not compatible or if forceCompat query param is set (for testing)
-	if (forceCompat || (compatibility && !compatibility.isCompatible)) {
+	// Show compatibility error if not compatible (only for Prompt API) or if forceCompat query param is set (for testing)
+	if (
+		forceCompat ||
+		(providerType === "prompt-api" && compatibility && !compatibility.isCompatible)
+	) {
 		return <CompatibilityError />;
 	}
 

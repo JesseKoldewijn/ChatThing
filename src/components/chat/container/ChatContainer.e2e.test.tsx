@@ -17,21 +17,18 @@ function createMinimalMockStream(text: string = "Test response") {
 	};
 }
 
-vi.mock("@/lib/ai/prompt", () => ({
-	promptAsync: vi.fn(async () => createMinimalMockStream("Hello! This is a test response.")),
+vi.mock("@/lib/ai", () => ({
+	getAIManager: vi.fn(() => ({
+		prompt: vi.fn(async () => createMinimalMockStream("Hello! This is a test response.")),
+		generateTitle: vi.fn().mockResolvedValue("Test Chat"),
+	})),
 	promptStreamReader: vi.fn().mockResolvedValue([]),
-}));
-
-// Mock title generator with minimal implementation
-vi.mock("@/lib/ai/titleGenerator", () => ({
-	generateConversationTitle: vi.fn().mockResolvedValue("Test Chat"),
-	needsTitleGeneration: vi.fn().mockReturnValue(false),
 }));
 
 // Mock compatibility check but make it more realistic - it will still exercise the compatibility logic
 // The real check accesses browser APIs that may not be available in test environment
-vi.mock("@/lib/ai/compat", async () => {
-	const actual = await vi.importActual<typeof import("@/lib/ai/compat")>("@/lib/ai/compat");
+vi.mock("@/lib/ai/prompt-api/compat", async () => {
+	const actual = await vi.importActual<typeof import("@/lib/ai/prompt-api/compat")>("@/lib/ai/prompt-api/compat");
 	const browserInfo = actual.detectBrowser();
 	return {
 		...actual,
@@ -57,7 +54,7 @@ vi.mock("@/lib/ai/compat", async () => {
 // Mock useCompatibility hook to return compatible state immediately
 vi.mock("@/lib/ai/hooks", async () => {
 	const actual = await vi.importActual<typeof import("@/lib/ai/hooks")>("@/lib/ai/hooks");
-	const { detectBrowser } = await import("@/lib/ai/compat");
+	const { detectBrowser } = await import("@/lib/ai/prompt-api/compat");
 	const browserInfo = detectBrowser();
 	return {
 		...actual,

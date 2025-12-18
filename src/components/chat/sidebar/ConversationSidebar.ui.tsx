@@ -40,6 +40,7 @@ export interface ConversationSidebarUIProps {
 	onSelectConversation: (id: string) => void;
 	onDeleteConversation: (id: string) => void;
 	onRenameConversation: (id: string) => void;
+	onRegenerateTitle: (id: string) => void;
 	onArchiveConversation: (id: string) => void;
 	onUnarchiveConversation: (id: string) => void;
 	onRestoreConversation: (id: string) => void;
@@ -59,6 +60,7 @@ export const ConversationSidebarUI = ({
 	onSelectConversation,
 	onDeleteConversation,
 	onRenameConversation,
+	onRegenerateTitle,
 	onArchiveConversation,
 	onUnarchiveConversation,
 	onRestoreConversation,
@@ -200,6 +202,22 @@ export const ConversationSidebarUI = ({
 							>
 								<Pencil className="mr-2.5 h-4 w-4" />
 								Rename
+							</DropdownMenuItem>
+						)}
+
+						{/* Regenerate Title - only for active/archived */}
+						{!isDeleted && (
+							<DropdownMenuItem
+								data-testid={`conversation-regenerate-title-${conversation.id}`}
+								className="py-2.5 text-sm"
+								onClick={(e) => {
+									e.stopPropagation();
+									setOpenDropdownId(null);
+									onRegenerateTitle(conversation.id);
+								}}
+							>
+								<RotateCcw className="mr-2.5 h-4 w-4" />
+								Regenerate Title
 							</DropdownMenuItem>
 						)}
 

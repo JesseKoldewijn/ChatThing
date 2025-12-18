@@ -48,8 +48,10 @@ vi.mock("@/lib/ai/hooks", () => ({
 	})),
 }));
 
-vi.mock("@/lib/ai/prompt", () => ({
-	promptAsync: (...args: unknown[]) => mockPromptAsync(...args),
+vi.mock("@/lib/ai", () => ({
+	getAIManager: vi.fn(() => ({
+		prompt: (...args: unknown[]) => mockPromptAsync(...args),
+	})),
 }));
 
 vi.mock("ai", () => ({
@@ -82,6 +84,7 @@ vi.mock("@/lib/stores/conversations", () => ({
 vi.mock("@/lib/stores/settings", () => ({
 	aiSettingsAtom: { get: () => ({}) },
 	temperatureUnitAtom: { get: () => "auto" },
+	providerTypeAtom: { get: () => "prompt-api" },
 	getResolvedTimezone: () => "America/New_York",
 }));
 
@@ -243,7 +246,7 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 			await user.click(screen.getByTestId("send-btn"));
 
 			await waitFor(() => {
-				// Verify promptAsync was called with the message
+				// Verify the prompt was called with the message
 				expect(mockPromptAsync).toHaveBeenCalledWith(
 					"Hello AI!",
 					expect.objectContaining({

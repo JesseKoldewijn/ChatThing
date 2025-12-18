@@ -9,6 +9,7 @@ import {
 	switchConversation,
 	deleteConversation,
 	updateConversationTitle,
+	triggerTitleGeneration,
 	saveCurrentConversation,
 	archiveConversation,
 	unarchiveConversation,
@@ -103,6 +104,10 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 		}
 	}, [conversations]);
 
+	const handleRegenerateTitle = useCallback((id: string) => {
+		triggerTitleGeneration(id, true);
+	}, []);
+
 	const handleArchiveConversation = useCallback((id: string) => {
 		archiveConversation(id);
 	}, []);
@@ -122,6 +127,7 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 			onSelectConversation={handleSelectConversation}
 			onDeleteConversation={handleDeleteConversation}
 			onRenameConversation={handleRenameConversation}
+			onRegenerateTitle={handleRegenerateTitle}
 			onArchiveConversation={handleArchiveConversation}
 			onUnarchiveConversation={handleUnarchiveConversation}
 			onRestoreConversation={handleRestoreConversation}
