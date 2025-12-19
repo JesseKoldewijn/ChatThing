@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -73,28 +73,6 @@ export const ConversationSidebarUI = ({
 	archivedCount,
 	deletedCount,
 }: ConversationSidebarUIProps) => {
-	// Track which dropdown is open to prevent row click
-	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-
-	const formatDate = (timestamp: number) => {
-		const date = new Date(timestamp);
-		const now = new Date();
-		const diffDays = Math.floor(
-			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-		);
-
-		if (diffDays === 0) return "Today";
-		if (diffDays === 1) return "Yesterday";
-		if (diffDays < 7) return `${diffDays} days ago`;
-		return date.toLocaleDateString();
-	};
-
-	const handleRowClick = (conversationId: string) => {
-		// Don't trigger row click if dropdown is open
-		if (openDropdownId) return;
-		onSelectConversation(conversationId);
-	};
-
 	// Filter conversations by status
 	const activeConversations = conversations.filter(
 		(c) => c.status === "active"
@@ -105,189 +83,6 @@ export const ConversationSidebarUI = ({
 	const deletedConversations = conversations.filter(
 		(c) => c.status === "deleted"
 	);
-
-	const renderConversationItem = (conversation: ConversationItem) => {
-		const isArchived = conversation.status === "archived";
-		const isDeleted = conversation.status === "deleted";
-
-		return (
-			<div
-				key={conversation.id}
-				data-testid={`conversation-item-${conversation.id}`}
-				className={cn(
-					"group relative flex items-center rounded-lg px-3 py-3 cursor-pointer min-h-[52px]",
-					"hover:bg-sidebar-accent active:bg-sidebar-accent",
-					conversation.isActive && "bg-sidebar-accent",
-					isDeleted && "opacity-60"
-				)}
-				onClick={() => handleRowClick(conversation.id)}
-			>
-				<MessageSquare
-					className={cn(
-						"mr-2 h-4 w-4 shrink-0",
-						isArchived
-							? "text-amber-500"
-							: isDeleted
-							? "text-destructive"
-							: "text-muted-foreground"
-					)}
-				/>
-				<div className="min-w-0 flex-1 overflow-hidden">
-					{conversation.isGeneratingTitle ? (
-						<div className="flex items-center gap-1.5">
-							<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-							<span className="text-sm text-muted-foreground italic">
-								Generating title...
-							</span>
-						</div>
-					) : (
-						<p
-							className={cn(
-								"truncate text-sm font-medium max-w-[180px]",
-								isDeleted
-									? "text-muted-foreground line-through"
-									: "text-sidebar-foreground"
-							)}
-						>
-							{conversation.title}
-						</p>
-					)}
-					{/* suppressHydrationWarning: date formatting depends on current time which differs between SSR and hydration */}
-					<p
-						className="text-xs text-muted-foreground"
-						suppressHydrationWarning
-					>
-						{formatDate(conversation.updatedAt)}
-					</p>
-				</div>
-
-				{/* Actions dropdown */}
-				<DropdownMenu
-					open={openDropdownId === conversation.id}
-					onOpenChange={(open) => {
-						setOpenDropdownId(open ? conversation.id : null);
-					}}
-				>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-							data-testid={`conversation-menu-${conversation.id}`}
-							className={cn(
-								"h-10 w-10 shrink-0 transition-opacity",
-								"opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
-								openDropdownId === conversation.id &&
-									"lg:opacity-100"
-							)}
-							onClick={(e) => e.stopPropagation()}
-						>
-							<MoreVertical className="h-5 w-5" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						align="end"
-						side="bottom"
-						className="w-48 p-1.5"
-					>
-						{/* Rename - only for active/archived */}
-						{!isDeleted && (
-							<DropdownMenuItem
-								data-testid={`conversation-rename-${conversation.id}`}
-								className="py-2.5 text-sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									setOpenDropdownId(null);
-									onRenameConversation(conversation.id);
-								}}
-							>
-								<Pencil className="mr-2.5 h-4 w-4" />
-								Rename
-							</DropdownMenuItem>
-						)}
-
-						{/* Regenerate Title - only for active/archived */}
-						{!isDeleted && (
-							<DropdownMenuItem
-								data-testid={`conversation-regenerate-title-${conversation.id}`}
-								className="py-2.5 text-sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									setOpenDropdownId(null);
-									onRegenerateTitle(conversation.id);
-								}}
-							>
-								<RotateCcw className="mr-2.5 h-4 w-4" />
-								Regenerate Title
-							</DropdownMenuItem>
-						)}
-
-						{/* Archive/Unarchive - only for active/archived */}
-						{!isDeleted && (
-							<DropdownMenuItem
-								data-testid={`conversation-${isArchived ? "unarchive" : "archive"}-${conversation.id}`}
-								className="py-2.5 text-sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									setOpenDropdownId(null);
-									if (isArchived) {
-										onUnarchiveConversation(
-											conversation.id
-										);
-									} else {
-										onArchiveConversation(conversation.id);
-									}
-								}}
-							>
-								{isArchived ? (
-									<>
-										<ArchiveRestore className="mr-2.5 h-4 w-4" />
-										Unarchive
-									</>
-								) : (
-									<>
-										<Archive className="mr-2.5 h-4 w-4" />
-										Archive
-									</>
-								)}
-							</DropdownMenuItem>
-						)}
-
-						{/* Restore - only for deleted */}
-						{isDeleted && (
-							<DropdownMenuItem
-								data-testid={`conversation-restore-${conversation.id}`}
-								className="py-2.5 text-sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									setOpenDropdownId(null);
-									onRestoreConversation(conversation.id);
-								}}
-							>
-								<RotateCcw className="mr-2.5 h-4 w-4" />
-								Restore
-							</DropdownMenuItem>
-						)}
-
-						{!isDeleted && <DropdownMenuSeparator />}
-
-						{/* Delete */}
-						<DropdownMenuItem
-							data-testid={`conversation-delete-${conversation.id}`}
-							className="py-2.5 text-sm text-destructive focus:text-destructive"
-							onClick={(e) => {
-								e.stopPropagation();
-								setOpenDropdownId(null);
-								onDeleteConversation(conversation.id);
-							}}
-						>
-							<Trash2 className="mr-2.5 h-4 w-4" />
-							{isDeleted ? "Delete Forever" : "Delete"}
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-		);
-	};
 
 	const renderSection = (
 		title: string,
@@ -335,7 +130,19 @@ export const ConversationSidebarUI = ({
 
 				{(!isCollapsible || isOpen) && (
 					<div className="space-y-1">
-						{items.map(renderConversationItem)}
+						{items.map((c) => (
+							<ConversationRow
+								key={c.id}
+								conversation={c}
+								onSelect={onSelectConversation}
+								onRename={onRenameConversation}
+								onDelete={onDeleteConversation}
+								onRegenerateTitle={onRegenerateTitle}
+								onArchive={onArchiveConversation}
+								onUnarchive={onUnarchiveConversation}
+								onRestore={onRestoreConversation}
+							/>
+						))}
 					</div>
 				)}
 			</div>
@@ -425,6 +232,217 @@ export const ConversationSidebarUI = ({
 			{settingsButton && (
 				<div className="border-t p-2">{settingsButton}</div>
 			)}
+		</div>
+	);
+};
+
+/**
+ * Sub-component for a single conversation row to handle its own date formatting
+ * deterministicly between server and client.
+ */
+const ConversationRow = ({
+	conversation,
+	onSelect,
+	onRename,
+	onDelete,
+	onRegenerateTitle,
+	onArchive,
+	onUnarchive,
+	onRestore,
+}: {
+	conversation: ConversationItem;
+	onSelect: (id: string) => void;
+	onRename: (id: string) => void;
+	onDelete: (id: string) => void;
+	onRegenerateTitle: (id: string) => void;
+	onArchive: (id: string) => void;
+	onUnarchive: (id: string) => void;
+	onRestore: (id: string) => void;
+}) => {
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [displayDate, setDisplayDate] = useState("");
+
+	useEffect(() => {
+		const date = new Date(conversation.updatedAt);
+		const now = new Date();
+		const diffDays = Math.floor(
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+		);
+
+		if (diffDays === 0) setDisplayDate("Today");
+		else if (diffDays === 1) setDisplayDate("Yesterday");
+		else if (diffDays < 7) setDisplayDate(`${diffDays} days ago`);
+		else setDisplayDate(date.toLocaleDateString());
+	}, [conversation.updatedAt]);
+
+	const isArchived = conversation.status === "archived";
+	const isDeleted = conversation.status === "deleted";
+
+	return (
+		<div
+			data-testid={`conversation-item-${conversation.id}`}
+			className={cn(
+				"group relative flex items-center rounded-lg px-3 py-3 cursor-pointer min-h-[52px]",
+				"hover:bg-sidebar-accent active:bg-sidebar-accent",
+				conversation.isActive && "bg-sidebar-accent",
+				isDeleted && "opacity-60"
+			)}
+			onClick={() => !isMenuOpen && onSelect(conversation.id)}
+		>
+			<MessageSquare
+				className={cn(
+					"mr-2 h-4 w-4 shrink-0",
+					isArchived
+						? "text-amber-500"
+						: isDeleted
+						? "text-destructive"
+						: "text-muted-foreground"
+				)}
+			/>
+			<div className="min-w-0 flex-1 overflow-hidden">
+				{conversation.isGeneratingTitle ? (
+					<div className="flex items-center gap-1.5">
+						<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+						<span className="text-sm text-muted-foreground italic">
+							Generating title...
+						</span>
+					</div>
+				) : (
+					<p
+						className={cn(
+							"truncate text-sm font-medium max-w-[180px]",
+							isDeleted
+								? "text-muted-foreground line-through"
+								: "text-sidebar-foreground"
+						)}
+					>
+						{conversation.title}
+					</p>
+				)}
+				<p className="text-xs text-muted-foreground h-4">
+					{displayDate}
+				</p>
+			</div>
+
+			{/* Actions dropdown */}
+			<DropdownMenu
+				open={isMenuOpen}
+				onOpenChange={setIsMenuOpen}
+			>
+				<DropdownMenuTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon"
+						data-testid={`conversation-menu-${conversation.id}`}
+						className={cn(
+							"h-10 w-10 shrink-0 transition-opacity",
+							"opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
+							isMenuOpen && "lg:opacity-100"
+						)}
+						onClick={(e) => e.stopPropagation()}
+					>
+						<MoreVertical className="h-5 w-5" />
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					align="end"
+					side="bottom"
+					className="w-48 p-1.5"
+				>
+					{/* Rename - only for active/archived */}
+					{!isDeleted && (
+						<DropdownMenuItem
+							data-testid={`conversation-rename-${conversation.id}`}
+							className="py-2.5 text-sm"
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsMenuOpen(false);
+								onRename(conversation.id);
+							}}
+						>
+							<Pencil className="mr-2.5 h-4 w-4" />
+							Rename
+						</DropdownMenuItem>
+					)}
+
+					{/* Regenerate Title - only for active/archived */}
+					{!isDeleted && (
+						<DropdownMenuItem
+							data-testid={`conversation-regenerate-title-${conversation.id}`}
+							className="py-2.5 text-sm"
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsMenuOpen(false);
+								onRegenerateTitle(conversation.id);
+							}}
+						>
+							<RotateCcw className="mr-2.5 h-4 w-4" />
+							Regenerate Title
+						</DropdownMenuItem>
+					)}
+
+					{/* Archive/Unarchive - only for active/archived */}
+					{!isDeleted && (
+						<DropdownMenuItem
+							data-testid={`conversation-${isArchived ? "unarchive" : "archive"}-${conversation.id}`}
+							className="py-2.5 text-sm"
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsMenuOpen(false);
+								if (isArchived) {
+									onUnarchive(conversation.id);
+								} else {
+									onArchive(conversation.id);
+								}
+							}}
+						>
+							{isArchived ? (
+								<>
+									<ArchiveRestore className="mr-2.5 h-4 w-4" />
+									Unarchive
+								</>
+							) : (
+								<>
+									<Archive className="mr-2.5 h-4 w-4" />
+									Archive
+								</>
+							)}
+						</DropdownMenuItem>
+					)}
+
+					{/* Restore - only for deleted */}
+					{isDeleted && (
+						<DropdownMenuItem
+							data-testid={`conversation-restore-${conversation.id}`}
+							className="py-2.5 text-sm"
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsMenuOpen(false);
+								onRestore(conversation.id);
+							}}
+						>
+							<RotateCcw className="mr-2.5 h-4 w-4" />
+							Restore
+						</DropdownMenuItem>
+					)}
+
+					{!isDeleted && <DropdownMenuSeparator />}
+
+					{/* Delete */}
+					<DropdownMenuItem
+						data-testid={`conversation-delete-${conversation.id}`}
+						className="py-2.5 text-sm text-destructive focus:text-destructive"
+						onClick={(e) => {
+							e.stopPropagation();
+							setIsMenuOpen(false);
+							onDelete(conversation.id);
+						}}
+					>
+						<Trash2 className="mr-2.5 h-4 w-4" />
+						{isDeleted ? "Delete Forever" : "Delete"}
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</div>
 	);
 };

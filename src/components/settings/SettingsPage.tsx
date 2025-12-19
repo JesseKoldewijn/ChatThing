@@ -36,36 +36,51 @@ import { fetchOpenRouterModels, openRouterModelsAtom, isLoadingModelsAtom } from
 
 export const SettingsPage = () => {
 	const { goBack } = useNavigation();
-	const currentTheme = useStore(themeAtom);
-	const conversations = useStore(conversationsAtom);
-	const archiveThreshold = useStore(archiveThresholdAtom);
-	const temperatureUnit = useStore(temperatureUnitAtom);
-	const timezone = useStore(timezoneAtom);
-	const providerType = useStore(providerTypeAtom);
-	const openRouterApiKey = useStore(openRouterApiKeyAtom);
-	const openRouterModel = useStore(openRouterModelAtom);
+	const [hasMounted, setHasMounted] = useState(false);
+	
+	// Subscribe to stores
+	const rawTheme = useStore(themeAtom);
+	const rawConversations = useStore(conversationsAtom);
+	const rawArchiveThreshold = useStore(archiveThresholdAtom);
+	const rawTemperatureUnit = useStore(temperatureUnitAtom);
+	const rawTimezone = useStore(timezoneAtom);
+	const rawProviderType = useStore(providerTypeAtom);
+	const rawOpenRouterApiKey = useStore(openRouterApiKeyAtom);
+	const rawOpenRouterModel = useStore(openRouterModelAtom);
 	const openRouterModels = useStore(openRouterModelsAtom);
 	const isLoadingModels = useStore(isLoadingModelsAtom);
 	const [isImporting, setIsImporting] = useState(false);
-	
+
+	// Ensure deterministic values during hydration by using defaults if not mounted
+	const currentTheme = hasMounted ? rawTheme : "system";
+	const conversations = hasMounted ? rawConversations : [];
+	const archiveThreshold = hasMounted ? rawArchiveThreshold : { value: 2, unit: "days" };
+	const temperatureUnit = hasMounted ? rawTemperatureUnit : "auto";
+	const timezone = hasMounted ? rawTimezone : "auto";
+	const providerType = hasMounted ? rawProviderType : "open-router";
+	const openRouterApiKey = hasMounted ? rawOpenRouterApiKey : "";
+	const openRouterModel = hasMounted ? rawOpenRouterModel : "mistralai/devstral-2512:free";
+
 	// Defer system timezone detection to avoid SSR hydration mismatch
-	// null = loading state (shown during SSR and initial hydration)
-	// string = actual timezone (set after client hydration)
 	const [systemTimezone, setSystemTimezone] = useState<string | null>(null);
 	
 	useEffect(() => {
+		setHasMounted(true);
 		setSystemTimezone(getSystemTimezone());
-		
-		// Fetch OpenRouter models if provider is active or when page mounts
 		fetchOpenRouterModels();
 	}, []);
 
 	// Calculate counts by status
-	const { activeCount, archivedCount, deletedCount } = useMemo(() => ({
-		activeCount: conversations.filter((c) => c.status === "active").length,
-		archivedCount: conversations.filter((c) => c.status === "archived").length,
-		deletedCount: conversations.filter((c) => c.status === "deleted").length,
-	}), [conversations]);
+	const { activeCount, archivedCount, deletedCount } = useMemo(() => {
+		if (!hasMounted) {
+			return { activeCount: 0, archivedCount: 0, deletedCount: 0 };
+		}
+		return {
+			activeCount: conversations.filter((c) => c.status === "active").length,
+			archivedCount: conversations.filter((c) => c.status === "archived").length,
+			deletedCount: conversations.filter((c) => c.status === "deleted").length,
+		};
+	}, [conversations, hasMounted]);
 
 	const handleThemeChange = useCallback((theme: Theme) => {
 		setTheme(theme);
@@ -139,6 +154,7 @@ export const SettingsPage = () => {
 
 	return (
 		<SettingsPageUI
+			isHydrated={hasMounted}
 			currentTheme={currentTheme}
 			temperatureUnit={temperatureUnit}
 			timezone={timezone}
@@ -148,7 +164,6 @@ export const SettingsPage = () => {
 			openRouterModel={openRouterModel}
 			openRouterModels={openRouterModels}
 			isLoadingModels={isLoadingModels}
-			conversationCount={conversations.length}
 			activeCount={activeCount}
 			archivedCount={archivedCount}
 			deletedCount={deletedCount}

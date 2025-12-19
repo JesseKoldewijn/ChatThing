@@ -1,4 +1,5 @@
 import { useStore } from "@nanostores/react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, PanelLeftClose, PanelLeft, Sparkles } from "lucide-react";
 import {
@@ -21,6 +22,11 @@ export const ChatHeader = ({
 	onMenuClick,
 	isSidebarOpen = false,
 }: ChatHeaderProps) => {
+	const [hasMounted, setHasMounted] = useState(false);
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
+
 	const conversations = useStore(conversationsAtom);
 	const activeConversationId = useStore(activeConversationIdAtom);
 
@@ -60,7 +66,7 @@ export const ChatHeader = ({
 				</div>
 				<div className="min-w-0 flex-1 min-h-10 flex flex-col justify-center">
 					<h1 className="truncate font-semibold leading-tight">
-						{activeConversation?.title ?? "New Chat"}
+						{hasMounted ? (activeConversation?.title ?? "New Chat") : "New Chat"}
 					</h1>
 					<p className="text-xs text-muted-foreground leading-tight">
 						AI Assistant

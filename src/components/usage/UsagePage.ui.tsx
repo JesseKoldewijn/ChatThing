@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	AreaChart,
 	Area,
@@ -50,6 +51,7 @@ export interface TableDataRow {
 }
 
 export interface UsagePageUIProps {
+	isHydrated?: boolean;
 	summary: UsageSummary;
 	chartData: ChartDataPoint[];
 	tableData: TableDataRow[];
@@ -65,6 +67,7 @@ const HeroStat = ({
 	subLabel,
 	gradient,
 	testId,
+	isLoading = false,
 }: {
 	icon: React.ElementType;
 	label: string;
@@ -72,6 +75,7 @@ const HeroStat = ({
 	subLabel?: string;
 	gradient: string;
 	testId?: string;
+	isLoading?: boolean;
 }) => (
 	<div
 		data-testid={testId}
@@ -88,12 +92,20 @@ const HeroStat = ({
 					{label}
 				</span>
 			</div>
-			<p data-testid={testId ? `${testId}-value` : undefined} className="text-4xl font-bold tracking-tight text-white">
-				{value}
-			</p>
-			{subLabel && (
-				<p className="mt-1 text-xs text-white/60">{subLabel}</p>
+			{isLoading ? (
+				<Skeleton className="h-10 w-24 bg-white/20" />
+			) : (
+				<p data-testid={testId ? `${testId}-value` : undefined} className="text-4xl font-bold tracking-tight text-white">
+					{value}
+				</p>
 			)}
+			<div className="mt-1 h-4">
+				{isLoading ? (
+					<Skeleton className="h-3 w-32 bg-white/10" />
+				) : (
+					subLabel && <p className="text-xs text-white/60">{subLabel}</p>
+				)}
+			</div>
 		</div>
 		<div className="absolute -bottom-4 -right-4 opacity-10">
 			<Icon className="h-24 w-24 text-white" />
@@ -108,21 +120,27 @@ const CompactStat = ({
 	icon: Icon,
 	color,
 	testId,
+	isLoading = false,
 }: {
 	label: string;
 	value: string | number;
 	icon: React.ElementType;
 	color: string;
 	testId?: string;
+	isLoading?: boolean;
 }) => (
 	<div data-testid={testId} className="flex items-center gap-3 rounded-xl border bg-card/50 px-4 py-3">
 		<div className={cn("rounded-lg p-2", color)}>
 			<Icon className="h-4 w-4" />
 		</div>
 		<div className="min-w-0 flex-1">
-			<p data-testid={testId ? `${testId}-value` : undefined} className="text-lg font-semibold tabular-nums text-foreground">
-				{value}
-			</p>
+			{isLoading ? (
+				<Skeleton className="h-7 w-16 mb-1" />
+			) : (
+				<p data-testid={testId ? `${testId}-value` : undefined} className="text-lg font-semibold tabular-nums text-foreground">
+					{value}
+				</p>
+			)}
 			<p className="text-[11px] text-muted-foreground">{label}</p>
 		</div>
 	</div>
@@ -208,6 +226,7 @@ const SortableHeader = ({
 };
 
 export const UsagePageUI = ({
+	isHydrated = false,
 	summary,
 	chartData,
 	tableData,
@@ -385,6 +404,7 @@ export const UsagePageUI = ({
 								value={totalTokens.toLocaleString()}
 								subLabel={`${summary.totalInputTokens.toLocaleString()} in · ${summary.totalOutputTokens.toLocaleString()} out`}
 								gradient="from-violet-600 to-purple-700"
+								isLoading={!isHydrated}
 							/>
 							<HeroStat
 								testId="hero-stat-conversations"
@@ -393,6 +413,7 @@ export const UsagePageUI = ({
 								value={summary.totalMessages}
 								subLabel={`${summary.totalResponses} AI responses`}
 								gradient="from-blue-600 to-cyan-600"
+								isLoading={!isHydrated}
 							/>
 							<HeroStat
 								testId="hero-stat-tool-calls"
@@ -408,6 +429,7 @@ export const UsagePageUI = ({
 										: "No tools used yet"
 								}
 								gradient="from-amber-500 to-orange-600"
+								isLoading={!isHydrated}
 							/>
 						</div>
 					</section>
@@ -420,6 +442,7 @@ export const UsagePageUI = ({
 							label="Messages Sent"
 							value={summary.totalMessages}
 							color="bg-blue-500/10 text-blue-500"
+							isLoading={!isHydrated}
 						/>
 						<CompactStat
 							testId="compact-stat-responses"
@@ -427,6 +450,7 @@ export const UsagePageUI = ({
 							label="AI Responses"
 							value={summary.totalResponses}
 							color="bg-emerald-500/10 text-emerald-500"
+							isLoading={!isHydrated}
 						/>
 						<CompactStat
 							testId="compact-stat-input-tokens"
@@ -434,6 +458,7 @@ export const UsagePageUI = ({
 							label="Input Tokens"
 							value={summary.totalInputTokens.toLocaleString()}
 							color="bg-cyan-500/10 text-cyan-500"
+							isLoading={!isHydrated}
 						/>
 						<CompactStat
 							testId="compact-stat-output-tokens"
@@ -441,6 +466,7 @@ export const UsagePageUI = ({
 							label="Output Tokens"
 							value={summary.totalOutputTokens.toLocaleString()}
 							color="bg-rose-500/10 text-rose-500"
+							isLoading={!isHydrated}
 						/>
 					</section>
 
@@ -477,8 +503,25 @@ export const UsagePageUI = ({
 							</div>
 						</div>
 						<div className="p-4">
-							{hasData ? (
-								<div className="h-[260px] w-full">
+							{!isHydrated ? (
+								<div className="h-[260px] w-full flex flex-col gap-4 p-4">
+									<div className="flex-1 flex items-end gap-2">
+										{[...Array(15)].map((_, i) => (
+											<Skeleton 
+												key={i} 
+												className="flex-1 rounded-t-sm" 
+												style={{ height: `${20 + (i % 10) * 5}%` }}
+											/>
+										))}
+									</div>
+									<div className="flex justify-between">
+										<Skeleton className="h-3 w-12" />
+										<Skeleton className="h-3 w-12" />
+										<Skeleton className="h-3 w-12" />
+									</div>
+								</div>
+							) : hasData ? (
+								<div className="h-[260px] w-full animate-in fade-in duration-500">
 									<ResponsiveContainer
 										width="100%"
 										height="100%"

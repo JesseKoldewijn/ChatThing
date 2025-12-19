@@ -34,6 +34,60 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
 	const message = error.message.toLowerCase();
 	const name = error.name.toLowerCase();
 
+	// Check for AI SDK APICallError or similar patterns
+	const isAiCallError = 
+		error.name === "AI_APICallError" || 
+		error.name === "APICallError" ||
+		name.includes("apicallerror") ||
+		name.includes("aicallerror") ||
+		name.includes("ai_apicallerror") ||
+		name.includes("apierror") ||
+		error.constructor?.name === "APICallError" ||
+		error.constructor?.name === "AI_APICallError";
+
+	if (isAiCallError) {
+		// @ts-ignore - AI SDK errors have statusCode
+		const statusCode = error.statusCode || error.status || error.errorCode;
+		
+		if (statusCode === 429) {
+			return {
+				category: "rate_limit",
+				title: "Rate Limited",
+				isRetryable: true,
+			};
+		}
+		
+		if (statusCode === 401 || statusCode === 403) {
+			return {
+				category: "permission",
+				title: "Authentication Error",
+				isRetryable: false,
+			};
+		}
+		
+		if (statusCode === 404) {
+			return {
+				category: "model",
+				title: "Model Not Found",
+				isRetryable: false,
+			};
+		}
+		
+		if (statusCode >= 500) {
+			return {
+				category: "api",
+				title: "AI Provider Error",
+				isRetryable: true,
+			};
+		}
+
+		return {
+			category: "api",
+			title: "AI API Error",
+			isRetryable: true,
+		};
+	}
+
 	// Network errors
 	if (
 		message.includes("network") ||
@@ -41,7 +95,7 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
 		message.includes("connection") ||
 		message.includes("offline") ||
 		name.includes("networkerror") ||
-		name.includes("typeerror") && message.includes("failed to fetch")
+		(name.includes("typeerror") && message.includes("failed to fetch"))
 	) {
 		return {
 			category: "network",
@@ -119,7 +173,9 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
 	if (
 		message.includes("api") ||
 		message.includes("error") ||
-		name.includes("apierror")
+		name.includes("apierror") ||
+		name.includes("aicallerror") ||
+		name.includes("ai_apicallerror")
 	) {
 		return {
 			category: "api",
@@ -139,6 +195,45 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
  * Get a user-friendly message for an error
  */
 const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string => {
+	const message = error.message.toLowerCase();
+	const name = error.name.toLowerCase();
+
+	// Handle APICallError specifically for better messages
+	const isAiCallError = 
+		error.name === "AI_APICallError" || 
+		error.name === "APICallError" ||
+		name.includes("apicallerror") ||
+		name.includes("aicallerror") ||
+		name.includes("ai_apicallerror") ||
+		name.includes("apierror") ||
+		error.constructor?.name === "APICallError" ||
+		error.constructor?.name === "AI_APICallError";
+
+	if (isAiCallError) {
+		// @ts-ignore - AI SDK errors have statusCode
+		const statusCode = error.statusCode || error.status || error.errorCode;
+		const provider = providerTypeAtom.get() === "open-router" ? "OpenRouter" : "Built-in AI";
+		
+		switch (statusCode) {
+			case 401:
+				return `Your API key for ${provider} seems to be invalid. Please check your settings.`;
+			case 403:
+				return `Access denied by ${provider}. Please check if your account has access to the requested model.`;
+			case 404:
+				return `The requested model was not found on ${provider}. Please select a different model in settings.`;
+			case 429:
+				return `You've exceeded the rate limit for ${provider}. Please wait a moment before trying again.`;
+			case 500:
+				return `${provider} is currently experiencing internal errors. Please try again later.`;
+			case 503:
+				return `${provider} is temporarily overloaded or down for maintenance. Please try again in a few minutes.`;
+			default:
+				if (statusCode && statusCode >= 400) {
+					return `The AI provider (${provider}) returned an error (HTTP ${statusCode}). ${error.message}`;
+				}
+		}
+	}
+
 	switch (category) {
 		case "network":
 			return "Unable to connect to the AI. Please check your internet connection and try again.";

@@ -5,7 +5,7 @@ import { routeTree } from "./routeTree.gen";
  * Create the router instance
  * This is shared between client and server
  */
-export function createAppRouter() {
+export function getRouter() {
 	return createRouter({
 		routeTree,
 		defaultPreload: "intent",
@@ -16,7 +16,7 @@ export function createAppRouter() {
 // Type declaration for the router
 declare module "@tanstack/react-router" {
 	interface Register {
-		router: ReturnType<typeof createAppRouter>;
+		router: ReturnType<typeof getRouter>;
 	}
 }
 
