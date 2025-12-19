@@ -2,14 +2,8 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
-import { useState, useCallback, useEffect, type ComponentType, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, type ComponentType } from "react";
 import type { SyntaxHighlighterProps } from "react-syntax-highlighter";
-
-// Lazy load Mermaid component
-const Mermaid = lazy(() => import("@/components/chat/messages/Mermaid").then(mod => ({ default: mod.Mermaid })));
-
-// Lazy load PlantUML component
-const PlantUML = lazy(() => import("@/components/chat/messages/PlantUML").then(mod => ({ default: mod.PlantUML })));
 
 interface CodeBlockProps {
 	language: string;
@@ -238,9 +232,10 @@ const CodeBlock = ({ language, code }: CodeBlockProps) => {
 
 interface MarkdownRendererProps {
 	content: string;
+	isStreaming?: boolean;
 }
 
-export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
+export const MarkdownRenderer = ({ content, isStreaming = false }: MarkdownRendererProps) => {
 	return (
 		<Markdown
 			remarkPlugins={[remarkGfm]}
@@ -261,27 +256,12 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					}
 
 					const language = match[1];
-
-					if (language === "mermaid") {
-						return (
-							<Suspense fallback={<CodeBlockFallback code={String(children)} />}>
-								<Mermaid code={String(children).replace(/\n$/, "")} />
-							</Suspense>
-						);
-					}
-
-					if (language === "plantuml" || language === "puml") {
-						return (
-							<Suspense fallback={<CodeBlockFallback code={String(children)} />}>
-								<PlantUML code={String(children).replace(/\n$/, "")} />
-							</Suspense>
-						);
-					}
+					const code = String(children).replace(/\n$/, "");
 
 					return (
 						<CodeBlock
 							language={language}
-							code={String(children).replace(/\n$/, "")}
+							code={code}
 						/>
 					);
 				},
@@ -449,5 +429,5 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 // Helper to create a render function for MessageItem
 // eslint-disable-next-line react-refresh/only-export-components
 export const createMarkdownRenderer = () => {
-	return (content: string) => <MarkdownRenderer content={content} />;
+	return (content: string, isStreaming = false) => <MarkdownRenderer content={content} isStreaming={isStreaming} />;
 };

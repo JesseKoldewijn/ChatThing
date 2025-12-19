@@ -1,7 +1,8 @@
-import { aiSettingsAtom, providerTypeAtom, openRouterApiKeyAtom, openRouterModelAtom } from "@/lib/stores/settings";
+import { aiSettingsAtom, providerTypeAtom, openRouterApiKeyAtom, openRouterModelAtom, ollamaModelAtom, ollamaBaseUrlAtom } from "@/lib/stores/settings";
 import { AIManager } from "./manager";
 import { PromptAPIProvider } from "./prompt-api/provider";
 import { OpenRouterProvider } from "./open-router/provider";
+import { OllamaProvider } from "./ollama/provider";
 
 /**
  * Get the current AI manager based on settings
@@ -12,6 +13,12 @@ export const getAIManager = () => {
 	if (type === "prompt-api") {
 		const settings = aiSettingsAtom.get();
 		return new AIManager(new PromptAPIProvider(settings));
+	}
+	
+	if (type === "ollama") {
+		const model = ollamaModelAtom.get();
+		const baseUrl = ollamaBaseUrlAtom.get();
+		return new AIManager(new OllamaProvider({ model, baseUrl }));
 	}
 	
 	// Default to OpenRouter

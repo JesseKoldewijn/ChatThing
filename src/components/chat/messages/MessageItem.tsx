@@ -9,7 +9,7 @@ interface MessageItemProps {
 	message: Message;
 	isStreaming?: boolean;
 	onRegenerate?: (prompt: string, transactionId: string) => void;
-	renderContent?: (content: string) => React.ReactNode;
+	renderContent?: (content: string, isStreaming?: boolean) => React.ReactNode;
 }
 
 export const MessageItem = ({

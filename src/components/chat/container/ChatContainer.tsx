@@ -326,32 +326,7 @@ export const ChatContainer = () => {
 								chunk.toolName === "datetime" &&
 								result
 							) {
-								// Format datetime using user's preferred timezone
-								const userTimezone = getResolvedTimezone();
-								const timestamp = result.timestamp as number;
-								const date = new Date(timestamp);
-
-								const dateStr = date.toLocaleDateString(
-									"en-US",
-									{
-										weekday: "long",
-										year: "numeric",
-										month: "long",
-										day: "numeric",
-										timeZone: userTimezone,
-									}
-								);
-								const timeStr = date.toLocaleTimeString(
-									"en-US",
-									{
-										hour: "2-digit",
-										minute: "2-digit",
-										second: "2-digit",
-										hour12: true,
-										timeZone: userTimezone,
-									}
-								);
-
+// ... existing datetime logic ...
 								const datetimeResponse = `It's currently ${timeStr} on ${dateStr} (${userTimezone}).`;
 								appendToStream(datetimeResponse);
 							}

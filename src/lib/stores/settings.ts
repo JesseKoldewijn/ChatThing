@@ -82,10 +82,12 @@ export const getResolvedTimezone = (): string => {
 export const aiSettingsAtom = atom<BuiltInAIChatSettings>({});
 
 // AI Provider settings
-export type ProviderType = "prompt-api" | "open-router";
+export type ProviderType = "prompt-api" | "open-router" | "ollama";
 export const providerTypeAtom = atom<ProviderType>("open-router");
 export const openRouterApiKeyAtom = atom<string>("");
 export const openRouterModelAtom = atom<string>("mistralai/devstral-2512:free");
+export const ollamaModelAtom = atom<string>("deepseek-r1:1.5b");
+export const ollamaBaseUrlAtom = atom<string>("http://localhost:11434");
 
 // Archive threshold units
 export type ArchiveThresholdUnit = "hours" | "days" | "weeks" | "months";
@@ -147,6 +149,8 @@ const OUTPUT_LANGUAGE_KEY = "output-language";
 const PROVIDER_TYPE_KEY = "ai-provider-type";
 const OPENROUTER_API_KEY_KEY = "openrouter-api-key";
 const OPENROUTER_MODEL_KEY = "openrouter-model";
+const OLLAMA_MODEL_KEY = "ollama-model";
+const OLLAMA_BASE_URL_KEY = "ollama-base-url";
 
 /**
  * Load theme from localStorage
@@ -232,7 +236,7 @@ const loadAiProviderSettingsFromStorage = () => {
 	if (!isBrowser) return;
 	
 	const type = localStorage.getItem(PROVIDER_TYPE_KEY) as ProviderType | null;
-	if (type && ["prompt-api", "open-router"].includes(type)) {
+	if (type && ["prompt-api", "open-router", "ollama"].includes(type)) {
 		providerTypeAtom.set(type);
 	}
 	
@@ -244,6 +248,16 @@ const loadAiProviderSettingsFromStorage = () => {
 	const model = localStorage.getItem(OPENROUTER_MODEL_KEY);
 	if (model) {
 		openRouterModelAtom.set(model);
+	}
+
+	const ollamaModel = localStorage.getItem(OLLAMA_MODEL_KEY);
+	if (ollamaModel) {
+		ollamaModelAtom.set(ollamaModel);
+	}
+
+	const ollamaBaseUrl = localStorage.getItem(OLLAMA_BASE_URL_KEY);
+	if (ollamaBaseUrl) {
+		ollamaBaseUrlAtom.set(ollamaBaseUrl);
 	}
 };
 
@@ -278,6 +292,20 @@ export const setOpenRouterModel = (model: string) => {
 	openRouterModelAtom.set(model);
 	if (isBrowser) {
 		localStorage.setItem(OPENROUTER_MODEL_KEY, model);
+	}
+};
+
+export const setOllamaModel = (model: string) => {
+	ollamaModelAtom.set(model);
+	if (isBrowser) {
+		localStorage.setItem(OLLAMA_MODEL_KEY, model);
+	}
+};
+
+export const setOllamaBaseUrl = (url: string) => {
+	ollamaBaseUrlAtom.set(url);
+	if (isBrowser) {
+		localStorage.setItem(OLLAMA_BASE_URL_KEY, url);
 	}
 };
 
