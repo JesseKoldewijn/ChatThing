@@ -30,6 +30,7 @@ import {
 	Cpu,
 	Eye,
 	EyeOff,
+	Server,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -41,6 +42,8 @@ import type {
 	ProviderType,
 } from "@/lib/stores/settings";
 import type { OpenRouterModel } from "@/lib/ai/open-router/models";
+import type { PullProgress, OllamaModel } from "@/lib/ai/ollama/api";
+import type { OllamaStatus } from "./SettingsPage";
 
 export interface SettingsPageUIProps {
 	isHydrated?: boolean;
@@ -52,6 +55,13 @@ export interface SettingsPageUIProps {
 	openRouterApiKey: string;
 	openRouterModel: string;
 	openRouterModels: OpenRouterModel[];
+	ollamaModel: string;
+	ollamaBaseUrl: string;
+	ollamaModels: OllamaModel[];
+	ollamaStatus: OllamaStatus;
+	isLoadingOllamaModels: boolean;
+	isPulling: boolean;
+	pullProgress: PullProgress | null;
 	isLoadingModels: boolean;
 	activeCount: number;
 	archivedCount: number;
@@ -64,6 +74,10 @@ export interface SettingsPageUIProps {
 	onProviderTypeChange: (type: ProviderType) => void;
 	onOpenRouterApiKeyChange: (key: string) => void;
 	onOpenRouterModelChange: (model: string) => void;
+	onOllamaModelChange: (model: string) => void;
+	onOllamaBaseUrlChange: (url: string) => void;
+	onCheckOllama: () => void;
+	onPullModel: () => void;
 	onArchiveThresholdChange: (threshold: ArchiveThreshold) => void;
 	onExport: () => void;
 	onImport: (file: File, mode: "merge" | "replace") => void;
@@ -165,6 +179,16 @@ const SettingsSection = ({
 	</div>
 );
 
+// Local Progress component to avoid module resolution issues
+const Progress = ({ value, className }: { value?: number; className?: string }) => (
+	<div className={cn("relative h-2 w-full overflow-hidden rounded-full bg-primary/20", className)}>
+		<div
+			className="h-full bg-primary transition-all duration-300"
+			style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+		/>
+	</div>
+);
+
 export const SettingsPageUI = ({
 	isHydrated = false,
 	currentTheme,
@@ -175,6 +199,13 @@ export const SettingsPageUI = ({
 	openRouterApiKey,
 	openRouterModel,
 	openRouterModels,
+	ollamaModel,
+	ollamaBaseUrl,
+	ollamaModels,
+	ollamaStatus,
+	isLoadingOllamaModels,
+	isPulling,
+	pullProgress,
 	isLoadingModels,
 	activeCount,
 	archivedCount,
@@ -187,6 +218,10 @@ export const SettingsPageUI = ({
 	onProviderTypeChange,
 	onOpenRouterApiKeyChange,
 	onOpenRouterModelChange,
+	onOllamaModelChange,
+	onOllamaBaseUrlChange,
+	onCheckOllama,
+	onPullModel,
 	onArchiveThresholdChange,
 	onExport,
 	onImport,
@@ -196,20 +231,42 @@ export const SettingsPageUI = ({
 }: SettingsPageUIProps) => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const suggestionsRef = useRef<HTMLDivElement>(null);
+	const ollamaSuggestionsRef = useRef<HTMLDivElement>(null);
 	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [showOllamaSuggestions, setShowOllamaSuggestions] = useState(false);
 	const [showApiKey, setShowApiKey] = useState(false);
 
 	const filteredModels = useMemo(() => {
-		if (!openRouterModel) return openRouterModels.slice(0, 20);
+		const models = (openRouterModels || []).filter(m => m && (m.id || m.name));
+		if (!openRouterModel) return models.slice(0, 20);
 		const search = openRouterModel.toLowerCase();
-		return openRouterModels
+		return models
 			.filter(
 				(m) =>
-					m.id.toLowerCase().includes(search) ||
-					m.name.toLowerCase().includes(search)
+					(m.id && m.id.toLowerCase().includes(search)) ||
+					(m.name && m.name.toLowerCase().includes(search))
 			)
 			.slice(0, 20);
 	}, [openRouterModels, openRouterModel]);
+
+	const filteredOllamaModels = useMemo(() => {
+		const models = (ollamaModels || []).filter(m => m && (m.name || m.model));
+		if (!ollamaModel) return models.slice(0, 20);
+		const search = ollamaModel.toLowerCase();
+		return models
+			.filter(
+				(m) =>
+					(m.name && m.name.toLowerCase().includes(search)) ||
+					(m.model && m.model.toLowerCase().includes(search))
+			)
+			.slice(0, 20);
+	}, [ollamaModels, ollamaModel]);
+
+	const isOllamaModelInstalled = useMemo(() => {
+		return (ollamaModels || []).some(
+			(m) => m && (m.name === ollamaModel || m.model === ollamaModel)
+		);
+	}, [ollamaModels, ollamaModel]);
 
 	// Close suggestions when clicking outside
 	useEffect(() => {
@@ -219,6 +276,12 @@ export const SettingsPageUI = ({
 				!suggestionsRef.current.contains(event.target as Node)
 			) {
 				setShowSuggestions(false);
+			}
+			if (
+				ollamaSuggestionsRef.current &&
+				!ollamaSuggestionsRef.current.contains(event.target as Node)
+			) {
+				setShowOllamaSuggestions(false);
 			}
 		};
 		document.addEventListener("mousedown", handleClickOutside);
@@ -515,6 +578,12 @@ export const SettingsPageUI = ({
 												description:
 													"Cloud-based models",
 											},
+											{
+												value: "ollama" as ProviderType,
+												label: "Ollama",
+												description:
+													"Local LLM (Ollama)",
+											},
 										].map(
 											({ value, label, description }) => (
 												<button
@@ -555,208 +624,253 @@ export const SettingsPageUI = ({
 								)}
 
 								<div className="min-h-[220px]">
-									<div className="h-full">
-										{providerType === "open-router" ? (
-											<div className="space-y-4 rounded-lg bg-muted/50 p-4">
-												<div className="space-y-1.5">
-													<label
-														htmlFor="openrouter-api-key"
-														className="flex items-center gap-2 text-xs font-medium text-foreground"
-													>
-														<Key className="h-3 w-3" />
-														OpenRouter API Key
-													</label>
-													<div className="relative">
-														<input
-															id="openrouter-api-key"
-															name="openrouter-api-key"
-															type={
-																showApiKey
-																	? "text"
-																	: "password"
-															}
-															value={
-																showApiKey
-																	? openRouterApiKey
-																	: openRouterApiKey
-																		? "••••••••••••••••"
-																		: ""
-															}
-															onChange={(e) => {
-																if (
-																	showApiKey
-																) {
-																	onOpenRouterApiKeyChange(
-																		e.target
-																			.value
-																	);
-																}
-															}}
-															readOnly={
-																!isHydrated ||
-																!showApiKey
-															}
-															placeholder="••••••••••••••••"
-															className={cn(
-																"w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pr-9",
-																!showApiKey &&
-																	openRouterApiKey &&
-																	"cursor-pointer",
-																!isHydrated &&
-																	"opacity-70"
-															)}
-															onClick={() =>
-																isHydrated &&
-																!showApiKey &&
-																setShowApiKey(
-																	true
-																)
-															}
-															autoComplete="off"
-														/>
-														<button
-															type="button"
-															onClick={() =>
-																isHydrated &&
-																setShowApiKey(
-																	!showApiKey
-																)
-															}
-															disabled={
-																!isHydrated
-															}
-															className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
-															title={
-																showApiKey
-																	? "Hide API Key"
-																	: "Show API Key"
-															}
-														>
-															{showApiKey ? (
-																<EyeOff className="h-4 w-4" />
-															) : (
-																<Eye className="h-4 w-4" />
-															)}
-														</button>
+									{!isHydrated ? (
+										<div className="space-y-4 rounded-lg bg-muted/50 p-4">
+											<div className="space-y-2">
+												<div className="flex items-center justify-between">
+													<div className="flex items-center gap-2">
+														<Skeleton className="h-3.5 w-3.5 rounded-full" />
+														<Skeleton className="h-3 w-16" />
 													</div>
-													<p className="text-[10px] text-muted-foreground">
-														Your API key is stored
-														locally in your browser.
-													</p>
+													<Skeleton className="h-3 w-12" />
 												</div>
-
-												<div className="space-y-1.5">
-													<label
-														htmlFor="openrouter-model"
-														className="flex items-center gap-2 text-xs font-medium text-foreground"
-													>
-														<Cpu className="h-3 w-3" />
-														Model
-														{isLoadingModels && (
-															<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-														)}
-													</label>
-													<div
-														className="relative"
-														ref={suggestionsRef}
-													>
-														<input
-															id="openrouter-model"
-															name="openrouter-model"
-															type="text"
-															value={
-																openRouterModel
-															}
-															onFocus={() =>
-																isHydrated &&
-																setShowSuggestions(
-																	true
-																)
-															}
-															onChange={(e) => {
-																if (
-																	isHydrated
-																) {
-																	onOpenRouterModelChange(
-																		e.target
-																			.value
-																	);
-																	setShowSuggestions(
-																		true
-																	);
-																}
-															}}
-															readOnly={
-																!isHydrated
-															}
-															placeholder="mistralai/devstral-2512:free"
-															className={cn(
-																"w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-																!isHydrated &&
-																	"opacity-70"
+												<div className="flex gap-2">
+													<Skeleton className="h-9 flex-1 rounded-md" />
+													<Skeleton className="h-9 w-16 rounded-md" />
+												</div>
+											</div>
+											<div className="space-y-2">
+												<div className="flex items-center gap-2">
+													<Skeleton className="h-3.5 w-3.5 rounded-full" />
+													<Skeleton className="h-3 w-12" />
+												</div>
+												<Skeleton className="h-9 w-full rounded-md" />
+											</div>
+										</div>
+									) : (
+										<div className="h-full">
+											{providerType === "open-router" ? (
+												<div className="space-y-4 rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
+													<div className="space-y-2">
+														<div className="flex items-center gap-2">
+															<Key className="h-3.5 w-3.5 text-muted-foreground" />
+															<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																API Key
+															</label>
+														</div>
+														<div className="relative">
+															<input
+																type={showApiKey ? "text" : "password"}
+																value={openRouterApiKey}
+																onChange={(e) => onOpenRouterApiKeyChange(e.target.value)}
+																autoComplete="off"
+																placeholder="sk-or-..."
+																className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+															/>
+															<button
+																type="button"
+																onClick={() => setShowApiKey(!showApiKey)}
+																className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+															>
+																{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+															</button>
+														</div>
+													</div>
+													<div className="space-y-2">
+														<div className="flex items-center justify-between">
+															<div className="flex items-center gap-2">
+																<Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+																<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																	Model
+																</label>
+															</div>
+															{isLoadingModels && (
+																<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
 															)}
-															autoComplete="off"
-														/>
-														{isHydrated &&
-															showSuggestions &&
-															filteredModels.length >
-																0 && (
-																<div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in zoom-in-95">
-																	<ScrollArea className="max-h-[250px]">
-																		<div className="p-1">
-																			{filteredModels.map(
-																				(
-																					model
-																				) => (
-																					<button
-																						key={
-																							model.id
-																						}
-																						type="button"
-																						onClick={() => {
-																							onOpenRouterModelChange(
-																								model.id
-																							);
-																							setShowSuggestions(
-																								false
-																							);
-																						}}
-																						className="flex w-full flex-col items-start rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-																					>
-																						<span className="font-medium">
-																							{
-																								model.name
-																							}
-																						</span>
-																						<span className="text-[10px] text-muted-foreground">
-																							{
-																								model.id
-																							}
-																						</span>
-																					</button>
-																				)
-																			)}
-																		</div>
-																	</ScrollArea>
+														</div>
+														<div className="relative" ref={suggestionsRef}>
+															<input
+																value={openRouterModel}
+																onChange={(e) => {
+																	onOpenRouterModelChange(e.target.value);
+																	setShowSuggestions(true);
+																}}
+																onFocus={() => setShowSuggestions(true)}
+																autoComplete="openRouter-llm-model"
+																placeholder="google/gemini-2.0-flash-exp:free"
+																className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+															/>
+															{showSuggestions && filteredModels.length > 0 && (
+																<div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md animate-in fade-in zoom-in-95">
+																	{filteredModels.map((m) => (
+																		<button
+																			key={m.id}
+																			type="button"
+																			onClick={() => {
+																				onOpenRouterModelChange(m.id);
+																				setShowSuggestions(false);
+																			}}
+																			className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+																		>
+																			<div className="font-medium">{m.name || m.id}</div>
+																			<div className="text-[10px] text-muted-foreground">{m.id}</div>
+																		</button>
+																	))}
 																</div>
 															)}
+														</div>
 													</div>
-													<p className="text-[10px] text-muted-foreground">
-														Specify the OpenRouter
-														model identifier.
+												</div>
+											) : providerType === "ollama" ? (
+												<div className="space-y-4 rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
+												<div className="space-y-2">
+													<div className="flex items-center justify-between">
+														<div className="flex items-center gap-2">
+															<Server className="h-3.5 w-3.5 text-muted-foreground" />
+															<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																Base URL
+															</label>
+														</div>
+														<div className="flex items-center gap-2">
+															{ollamaStatus === "checking" && (
+																<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+															)}
+															{ollamaStatus === "available" && (
+																<span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400">
+																	<span className="h-1.5 w-1.5 rounded-full bg-current" />
+																	Online
+																</span>
+															)}
+															{ollamaStatus === "unavailable" && (
+																<span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-destructive">
+																	<span className="h-1.5 w-1.5 rounded-full bg-current" />
+																	Offline
+																</span>
+															)}
+														</div>
+													</div>
+													<div className="flex gap-2">
+														<input
+															value={ollamaBaseUrl}
+															onChange={(e) => onOllamaBaseUrlChange(e.target.value)}
+															autoComplete="ollama-base-url"
+															placeholder="http://localhost:11434"
+															className="flex-1 rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+														/>
+														<Button
+															type="button"
+															variant="outline"
+															size="sm"
+															className="h-9 px-3"
+															onClick={onCheckOllama}
+															disabled={ollamaStatus === "checking" || !ollamaBaseUrl}
+														>
+															Check
+														</Button>
+													</div>
+												</div>
+													<div className="space-y-2">
+														<div className="flex items-center justify-between">
+															<div className="flex items-center gap-2">
+																<Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+																<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																	Model
+																</label>
+															</div>
+															<div className="flex items-center gap-2">
+																{isLoadingOllamaModels && (
+																	<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+																)}
+																{isOllamaModelInstalled && (
+																	<span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+																		Installed
+																	</span>
+																)}
+															</div>
+														</div>
+														<div className="relative" ref={ollamaSuggestionsRef}>
+															<div className="flex gap-2">
+																<div className="relative flex-1">
+																	<input
+																		value={ollamaModel}
+																		onChange={(e) => {
+																			onOllamaModelChange(e.target.value);
+																			setShowOllamaSuggestions(true);
+																		}}
+																		onFocus={() => setShowOllamaSuggestions(true)}
+																		autoComplete="ollama-llm-model"
+																		placeholder="deepseek-r1:1.5b"
+																		className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+																	/>
+																	{showOllamaSuggestions && filteredOllamaModels.length > 0 && (
+																		<div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md animate-in fade-in zoom-in-95">
+																			{filteredOllamaModels.map((m) => (
+																				<button
+																					key={m.name || m.model}
+																					type="button"
+																					onClick={() => {
+																						onOllamaModelChange(m.name || m.model);
+																						setShowOllamaSuggestions(false);
+																					}}
+																					className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+																				>
+																					<div className="font-medium">{m.name || m.model}</div>
+																					{m.details?.parameter_size && (
+																						<div className="text-[10px] text-muted-foreground">
+																							{m.details.parameter_size} parameters
+																						</div>
+																					)}
+																				</button>
+																			))}
+																		</div>
+																	)}
+																</div>
+																<Button
+																	type="button"
+																	size="sm"
+																	variant={isOllamaModelInstalled ? "outline" : "default"}
+																	className="h-9 gap-2 px-3"
+																	onClick={onPullModel}
+																	disabled={isPulling || !ollamaModel}
+																>
+																	{isPulling ? (
+																		<Loader2 className="h-4 w-4 animate-spin" />
+																	) : (
+																		<Download className="h-4 w-4" />
+																	)}
+																	<span className="hidden sm:inline">
+																		{isOllamaModelInstalled ? "Update" : "Pull"}
+																	</span>
+																</Button>
+															</div>
+														</div>
+													</div>
+
+													{isPulling && pullProgress && (
+														<div className="space-y-2 bg-background/50 p-3 rounded-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300">
+															<div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+																<span className="text-primary truncate mr-2">{pullProgress.status}</span>
+																{pullProgress.total > 0 && (
+																	<span className="text-muted-foreground">
+																		{Math.round((pullProgress.completed / pullProgress.total) * 100)}%
+																	</span>
+																)}
+															</div>
+															<Progress value={pullProgress.total > 0 ? (pullProgress.completed / pullProgress.total) * 100 : 0} />
+														</div>
+													)}
+												</div>
+											) : (
+												<div className="rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
+													<p className="text-xs text-muted-foreground">
+														Prompt API uses the built-in
+														AI model in your browser
+														(Chrome/Edge v138+).
 													</p>
 												</div>
-											</div>
-										) : (
-											<div className="rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
-												<p className="text-xs text-muted-foreground">
-													Prompt API uses the built-in
-													AI model in your browser
-													(Chrome/Edge v138+).
-												</p>
-											</div>
-										)}
-									</div>
+											)}
+										</div>
+									)}
 								</div>
 							</div>
 						</SettingsSection>

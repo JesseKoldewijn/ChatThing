@@ -18,7 +18,7 @@ export interface MessageItemUIProps {
 	isCopied?: boolean;
 	onCopy?: () => void;
 	onRegenerate?: () => void;
-	renderContent?: (content: string) => React.ReactNode;
+	renderContent?: (content: string, isStreaming?: boolean) => React.ReactNode;
 }
 
 export const MessageItemUI = ({
@@ -166,7 +166,7 @@ export const MessageItemUI = ({
 							)}
 						>
 							{renderContent ? (
-								renderContent(content)
+								renderContent(content, isStreaming)
 							) : (
 								<p className="m-0 whitespace-pre-wrap">
 									{content}

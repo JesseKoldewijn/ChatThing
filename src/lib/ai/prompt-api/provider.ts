@@ -211,7 +211,7 @@ export class PromptAPIProvider implements AIProvider {
 				[
 					"You are a helpful AI assistant. For most questions and conversations, respond naturally without tools.",
 					"",
-					"You have these tools available (use ONLY when specifically needed):",
+					"You have these tools and capabilities available (use ONLY when specifically needed):",
 					toolsDefinition,
 					"",
 					"WHEN TO USE TOOLS:",

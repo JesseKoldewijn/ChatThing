@@ -6,7 +6,7 @@ import { messagesAtom, currentStreamAtom, isStreamingAtom } from "@/lib/stores/c
 
 interface MessageListProps {
 	onRegenerate?: (prompt: string, transactionId: string) => void;
-	renderContent?: (content: string) => React.ReactNode;
+	renderContent?: (content: string, isStreaming?: boolean) => React.ReactNode;
 }
 
 export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) => {
