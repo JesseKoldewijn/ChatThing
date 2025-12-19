@@ -3,6 +3,7 @@ import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface NumberStepperProps {
+	id?: string;
 	value: number;
 	onChange: (value: number) => void;
 	min?: number;
@@ -16,6 +17,7 @@ export interface NumberStepperProps {
 }
 
 export const NumberStepper = ({
+	id,
 	value,
 	onChange,
 	min = 0,
@@ -88,6 +90,7 @@ export const NumberStepper = ({
 			)}
 		>
 			<button
+				id={`${id}-decrement`}
 				type="button"
 				onClick={handleDecrement}
 				disabled={disabled || value <= min}
@@ -103,6 +106,7 @@ export const NumberStepper = ({
 			<div className="h-6 w-px bg-border" />
 			{allowManualInput ? (
 				<input
+					id={`${id}-input`}
 					type="text"
 					inputMode="numeric"
 					value={inputValue}
@@ -124,6 +128,7 @@ export const NumberStepper = ({
 			)}
 			<div className="h-6 w-px bg-border" />
 			<button
+				id={`${id}-increment`}
 				type="button"
 				onClick={handleIncrement}
 				disabled={disabled || value >= max}
@@ -139,4 +144,3 @@ export const NumberStepper = ({
 		</div>
 	);
 };
-

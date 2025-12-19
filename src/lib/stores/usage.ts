@@ -1,5 +1,4 @@
-import { atom, onMount } from "nanostores";
-import { isHydratedAtom } from "./hydration";
+import { atom } from "nanostores";
 
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
@@ -92,30 +91,14 @@ const initializeUsage = () => {
 	}
 };
 
-// Load from localStorage on mount - defer until after hydration
-// Track if we've already initialized to avoid double-loading
-let isInitialized = false;
-
-const mountHandler = () => {
-	if (!isBrowser || isInitialized) return;
-
-	if (isHydratedAtom.get()) {
-		initializeUsage();
-		isInitialized = true;
-	} else {
-		const unsubHydration = isHydratedAtom.subscribe((hydrated) => {
-			if (hydrated && !isInitialized) {
-				initializeUsage();
-				isInitialized = true;
-				unsubHydration();
-			}
-		});
-	}
+/**
+ * Hydrate usage from localStorage.
+ * This should be called only on the client inside a useEffect.
+ */
+export const hydrateUsage = () => {
+	if (!isBrowser) return;
+	initializeUsage();
 };
-
-// Mount on either atom being subscribed to
-onMount(usageEventsAtom, mountHandler);
-onMount(dailyUsageAtom, mountHandler);
 
 /**
  * Persist usage data to localStorage

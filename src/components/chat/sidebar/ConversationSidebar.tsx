@@ -1,6 +1,9 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
-import { ConversationSidebarUI, type ConversationItem } from "./ConversationSidebar.ui";
+import {
+	ConversationSidebarUI,
+	type ConversationItem,
+} from "./ConversationSidebar.ui";
 import { SettingsPanel } from "../settings/SettingsPanel";
 import {
 	conversationsAtom,
@@ -30,29 +33,46 @@ interface ConversationSidebarProps {
 }
 
 export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
+	const [hasMounted, setHasMounted] = useState(false);
+
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
+
 	const conversations = useStore(conversationsAtom);
 	const activeConversationId = useStore(activeConversationIdAtom);
 	const { showArchived, showDeleted, toggleShowArchived, toggleShowDeleted } =
 		useChatSearchParams();
 
 	// Calculate counts
-	const { archivedCount, deletedCount } = useMemo(() => ({
-		archivedCount: conversations.filter((c) => c.status === "archived").length,
-		deletedCount: conversations.filter((c) => c.status === "deleted").length,
-	}), [conversations]);
+	const { archivedCount, deletedCount } = useMemo(
+		() => ({
+			archivedCount: conversations.filter((c) => c.status === "archived")
+				.length,
+			deletedCount: conversations.filter((c) => c.status === "deleted")
+				.length,
+		}),
+		[conversations]
+	);
 
 	// Map conversations to items
-	const conversationItems: ConversationItem[] = useMemo(() => 
-		conversations.map((c) => ({
-			id: c.id,
-			title: c.title,
-			updatedAt: c.updatedAt,
-			isActive: c.id === activeConversationId,
-			isGeneratingTitle: c.isGeneratingTitle,
-			status: c.status,
-		})),
+	const conversationItems: ConversationItem[] = useMemo(
+		() =>
+			conversations.map((c) => ({
+				id: c.id,
+				title: c.title,
+				updatedAt: c.updatedAt,
+				isActive: c.id === activeConversationId,
+				isGeneratingTitle: c.isGeneratingTitle,
+				status: c.status,
+			})),
 		[conversations, activeConversationId]
 	);
+
+	// Ensure deterministic render between server and client
+	const displayConversations = hasMounted ? conversationItems : [];
+	const displayArchivedCount = hasMounted ? archivedCount : 0;
+	const displayDeletedCount = hasMounted ? deletedCount : 0;
 
 	// Close sidebar only on mobile after actions
 	const closeSidebarOnMobile = useCallback(() => {
@@ -77,32 +97,42 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 		[activeConversationId, closeSidebarOnMobile]
 	);
 
-	const handleDeleteConversation = useCallback((id: string) => {
-		const conversation = conversations.find((c) => c.id === id);
-		if (!conversation) return;
+	const handleDeleteConversation = useCallback(
+		(id: string) => {
+			const conversation = conversations.find((c) => c.id === id);
+			if (!conversation) return;
 
-		if (conversation.status === "deleted") {
-			// Already deleted - permanently delete
-			if (confirm("This will permanently delete the conversation. This cannot be undone. Continue?")) {
-				permanentlyDeleteConversation(id);
+			if (conversation.status === "deleted") {
+				// Already deleted - permanently delete
+				if (
+					confirm(
+						"This will permanently delete the conversation. This cannot be undone. Continue?"
+					)
+				) {
+					permanentlyDeleteConversation(id);
+				}
+			} else {
+				// Soft delete
+				if (confirm("Move this conversation to trash?")) {
+					deleteConversation(id);
+				}
 			}
-		} else {
-			// Soft delete
-			if (confirm("Move this conversation to trash?")) {
-				deleteConversation(id);
+		},
+		[conversations]
+	);
+
+	const handleRenameConversation = useCallback(
+		(id: string) => {
+			const conversation = conversations.find((c) => c.id === id);
+			if (!conversation) return;
+
+			const newTitle = prompt("Enter new title:", conversation.title);
+			if (newTitle && newTitle.trim()) {
+				updateConversationTitle(id, newTitle.trim());
 			}
-		}
-	}, [conversations]);
-
-	const handleRenameConversation = useCallback((id: string) => {
-		const conversation = conversations.find((c) => c.id === id);
-		if (!conversation) return;
-
-		const newTitle = prompt("Enter new title:", conversation.title);
-		if (newTitle && newTitle.trim()) {
-			updateConversationTitle(id, newTitle.trim());
-		}
-	}, [conversations]);
+		},
+		[conversations]
+	);
 
 	const handleRegenerateTitle = useCallback((id: string) => {
 		triggerTitleGeneration(id, true);
@@ -122,7 +152,7 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 
 	return (
 		<ConversationSidebarUI
-			conversations={conversationItems}
+			conversations={displayConversations}
 			onNewChat={handleNewChat}
 			onSelectConversation={handleSelectConversation}
 			onDeleteConversation={handleDeleteConversation}
@@ -137,8 +167,8 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 			showDeleted={showDeleted}
 			onToggleArchived={toggleShowArchived}
 			onToggleDeleted={toggleShowDeleted}
-			archivedCount={archivedCount}
-			deletedCount={deletedCount}
+			archivedCount={displayArchivedCount}
+			deletedCount={displayDeletedCount}
 		/>
 	);
 };

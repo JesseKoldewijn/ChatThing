@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { UsagePageUI } from "./UsagePage.ui";
 import {
@@ -11,17 +11,43 @@ import { useNavigation } from "@/lib/hooks/useNavigation";
 
 export const UsagePage = () => {
 	const { goBack } = useNavigation();
+	const [hasMounted, setHasMounted] = useState(false);
+	
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
+
 	// Subscribe to daily usage changes - this triggers re-render when data changes
 	const dailyUsage = useStore(dailyUsageAtom);
 
 	// Compute summary and chart data based on current usage
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const summary = useMemo(() => getUsageSummary(), [dailyUsage]);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const chartData = useMemo(() => getRecentDailyUsage(30), [dailyUsage]);
+	// We must ensure these are deterministic (empty) during the first render
+	// to match the server-side render, even if the store is already hydrated on the client.
+	const summary = useMemo(() => {
+		if (!hasMounted) {
+			return {
+				totalMessages: 0,
+				totalResponses: 0,
+				totalToolCalls: 0,
+				totalCharacters: 0,
+				totalInputTokens: 0,
+				totalOutputTokens: 0,
+				averageResponseLength: 0,
+				toolBreakdown: {},
+				dailyUsage: [],
+			};
+		}
+		return getUsageSummary();
+	}, [dailyUsage, hasMounted]);
+
+	const chartData = useMemo(() => {
+		if (!hasMounted) return [];
+		return getRecentDailyUsage(30);
+	}, [dailyUsage, hasMounted]);
 
 	// Transform chart data for display
 	const formattedChartData = useMemo(() => {
+		if (!hasMounted) return [];
 		return chartData.map((day) => ({
 			...day,
 			// Format date for display (e.g., "Dec 14")
@@ -30,10 +56,11 @@ export const UsagePage = () => {
 				day: "numeric",
 			}),
 		}));
-	}, [chartData]);
+	}, [chartData, hasMounted]);
 
 	// Create table data from daily usage
 	const tableData = useMemo(() => {
+		if (!hasMounted) return [];
 		return chartData
 			.filter(
 				(day) =>
@@ -57,7 +84,7 @@ export const UsagePage = () => {
 				outputTokens: day.outputTokens || 0,
 				totalTokens: (day.inputTokens || 0) + (day.outputTokens || 0),
 			}));
-	}, [chartData]);
+	}, [chartData, hasMounted]);
 
 	const handleBack = useCallback(() => {
 		goBack();
@@ -75,6 +102,7 @@ export const UsagePage = () => {
 
 	return (
 		<UsagePageUI
+			isHydrated={hasMounted}
 			summary={summary}
 			chartData={formattedChartData}
 			tableData={tableData}

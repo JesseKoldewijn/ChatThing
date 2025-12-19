@@ -106,11 +106,22 @@ const convertHistoryToMessages = (history?: Message[]): ModelMessage[] => {
 
 	return history
 		.filter((msg) => {
-			const isFromToolTransaction = toolTransactionIds.has(msg.transactionId);
+			const isFromToolTransaction = toolTransactionIds.has(
+				msg.transactionId
+			);
 			if (isFromToolTransaction) {
-				if (msg.transactionId !== mostRecentToolTransactionId) return false;
+				// For the Prompt API (limited context), we only keep the most recent tool result
+				// to avoid confusing the model or hitting token limits.
+				// HOWEVER, we must NEVER filter out user messages as they are critical context.
+				if (
+					msg.role === "assistant" &&
+					msg.transactionId !== mostRecentToolTransactionId
+				) {
+					return false;
+				}
 			}
-			if (msg.role === "assistant" && isToolUIMessage(msg.content)) return false;
+			if (msg.role === "assistant" && isToolUIMessage(msg.content))
+				return false;
 			return true;
 		})
 		.map((msg): ModelMessage => {
@@ -246,7 +257,7 @@ Title:`;
 
 		try {
 			const result = await generateText({
-				model: builtInAI(undefined, {
+				model: builtInAI("text" as any, {
 					expectedOutputLanguages: ["en"],
 				} as BuiltInAIChatSettings),
 				prompt,

@@ -1,6 +1,5 @@
-import { atom, onMount } from "nanostores";
+import { atom } from "nanostores";
 import type { BuiltInAIChatSettings } from "@built-in-ai/core";
-import { isHydratedAtom } from "./hydration";
 
 export type Theme = "light" | "dark" | "system";
 
@@ -40,6 +39,9 @@ const detectBrowserLanguage = (): PromptApiLanguage => {
 	// Default to English if no supported language found
 	return "en";
 };
+
+// Check if we're in browser environment
+const isBrowser = typeof window !== "undefined";
 
 // Theme state
 export const themeAtom = atom<Theme>("system");
@@ -146,11 +148,8 @@ const PROVIDER_TYPE_KEY = "ai-provider-type";
 const OPENROUTER_API_KEY_KEY = "openrouter-api-key";
 const OPENROUTER_MODEL_KEY = "openrouter-model";
 
-// Check if we're in browser environment
-const isBrowser = typeof window !== "undefined";
-
 /**
- * Load theme from localStorage (called after hydration)
+ * Load theme from localStorage
  */
 const loadThemeFromStorage = () => {
 	if (!isBrowser) return;
@@ -161,7 +160,7 @@ const loadThemeFromStorage = () => {
 };
 
 /**
- * Load temperature unit from localStorage (called after hydration)
+ * Load temperature unit from localStorage
  */
 const loadTemperatureUnitFromStorage = () => {
 	if (!isBrowser) return;
@@ -172,7 +171,7 @@ const loadTemperatureUnitFromStorage = () => {
 };
 
 /**
- * Load timezone from localStorage (called after hydration)
+ * Load timezone from localStorage
  */
 const loadTimezoneFromStorage = () => {
 	if (!isBrowser) return;
@@ -183,7 +182,7 @@ const loadTimezoneFromStorage = () => {
 };
 
 /**
- * Load archive threshold from localStorage (called after hydration)
+ * Load archive threshold from localStorage
  */
 const loadArchiveThresholdFromStorage = () => {
 	if (!isBrowser) return;
@@ -212,7 +211,7 @@ const loadArchiveThresholdFromStorage = () => {
 };
 
 /**
- * Load output language from localStorage (called after hydration)
+ * Load output language from localStorage
  */
 const loadOutputLanguageFromStorage = () => {
 	if (!isBrowser) return;
@@ -247,130 +246,6 @@ const loadAiProviderSettingsFromStorage = () => {
 		openRouterModelAtom.set(model);
 	}
 };
-
-// Initialize theme - defer localStorage read until after hydration
-onMount(themeAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadThemeFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadThemeFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize output language - defer localStorage read until after hydration
-onMount(outputLanguageAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadOutputLanguageFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadOutputLanguageFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize temperature unit - defer localStorage read until after hydration
-onMount(temperatureUnitAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadTemperatureUnitFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadTemperatureUnitFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize timezone - defer localStorage read until after hydration
-onMount(timezoneAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadTimezoneFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadTimezoneFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize archive threshold - defer localStorage read until after hydration
-onMount(archiveThresholdAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadArchiveThresholdFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadArchiveThresholdFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize AI provider settings
-onMount(providerTypeAtom, () => {
-	if (!isBrowser) return;
-	
-	if (isHydratedAtom.get()) {
-		loadAiProviderSettingsFromStorage();
-		return;
-	}
-	
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadAiProviderSettingsFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
 
 // Actions
 export const setTheme = (theme: Theme) => {
@@ -446,4 +321,19 @@ export const setOutputLanguage = (language: PromptApiLanguage) => {
 // Legacy function for compatibility
 export const setArchiveThresholdDays = (days: number) => {
 	setArchiveThreshold({ value: days, unit: "days" });
+};
+
+/**
+ * Hydrate settings from localStorage.
+ * This should be called only on the client inside a useEffect.
+ */
+export const hydrateSettings = () => {
+	if (!isBrowser) return;
+	
+	loadThemeFromStorage();
+	loadOutputLanguageFromStorage();
+	loadTemperatureUnitFromStorage();
+	loadTimezoneFromStorage();
+	loadArchiveThresholdFromStorage();
+	loadAiProviderSettingsFromStorage();
 };

@@ -57,9 +57,32 @@ export const addMessage = (
 	content: string,
 	options?: AddMessageOptions
 ) => {
+	const currentMessages = messagesAtom.get();
+	const transactionId = options?.transactionId ?? crypto.randomUUID();
+
+	// If this is an assistant message with a transactionId, check if one already exists
+	// for this transaction to avoid duplicates during retries/regeneration
+	if (role === "assistant" && options?.transactionId) {
+		const index = currentMessages.findIndex(
+			(m) =>
+				m.transactionId === options.transactionId &&
+				m.role === "assistant"
+		);
+		if (index !== -1) {
+			const updatedMessages = [...currentMessages];
+			updatedMessages[index] = {
+				...updatedMessages[index],
+				content,
+				images: options.images,
+			};
+			messagesAtom.set(updatedMessages);
+			return updatedMessages[index];
+		}
+	}
+
 	const message: Message = {
 		id: crypto.randomUUID(),
-		transactionId: options?.transactionId ?? crypto.randomUUID(),
+		transactionId,
 		role,
 		content,
 		images:
@@ -68,7 +91,7 @@ export const addMessage = (
 				: undefined,
 		timestamp: Date.now(),
 	};
-	messagesAtom.set([...messagesAtom.get(), message]);
+	messagesAtom.set([...currentMessages, message]);
 	return message;
 };
 

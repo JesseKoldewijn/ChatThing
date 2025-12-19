@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 import { useStore } from "@nanostores/react";
 import { ChatContainerUI } from "./ChatContainer.ui";
 import { MessageList } from "../messages/MessageList";
@@ -135,8 +135,16 @@ export const ChatContainer = () => {
 	const providerType = useStore(providerTypeAtom);
 	const { compatibility } = useCompatibility();
 
+	const isStreaming = useStore(isStreamingAtom);
+	const lastUrlChatRef = useRef<string | undefined>(activeChat);
+
 	// Sync URL -> Atom
 	useEffect(() => {
+		// Skip if URL haven't changed since last sync
+		if (activeChat === lastUrlChatRef.current && activeChat === activeConversationId) {
+			return;
+		}
+
 		if (activeChat && activeChat !== activeConversationId) {
 			// Save current conversation before switching
 			saveCurrentConversation();
@@ -150,10 +158,20 @@ export const ChatContainer = () => {
 			if (conversation) {
 				messagesAtom.set(conversation.messages);
 			}
+			lastUrlChatRef.current = activeChat;
 		} else if (!activeChat && activeConversationId) {
-			setActiveChatAtom(null, false);
+			// ONLY clear if we're not streaming AND we're not in the middle of creating a chat
+			// We check for "New Chat" title as a proxy for a just-created chat
+			const conversations = conversationsAtom.get();
+			const activeConv = conversations.find(c => c.id === activeConversationId);
+			const isInitialChat = activeConv?.title === "New Chat" && activeConv?.messages.length === 0;
+
+			if (!isStreaming && !isInitialChat) {
+				setActiveChatAtom(null, false);
+				lastUrlChatRef.current = undefined;
+			}
 		}
-	}, [activeChat, activeConversationId]);
+	}, [activeChat, activeConversationId, isStreaming]);
 
 	// Sync Atom -> URL
 	useEffect(() => {
@@ -187,6 +205,11 @@ export const ChatContainer = () => {
 		) => {
 			const { addUserMessage = true, images } = options;
 
+			// Start streaming state immediately to guard against URL sync clearing
+			isStreamingAtom.set(true);
+			loadingAtom.set(true);
+			clearStream();
+
 			// Generate a transaction ID to link the prompt with all its responses
 			const transactionId = options.transactionId ?? crypto.randomUUID();
 			currentTransactionIdRef.current = transactionId;
@@ -213,12 +236,9 @@ export const ChatContainer = () => {
 				addMessage("user", prompt, { images, transactionId });
 				// Track usage
 				recordMessage(conversationId, prompt.length);
+				// Save immediately to avoid race conditions with URL sync
+				saveCurrentConversation();
 			}
-
-			// Start streaming state
-			isStreamingAtom.set(true);
-			loadingAtom.set(true);
-			clearStream();
 
 			try {
 				abortController = new AbortController();
@@ -379,16 +399,33 @@ export const ChatContainer = () => {
 				}
 			} catch (error) {
 				if ((error as Error).name !== "AbortError") {
+					console.error("Chat Error:", error);
+					
 					// Set the error with retry action (don't add user message on retry)
 					const retryMessage = lastMessageRef.current;
 					const retryImages = lastImagesRef.current;
-					setError(error as Error, () => {
+					const promptError = setError(error as Error, () => {
 						streamResponse(retryMessage, {
 							addUserMessage: false,
 							images: retryImages,
 							transactionId, // Preserve the transaction ID on retry
 						});
 					});
+
+					// ALSO show the error inside the chat conversation for better visibility
+					addMessage("assistant", `❌ ${promptError.title}: ${promptError.message}`, {
+						transactionId,
+					});
+
+					// Save the conversation even on error to persist the error message
+					saveCurrentConversation();
+
+					// Trigger title generation even on error if it's the first message
+					if (addUserMessage && conversationId) {
+						queueMicrotask(() => {
+							triggerTitleGeneration(conversationId);
+						});
+					}
 				}
 			} finally {
 				isStreamingAtom.set(false);
@@ -445,16 +482,19 @@ export const ChatContainer = () => {
 		setSidebar(false);
 	}, [setSidebar]);
 
-	const markdownRenderer = createMarkdownRenderer();
+	const [hasMounted, setHasMounted] = useState(false);
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
 
-	// Skip loading state - go straight to the real UI
-	// The compatibility check runs in the background.
-	// If incompatible, we'll show the error once the check completes.
+	const markdownRenderer = useMemo(() => createMarkdownRenderer(), []);
 
 	// Show compatibility error if not compatible (only for Prompt API) or if forceCompat query param is set (for testing)
+	// We only show this after hydration to avoid SSR mismatch
 	if (
-		forceCompat ||
-		(providerType === "prompt-api" && compatibility && !compatibility.isCompatible)
+		hasMounted &&
+		(forceCompat ||
+			(providerType === "prompt-api" && compatibility && !compatibility.isCompatible))
 	) {
 		return <CompatibilityError />;
 	}
