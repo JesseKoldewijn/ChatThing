@@ -115,7 +115,7 @@ export const ChatInputUI = ({
 						variant="outline"
 						onClick={handleImageButtonClick}
 						disabled={isDisabled || isLoading}
-						className="h-[52px] w-[52px] shrink-0 rounded-xl"
+						className="h-[52px] w-[52px] shrink-0 rounded-xl transition-none"
 						title="Attach image"
 					>
 						<ImagePlus className="h-5 w-5" />
@@ -136,9 +136,9 @@ export const ChatInputUI = ({
 							disabled={isDisabled}
 							className={cn(
 								"min-h-[52px] max-h-[200px] resize-none py-3.5 px-4",
-								"rounded-xl border-2 border-input bg-background",
+								"rounded-xl border-2 border-input bg-background dark:bg-input/30",
 								"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-								"transition-all duration-200"
+								"transition-none"
 							)}
 							rows={1}
 						/>
@@ -152,7 +152,7 @@ export const ChatInputUI = ({
 							size="icon"
 							variant="destructive"
 							onClick={onStop}
-							className="h-[52px] w-[52px] shrink-0 rounded-xl"
+							className="h-[52px] w-[52px] shrink-0 rounded-xl transition-none"
 						>
 							<Square className="h-5 w-5" />
 						</Button>
@@ -163,7 +163,7 @@ export const ChatInputUI = ({
 							size="icon"
 							onClick={onSubmit}
 							disabled={isDisabled || !canSubmit}
-							className="h-[52px] w-[52px] shrink-0 rounded-xl"
+							className="h-[52px] w-[52px] shrink-0 rounded-xl transition-none"
 						>
 							{isLoading ? (
 								<Loader2 className="h-5 w-5 animate-spin" />

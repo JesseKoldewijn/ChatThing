@@ -15,8 +15,8 @@ vi.mock("@/lib/hooks/useNavigation", () => ({
 }));
 
 // Mock compatibility check but use real detectBrowser for coverage
-vi.mock("@/lib/ai/compat", async () => {
-	const actual = await vi.importActual<typeof import("@/lib/ai/compat")>("@/lib/ai/compat");
+vi.mock("@/lib/ai/prompt-api/compat", async () => {
+	const actual = await vi.importActual<typeof import("@/lib/ai/prompt-api/compat")>("@/lib/ai/prompt-api/compat");
 	return {
 		...actual,
 		detectBrowser: actual.detectBrowser,

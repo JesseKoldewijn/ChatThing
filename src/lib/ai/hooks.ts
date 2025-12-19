@@ -8,28 +8,38 @@ import {
 	dataAtom,
 	conversationAtom,
 } from "./store";
-import { promptAsync, promptStreamReader } from "./prompt";
+import { getAIManager } from "./index";
+import { promptStreamReader } from "./manager";
 import type { BuiltInAIChatSettings } from "@built-in-ai/core";
 import {
 	compatibilityCheck,
 	quickCompatibilityCheck,
 	type CompatibilityResult,
 	type PromptApiAvailability,
-} from "./compat";
+} from "./prompt-api/compat";
+import { providerTypeAtom } from "@/lib/stores/settings";
 
 // Compatibility state atoms
 export const compatibilityAtom = atom<CompatibilityResult | null>(null);
-export const compatibilityCheckingAtom = atom<boolean>(true);
+export const compatibilityCheckingAtom = atom<boolean>(false);
 
 /**
  * useCompatibility hook for checking and monitoring Prompt API compatibility
+ * ONLY runs when Prompt API is selected
  * @returns Compatibility status and recheck function
  */
 export const useCompatibility = () => {
 	const compatibility = useStore(compatibilityAtom);
 	const isChecking = useStore(compatibilityCheckingAtom);
+	const providerType = useStore(providerTypeAtom);
 
 	const checkCompatibility = useCallback(async () => {
+		// Only check if Prompt API is active
+		if (providerType !== "prompt-api") {
+			compatibilityCheckingAtom.set(false);
+			return;
+		}
+
 		compatibilityCheckingAtom.set(true);
 		try {
 			const result = await compatibilityCheck();
@@ -45,21 +55,29 @@ export const useCompatibility = () => {
 		} finally {
 			compatibilityCheckingAtom.set(false);
 		}
-	}, []);
+	}, [providerType]);
 
-	// Run compatibility check on mount
+	// Run compatibility check on mount or provider change
 	useEffect(() => {
-		checkCompatibility();
-	}, [checkCompatibility]);
+		if (providerType === "prompt-api") {
+			checkCompatibility();
+		} else {
+			// Reset compatibility state when switching away from Prompt API
+			compatibilityAtom.set(null);
+			compatibilityCheckingAtom.set(false);
+		}
+	}, [checkCompatibility, providerType]);
 
 	return {
 		compatibility,
 		isChecking,
 		recheck: () => {
-			compatibilityCheckingAtom.set(true);
-			setTimeout(() => {
-				checkCompatibility();
-			}, 1000);
+			if (providerType === "prompt-api") {
+				compatibilityCheckingAtom.set(true);
+				setTimeout(() => {
+					checkCompatibility();
+				}, 1000);
+			}
 		},
 	};
 };
@@ -75,27 +93,31 @@ export const usePrompt = () => {
 	const streamData = useStore(streamDataAtom);
 	const data = useStore(dataAtom);
 	const compatibility = useStore(compatibilityAtom);
+	const providerType = useStore(providerTypeAtom);
 
 	const streamAsyncCallback = useCallback(
 		async (prompt: string, options?: BuiltInAIChatSettings) => {
 			try {
-				// Check cached compatibility first
-				if (compatibility && !compatibility.isCompatible) {
-					throw (
-						compatibility.error ??
-						new Error("Prompt API is not available")
-					);
-				}
-
-				// If no cached result, run async check
-				if (!compatibility) {
-					const result = await compatibilityCheck();
-					compatibilityAtom.set(result);
-					if (!result.isCompatible) {
+				// Only check compatibility for Prompt API
+				if (providerType === "prompt-api") {
+					// Check cached compatibility first
+					if (compatibility && !compatibility.isCompatible) {
 						throw (
-							result.error ??
+							compatibility.error ??
 							new Error("Prompt API is not available")
 						);
+					}
+
+					// If no cached result, run async check
+					if (!compatibility) {
+						const result = await compatibilityCheck();
+						compatibilityAtom.set(result);
+						if (!result.isCompatible) {
+							throw (
+								result.error ??
+								new Error("Prompt API is not available")
+							);
+						}
 					}
 				}
 
@@ -103,7 +125,9 @@ export const usePrompt = () => {
 				errorAtom.set(null);
 				streamDataAtom.set(null);
 				conversationAtom.set([...conversationAtom.get(), prompt]);
-				const stream = await promptAsync(prompt, options);
+				
+				const manager = getAIManager();
+				const stream = await manager.prompt(prompt, options);
 				const data = await promptStreamReader(stream);
 				dataAtom.set(data);
 				streamDataAtom.set(stream);
@@ -113,7 +137,7 @@ export const usePrompt = () => {
 				loadingAtom.set(false);
 			}
 		},
-		[compatibility]
+		[compatibility, providerType]
 	);
 
 	return { loading, error, streamData, data, prompt: streamAsyncCallback };

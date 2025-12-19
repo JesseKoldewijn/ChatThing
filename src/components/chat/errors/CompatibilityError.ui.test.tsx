@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CompatibilityErrorUI } from "./CompatibilityError.ui";
-import type { BrowserInfo } from "@/lib/ai/compat";
+import type { BrowserInfo } from "@/lib/ai/prompt-api/compat";
 
 const defaultBrowserInfo: BrowserInfo = {
 	vendor: "chrome",

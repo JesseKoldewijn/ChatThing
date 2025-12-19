@@ -13,10 +13,10 @@ import {
 	dataAtom,
 	conversationAtom,
 } from "./store";
-import * as compat from "./compat";
+import * as compat from "./prompt-api/compat";
 
 // Mock the compat module
-vi.mock("./compat", () => ({
+vi.mock("./prompt-api/compat", () => ({
 	compatibilityCheck: vi.fn().mockResolvedValue({
 		isCompatible: true,
 		availability: "available",
@@ -31,15 +31,29 @@ vi.mock("./compat", () => ({
 	requestModelDownload: vi.fn().mockResolvedValue(true),
 }));
 
-// Mock the prompt module
-vi.mock("./prompt", () => ({
-	promptAsync: vi.fn().mockResolvedValue({
-		[Symbol.asyncIterator]: async function* () {
-			yield { type: "text-delta", textDelta: "Hello" };
-		},
-	}),
+// Mock index
+vi.mock("./index", () => ({
+	getAIManager: vi.fn(() => ({
+		prompt: vi.fn().mockResolvedValue({
+			[Symbol.asyncIterator]: async function* () {
+				yield { type: "text-delta", text: "Hello" };
+			},
+		}),
+	})),
+}));
+
+// Mock settings
+vi.mock("@/lib/stores/settings", async () => {
+	const { atom } = await import("nanostores");
+	return {
+		providerTypeAtom: atom("prompt-api"),
+	};
+});
+
+// Mock manager for promptStreamReader
+vi.mock("./manager", () => ({
 	promptStreamReader: vi.fn().mockResolvedValue([
-		{ type: "text-delta", textDelta: "Hello" },
+		{ type: "text-delta", text: "Hello" },
 	]),
 }));
 

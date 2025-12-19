@@ -1,6 +1,5 @@
-import { atom, onMount } from "nanostores";
+import { atom } from "nanostores";
 import type { BuiltInAIChatSettings } from "@built-in-ai/core";
-import { isHydratedAtom } from "./hydration";
 
 export type Theme = "light" | "dark" | "system";
 
@@ -41,6 +40,9 @@ const detectBrowserLanguage = (): PromptApiLanguage => {
 	return "en";
 };
 
+// Check if we're in browser environment
+const isBrowser = typeof window !== "undefined";
+
 // Theme state
 export const themeAtom = atom<Theme>("system");
 
@@ -78,6 +80,14 @@ export const getResolvedTimezone = (): string => {
 
 // AI model settings
 export const aiSettingsAtom = atom<BuiltInAIChatSettings>({});
+
+// AI Provider settings
+export type ProviderType = "prompt-api" | "open-router" | "ollama";
+export const providerTypeAtom = atom<ProviderType>("open-router");
+export const openRouterApiKeyAtom = atom<string>("");
+export const openRouterModelAtom = atom<string>("mistralai/devstral-2512:free");
+export const ollamaModelAtom = atom<string>("deepseek-r1:1.5b");
+export const ollamaBaseUrlAtom = atom<string>("http://localhost:11434");
 
 // Archive threshold units
 export type ArchiveThresholdUnit = "hours" | "days" | "weeks" | "months";
@@ -135,11 +145,15 @@ const TIMEZONE_KEY = "timezone";
 // Storage key for output language
 const OUTPUT_LANGUAGE_KEY = "output-language";
 
-// Check if we're in browser environment
-const isBrowser = typeof window !== "undefined";
+// Storage keys for AI providers
+const PROVIDER_TYPE_KEY = "ai-provider-type";
+const OPENROUTER_API_KEY_KEY = "openrouter-api-key";
+const OPENROUTER_MODEL_KEY = "openrouter-model";
+const OLLAMA_MODEL_KEY = "ollama-model";
+const OLLAMA_BASE_URL_KEY = "ollama-base-url";
 
 /**
- * Load theme from localStorage (called after hydration)
+ * Load theme from localStorage
  */
 const loadThemeFromStorage = () => {
 	if (!isBrowser) return;
@@ -150,7 +164,7 @@ const loadThemeFromStorage = () => {
 };
 
 /**
- * Load temperature unit from localStorage (called after hydration)
+ * Load temperature unit from localStorage
  */
 const loadTemperatureUnitFromStorage = () => {
 	if (!isBrowser) return;
@@ -161,7 +175,7 @@ const loadTemperatureUnitFromStorage = () => {
 };
 
 /**
- * Load timezone from localStorage (called after hydration)
+ * Load timezone from localStorage
  */
 const loadTimezoneFromStorage = () => {
 	if (!isBrowser) return;
@@ -172,7 +186,7 @@ const loadTimezoneFromStorage = () => {
 };
 
 /**
- * Load archive threshold from localStorage (called after hydration)
+ * Load archive threshold from localStorage
  */
 const loadArchiveThresholdFromStorage = () => {
 	if (!isBrowser) return;
@@ -201,7 +215,7 @@ const loadArchiveThresholdFromStorage = () => {
 };
 
 /**
- * Load output language from localStorage (called after hydration)
+ * Load output language from localStorage
  */
 const loadOutputLanguageFromStorage = () => {
 	if (!isBrowser) return;
@@ -215,110 +229,37 @@ const loadOutputLanguageFromStorage = () => {
 	}
 };
 
-// Initialize theme - defer localStorage read until after hydration
-onMount(themeAtom, () => {
+/**
+ * Load AI provider settings from localStorage
+ */
+const loadAiProviderSettingsFromStorage = () => {
 	if (!isBrowser) return;
 	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadThemeFromStorage();
-		return;
+	const type = localStorage.getItem(PROVIDER_TYPE_KEY) as ProviderType | null;
+	if (type && ["prompt-api", "open-router", "ollama"].includes(type)) {
+		providerTypeAtom.set(type);
 	}
 	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadThemeFromStorage();
-			unsubscribe();
-		}
-	});
+	const apiKey = localStorage.getItem(OPENROUTER_API_KEY_KEY);
+	if (apiKey) {
+		openRouterApiKeyAtom.set(apiKey);
+	}
 	
-	return unsubscribe;
-});
+	const model = localStorage.getItem(OPENROUTER_MODEL_KEY);
+	if (model) {
+		openRouterModelAtom.set(model);
+	}
 
-// Initialize output language - defer localStorage read until after hydration
-onMount(outputLanguageAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadOutputLanguageFromStorage();
-		return;
+	const ollamaModel = localStorage.getItem(OLLAMA_MODEL_KEY);
+	if (ollamaModel) {
+		ollamaModelAtom.set(ollamaModel);
 	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadOutputLanguageFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
 
-// Initialize temperature unit - defer localStorage read until after hydration
-onMount(temperatureUnitAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadTemperatureUnitFromStorage();
-		return;
+	const ollamaBaseUrl = localStorage.getItem(OLLAMA_BASE_URL_KEY);
+	if (ollamaBaseUrl) {
+		ollamaBaseUrlAtom.set(ollamaBaseUrl);
 	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadTemperatureUnitFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize timezone - defer localStorage read until after hydration
-onMount(timezoneAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadTimezoneFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadTimezoneFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
-
-// Initialize archive threshold - defer localStorage read until after hydration
-onMount(archiveThresholdAtom, () => {
-	if (!isBrowser) return;
-	
-	// If already hydrated, load immediately
-	if (isHydratedAtom.get()) {
-		loadArchiveThresholdFromStorage();
-		return;
-	}
-	
-	// Otherwise, wait for hydration to complete
-	const unsubscribe = isHydratedAtom.subscribe((hydrated) => {
-		if (hydrated) {
-			loadArchiveThresholdFromStorage();
-			unsubscribe();
-		}
-	});
-	
-	return unsubscribe;
-});
+};
 
 // Actions
 export const setTheme = (theme: Theme) => {
@@ -331,6 +272,41 @@ export const setTheme = (theme: Theme) => {
 
 export const updateAiSettings = (settings: Partial<BuiltInAIChatSettings>) => {
 	aiSettingsAtom.set({ ...aiSettingsAtom.get(), ...settings });
+};
+
+export const setProviderType = (type: ProviderType) => {
+	providerTypeAtom.set(type);
+	if (isBrowser) {
+		localStorage.setItem(PROVIDER_TYPE_KEY, type);
+	}
+};
+
+export const setOpenRouterApiKey = (key: string) => {
+	openRouterApiKeyAtom.set(key);
+	if (isBrowser) {
+		localStorage.setItem(OPENROUTER_API_KEY_KEY, key);
+	}
+};
+
+export const setOpenRouterModel = (model: string) => {
+	openRouterModelAtom.set(model);
+	if (isBrowser) {
+		localStorage.setItem(OPENROUTER_MODEL_KEY, model);
+	}
+};
+
+export const setOllamaModel = (model: string) => {
+	ollamaModelAtom.set(model);
+	if (isBrowser) {
+		localStorage.setItem(OLLAMA_MODEL_KEY, model);
+	}
+};
+
+export const setOllamaBaseUrl = (url: string) => {
+	ollamaBaseUrlAtom.set(url);
+	if (isBrowser) {
+		localStorage.setItem(OLLAMA_BASE_URL_KEY, url);
+	}
 };
 
 export const setTemperatureUnit = (unit: TemperatureUnit) => {
@@ -373,4 +349,19 @@ export const setOutputLanguage = (language: PromptApiLanguage) => {
 // Legacy function for compatibility
 export const setArchiveThresholdDays = (days: number) => {
 	setArchiveThreshold({ value: days, unit: "days" });
+};
+
+/**
+ * Hydrate settings from localStorage.
+ * This should be called only on the client inside a useEffect.
+ */
+export const hydrateSettings = () => {
+	if (!isBrowser) return;
+	
+	loadThemeFromStorage();
+	loadOutputLanguageFromStorage();
+	loadTemperatureUnitFromStorage();
+	loadTimezoneFromStorage();
+	loadArchiveThresholdFromStorage();
+	loadAiProviderSettingsFromStorage();
 };

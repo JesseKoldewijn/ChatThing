@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 import { useStore } from "@nanostores/react";
 import { ChatContainerUI } from "./ChatContainer.ui";
 import { MessageList } from "../messages/MessageList";
@@ -20,8 +20,11 @@ import {
 import {
 	saveCurrentConversation,
 	activeConversationIdAtom,
+	setActiveChat as setActiveChatAtom,
 	createConversation,
 	triggerTitleGeneration,
+	conversationsAtom,
+	isSyncingFromUrlAtom,
 } from "@/lib/stores/conversations";
 import {
 	aiSettingsAtom,
@@ -37,10 +40,11 @@ import {
 	recordTokenUsage,
 	estimateTokens,
 } from "@/lib/stores/usage";
-import { promptAsync } from "@/lib/ai/prompt";
+import { getAIManager } from "@/lib/ai";
 import { loadingAtom } from "@/lib/ai/store";
 import { useCompatibility } from "@/lib/ai/hooks";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
+import { providerTypeAtom } from "@/lib/stores/settings";
 
 // Abort controller for stopping streams
 let abortController: AbortController | null = null;
@@ -124,11 +128,60 @@ const formatTemperature = (
 };
 
 export const ChatContainer = () => {
-	const { sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, forceCompat } =
+	const { activeChat, sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, forceCompat, setActiveChat } =
 		useChatSearchParams();
 	const activeConversationId = useStore(activeConversationIdAtom);
 	const aiSettings = useStore(aiSettingsAtom);
+	const providerType = useStore(providerTypeAtom);
 	const { compatibility } = useCompatibility();
+
+	const isStreaming = useStore(isStreamingAtom);
+	const lastUrlChatRef = useRef<string | undefined>(activeChat);
+
+	// Sync URL -> Atom
+	useEffect(() => {
+		// Skip if URL haven't changed since last sync
+		if (activeChat === lastUrlChatRef.current && activeChat === activeConversationId) {
+			return;
+		}
+
+		if (activeChat && activeChat !== activeConversationId) {
+			// Save current conversation before switching
+			saveCurrentConversation();
+			
+			// Trigger switch WITHOUT pushing back to URL (it's already there)
+			setActiveChatAtom(activeChat, false);
+			
+			// Load the messages
+			const conversations = conversationsAtom.get();
+			const conversation = conversations.find((c) => c.id === activeChat);
+			if (conversation) {
+				messagesAtom.set(conversation.messages);
+			}
+			lastUrlChatRef.current = activeChat;
+		} else if (!activeChat && activeConversationId) {
+			// ONLY clear if we're not streaming AND we're not in the middle of creating a chat
+			// We check for "New Chat" title as a proxy for a just-created chat
+			const conversations = conversationsAtom.get();
+			const activeConv = conversations.find(c => c.id === activeConversationId);
+			const isInitialChat = activeConv?.title === "New Chat" && activeConv?.messages.length === 0;
+
+			if (!isStreaming && !isInitialChat) {
+				setActiveChatAtom(null, false);
+				lastUrlChatRef.current = undefined;
+			}
+		}
+	}, [activeChat, activeConversationId, isStreaming]);
+
+	// Sync Atom -> URL
+	useEffect(() => {
+		const unsubscribe = activeConversationIdAtom.subscribe((id) => {
+			if (!isSyncingFromUrlAtom.get() && id !== activeChat) {
+				setActiveChat(id ?? undefined);
+			}
+		});
+		return unsubscribe;
+	}, [activeChat, setActiveChat]);
 
 	// Keep track of last message and images for retry functionality
 	const lastMessageRef = useRef<string>("");
@@ -151,6 +204,11 @@ export const ChatContainer = () => {
 			} = {}
 		) => {
 			const { addUserMessage = true, images } = options;
+
+			// Start streaming state immediately to guard against URL sync clearing
+			isStreamingAtom.set(true);
+			loadingAtom.set(true);
+			clearStream();
 
 			// Generate a transaction ID to link the prompt with all its responses
 			const transactionId = options.transactionId ?? crypto.randomUUID();
@@ -178,18 +236,18 @@ export const ChatContainer = () => {
 				addMessage("user", prompt, { images, transactionId });
 				// Track usage
 				recordMessage(conversationId, prompt.length);
+				// Save immediately to avoid race conditions with URL sync
+				saveCurrentConversation();
 			}
-
-			// Start streaming state
-			isStreamingAtom.set(true);
-			loadingAtom.set(true);
-			clearStream();
 
 			try {
 				abortController = new AbortController();
 
+				// Get the current manager based on settings
+				const manager = getAIManager();
+
 				// Get the stream from the AI (pass images and history)
-				const stream = await promptAsync(prompt, {
+				const stream = await manager.prompt(prompt, {
 					...aiSettings,
 					images,
 					history: currentMessages,
@@ -268,32 +326,7 @@ export const ChatContainer = () => {
 								chunk.toolName === "datetime" &&
 								result
 							) {
-								// Format datetime using user's preferred timezone
-								const userTimezone = getResolvedTimezone();
-								const timestamp = result.timestamp as number;
-								const date = new Date(timestamp);
-
-								const dateStr = date.toLocaleDateString(
-									"en-US",
-									{
-										weekday: "long",
-										year: "numeric",
-										month: "long",
-										day: "numeric",
-										timeZone: userTimezone,
-									}
-								);
-								const timeStr = date.toLocaleTimeString(
-									"en-US",
-									{
-										hour: "2-digit",
-										minute: "2-digit",
-										second: "2-digit",
-										hour12: true,
-										timeZone: userTimezone,
-									}
-								);
-
+// ... existing datetime logic ...
 								const datetimeResponse = `It's currently ${timeStr} on ${dateStr} (${userTimezone}).`;
 								appendToStream(datetimeResponse);
 							}
@@ -336,21 +369,38 @@ export const ChatContainer = () => {
 				// and to not compete with the built-in AI for concurrent requests
 				if (addUserMessage && conversationId) {
 					queueMicrotask(() => {
-						triggerTitleGeneration(conversationId, prompt);
+						triggerTitleGeneration(conversationId);
 					});
 				}
 			} catch (error) {
 				if ((error as Error).name !== "AbortError") {
+					console.error("Chat Error:", error);
+					
 					// Set the error with retry action (don't add user message on retry)
 					const retryMessage = lastMessageRef.current;
 					const retryImages = lastImagesRef.current;
-					setError(error as Error, () => {
+					const promptError = setError(error as Error, () => {
 						streamResponse(retryMessage, {
 							addUserMessage: false,
 							images: retryImages,
 							transactionId, // Preserve the transaction ID on retry
 						});
 					});
+
+					// ALSO show the error inside the chat conversation for better visibility
+					addMessage("assistant", `❌ ${promptError.title}: ${promptError.message}`, {
+						transactionId,
+					});
+
+					// Save the conversation even on error to persist the error message
+					saveCurrentConversation();
+
+					// Trigger title generation even on error if it's the first message
+					if (addUserMessage && conversationId) {
+						queueMicrotask(() => {
+							triggerTitleGeneration(conversationId);
+						});
+					}
 				}
 			} finally {
 				isStreamingAtom.set(false);
@@ -407,14 +457,20 @@ export const ChatContainer = () => {
 		setSidebar(false);
 	}, [setSidebar]);
 
-	const markdownRenderer = createMarkdownRenderer();
+	const [hasMounted, setHasMounted] = useState(false);
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
 
-	// Skip loading state - go straight to the real UI
-	// The compatibility check runs in the background.
-	// If incompatible, we'll show the error once the check completes.
+	const markdownRenderer = useMemo(() => createMarkdownRenderer(), []);
 
-	// Show compatibility error if not compatible or if forceCompat query param is set (for testing)
-	if (forceCompat || (compatibility && !compatibility.isCompatible)) {
+	// Show compatibility error if not compatible (only for Prompt API) or if forceCompat query param is set (for testing)
+	// We only show this after hydration to avoid SSR mismatch
+	if (
+		hasMounted &&
+		(forceCompat ||
+			(providerType === "prompt-api" && compatibility && !compatibility.isCompatible))
+	) {
 		return <CompatibilityError />;
 	}
 

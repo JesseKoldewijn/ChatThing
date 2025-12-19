@@ -49,10 +49,11 @@ vi.mock("./imageStorage", () => ({
 	clearAllImages: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Mock title generator
-vi.mock("@/lib/ai/titleGenerator", () => ({
-	generateConversationTitle: vi.fn().mockResolvedValue("Generated Title"),
-	needsTitleGeneration: vi.fn((title: string) => title === "New Chat"),
+// Mock AI manager
+vi.mock("@/lib/ai", () => ({
+	getAIManager: vi.fn(() => ({
+		generateTitle: vi.fn().mockResolvedValue("Generated Title"),
+	})),
 }));
 
 // Mock hydration

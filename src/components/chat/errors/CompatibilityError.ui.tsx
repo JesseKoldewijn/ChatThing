@@ -21,7 +21,7 @@ import type {
 	PromptApiAvailability,
 	BrowserInfo,
 	DownloadProgress,
-} from "@/lib/ai/compat";
+} from "@/lib/ai/prompt-api/compat";
 import { Fragment, useState, useCallback } from "react";
 
 export interface CompatibilityErrorUIProps {

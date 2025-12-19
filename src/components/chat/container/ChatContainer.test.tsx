@@ -29,12 +29,14 @@ vi.mock("@/lib/ai/hooks", () => ({
 	}),
 }));
 
-vi.mock("@/lib/ai/prompt", () => ({
-	promptAsync: vi.fn().mockResolvedValue({
-		[Symbol.asyncIterator]: async function* () {
-			yield { type: "text-delta", textDelta: "Hello" };
-		},
-	}),
+vi.mock("@/lib/ai", () => ({
+	getAIManager: vi.fn(() => ({
+		prompt: vi.fn().mockResolvedValue({
+			[Symbol.asyncIterator]: async function* () {
+				yield { type: "text-delta", text: "Hello" };
+			},
+		}),
+	})),
 }));
 
 vi.mock("ai", () => ({
@@ -61,6 +63,7 @@ vi.mock("@/lib/stores/conversations", () => ({
 vi.mock("@/lib/stores/settings", () => ({
 	aiSettingsAtom: { get: () => ({}) },
 	temperatureUnitAtom: { get: () => "auto" },
+	providerTypeAtom: { get: () => "prompt-api" },
 	getResolvedTimezone: () => "America/New_York",
 }));
 

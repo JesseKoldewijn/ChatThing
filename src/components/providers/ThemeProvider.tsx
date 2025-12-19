@@ -19,14 +19,21 @@ const applyThemeToDOM = (theme: Theme) => {
 	if (!isBrowser) return;
 
 	const root = document.documentElement;
-	root.classList.remove("light", "dark");
+	const isDark =
+		theme === "dark" ||
+		(theme === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	if (theme === "system") {
-		// Check system preference and apply
-		const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-		root.classList.add(isDark ? "dark" : "light");
+	if (isDark) {
+		if (!root.classList.contains("dark")) {
+			root.classList.remove("light");
+			root.classList.add("dark");
+		}
 	} else {
-		root.classList.add(theme);
+		if (!root.classList.contains("light")) {
+			root.classList.remove("dark");
+			root.classList.add("light");
+		}
 	}
 };
 
@@ -36,12 +43,12 @@ const applyThemeToDOM = (theme: Theme) => {
  * This component should wrap the entire application.
  *
  * SSR-safe: Uses CSS media queries for initial server render, then hydrates
- * with the user's stored theme preference.
+ * with the user's stored theme preference via useEffect.
  */
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 	const theme = useStore(themeAtom);
 
-	// Apply theme on mount and when it changes (client-side only)
+	// Apply theme on mount and when it changes (client-side only via useEffect)
 	useEffect(() => {
 		applyThemeToDOM(theme);
 	}, [theme]);
@@ -68,7 +75,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 export const themeScript = `
 (function() {
 	try {
-		var theme = localStorage.getItem('theme-preference') || 'system';
+		var theme = localStorage.getItem('theme') || 'system';
 		var root = document.documentElement;
 		root.classList.remove('light', 'dark');
 		if (theme === 'system') {

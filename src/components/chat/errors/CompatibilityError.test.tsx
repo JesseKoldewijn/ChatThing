@@ -23,7 +23,7 @@ vi.mock("@/lib/hooks/useNavigation", () => ({
 	})),
 }));
 
-vi.mock("@/lib/ai/compat", () => ({
+vi.mock("@/lib/ai/prompt-api/compat", () => ({
 	requestModelDownload: vi.fn().mockResolvedValue({ success: true }),
 	detectBrowser: vi.fn(() => ({
 		vendor: "chrome",
@@ -67,7 +67,7 @@ vi.mock("./CompatibilityError.ui", () => ({
 import { CompatibilityError } from "./CompatibilityError";
 import { useCompatibility } from "@/lib/ai/hooks";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
-import { requestModelDownload } from "@/lib/ai/compat";
+import { requestModelDownload } from "@/lib/ai/prompt-api/compat";
 
 describe("CompatibilityError", () => {
 	beforeEach(() => {

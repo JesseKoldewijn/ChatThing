@@ -6,7 +6,7 @@ import {
 	detectBrowser,
 	generateInstructions,
 	type DownloadProgress,
-} from "@/lib/ai/compat";
+} from "@/lib/ai/prompt-api/compat";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
 
 export const CompatibilityError = () => {

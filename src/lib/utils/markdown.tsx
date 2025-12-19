@@ -232,9 +232,10 @@ const CodeBlock = ({ language, code }: CodeBlockProps) => {
 
 interface MarkdownRendererProps {
 	content: string;
+	isStreaming?: boolean;
 }
 
-export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
+export const MarkdownRenderer = ({ content, isStreaming = false }: MarkdownRendererProps) => {
 	return (
 		<Markdown
 			remarkPlugins={[remarkGfm]}
@@ -254,10 +255,13 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 						);
 					}
 
+					const language = match[1];
+					const code = String(children).replace(/\n$/, "");
+
 					return (
 						<CodeBlock
-							language={match[1]}
-							code={String(children).replace(/\n$/, "")}
+							language={language}
+							code={code}
 						/>
 					);
 				},
@@ -425,5 +429,5 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 // Helper to create a render function for MessageItem
 // eslint-disable-next-line react-refresh/only-export-components
 export const createMarkdownRenderer = () => {
-	return (content: string) => <MarkdownRenderer content={content} />;
+	return (content: string, isStreaming = false) => <MarkdownRenderer content={content} isStreaming={isStreaming} />;
 };

@@ -15,7 +15,7 @@ import {
 } from "./store";
 
 // Mock the compat module
-vi.mock("./compat", () => ({
+vi.mock("./prompt-api/compat", () => ({
 	compatibilityCheck: vi.fn().mockResolvedValue({
 		isCompatible: true,
 		availability: "available",
@@ -29,15 +29,29 @@ vi.mock("./compat", () => ({
 	}),
 }));
 
-// Mock the prompt module
-vi.mock("./prompt", () => ({
-	promptAsync: vi.fn().mockResolvedValue({
-		[Symbol.asyncIterator]: async function* () {
-			yield { type: "text-delta", textDelta: "Hello" };
-		},
-	}),
+// Mock index
+vi.mock("./index", () => ({
+	getAIManager: vi.fn(() => ({
+		prompt: vi.fn().mockResolvedValue({
+			[Symbol.asyncIterator]: async function* () {
+				yield { type: "text-delta", text: "Hello" };
+			},
+		}),
+	})),
+}));
+
+// Mock settings
+vi.mock("@/lib/stores/settings", async () => {
+	const { atom } = await import("nanostores");
+	return {
+		providerTypeAtom: atom("prompt-api"),
+	};
+});
+
+// Mock the manager module for promptStreamReader
+vi.mock("./manager", () => ({
 	promptStreamReader: vi.fn().mockResolvedValue([
-		{ type: "text-delta", textDelta: "Hello" },
+		{ type: "text-delta", text: "Hello" },
 	]),
 }));
 
@@ -142,7 +156,7 @@ describe("useCompatibility hook", () => {
 	});
 
 	it("should run compatibility check on mount", async () => {
-		const { compatibilityCheck } = await import("./compat");
+		const { compatibilityCheck } = await import("./prompt-api/compat");
 
 		renderHook(() => useCompatibility());
 

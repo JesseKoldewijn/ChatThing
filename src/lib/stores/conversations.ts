@@ -1,16 +1,12 @@
-import { atom, onMount } from "nanostores";
+import { atom } from "nanostores";
 import {
 	messagesAtom,
 	clearMessages,
 	type Message,
 	saveImagesToIndexedDB,
 } from "./chat";
-import {
-	generateConversationTitle,
-	needsTitleGeneration,
-} from "@/lib/ai/titleGenerator";
+import { getAIManager } from "@/lib/ai";
 import { archiveThresholdAtom, thresholdToHours } from "./settings";
-import { isHydratedAtom } from "./hydration";
 import { deleteConversationImages, clearAllImages } from "./imageStorage";
 
 // Check if we're in browser environment
@@ -19,12 +15,20 @@ const isBrowser = typeof window !== "undefined";
 // Active conversation ID atom
 export const activeChatIdAtom = atom<string | null>(null);
 
+// Flag to indicate a sync from URL is in progress to avoid circular updates
+export const isSyncingFromUrlAtom = atom<boolean>(false);
+
 /**
  * Set the active chat ID
  * @param id - The chat ID to set as active, or null to clear
+ * @param syncToUrl - Whether to trigger a sync to URL (internal use)
  */
-export const setActiveChat = (id: string | null) => {
+export const setActiveChat = (id: string | null, syncToUrl = true) => {
+	isSyncingFromUrlAtom.set(!syncToUrl);
 	activeChatIdAtom.set(id);
+	queueMicrotask(() => {
+		isSyncingFromUrlAtom.set(false);
+	});
 };
 
 export type ConversationStatus = "active" | "archived" | "deleted";
@@ -51,6 +55,9 @@ const titleGenerationInProgress = new Set<string>();
 
 // Track the previous chat ID to detect changes and save before switching
 let previousChatId: string | null = null;
+
+// Track programmatic switches with a counter to handle microtask races
+let programmaticSwitchCounter = 0;
 
 // Flag to indicate a programmatic switch is in progress (skips subscriber save)
 let programmaticSwitchInProgress = false;
@@ -83,7 +90,6 @@ const loadMessagesForChat = (chatId: string | null) => {
 
 /**
  * Initialize conversations from localStorage and set up URL syncing
- * Called after hydration to avoid hydration mismatches
  */
 const initializeConversations = () => {
 	if (!isBrowser) return;
@@ -104,7 +110,7 @@ const initializeConversations = () => {
 		}
 	}
 
-	// Run auto-archive check on mount
+	// Run auto-archive check
 	runAutoArchive();
 
 	// After loading conversations, check if URL has a chat ID and validate it
@@ -113,37 +119,24 @@ const initializeConversations = () => {
 	loadMessagesForChat(urlChatId);
 };
 
-// Load conversations from localStorage on mount - defer until after hydration
-onMount(conversationsAtom, () => {
-	if (!isBrowser) return;
-
-	// If already hydrated, initialize immediately
-	if (isHydratedAtom.get()) {
-		initializeConversations();
-	} else {
-		// Wait for hydration to complete
-		const unsubHydration = isHydratedAtom.subscribe((hydrated) => {
-			if (hydrated) {
-				initializeConversations();
-				unsubHydration();
-			}
-		});
-	}
-
-	// Subscribe to activeChatIdAtom changes (e.g., browser back/forward)
-	const unsubscribe = activeChatIdAtom.subscribe((newChatId) => {
+// Global subscription to activeChatIdAtom changes (e.g., browser back/forward)
+if (isBrowser) {
+	activeChatIdAtom.subscribe((newChatId) => {
 		// Skip if chat ID hasn't actually changed
 		if (newChatId === previousChatId) return;
 
 		// Skip if this is a programmatic switch (already handled by switchConversation)
-		if (programmaticSwitchInProgress) return;
+		if (programmaticSwitchInProgress || programmaticSwitchCounter > 0) {
+			previousChatId = newChatId;
+			return;
+		}
 
 		// Defer state updates to avoid updating during React render
 		queueMicrotask(() => {
 			// Double-check the value hasn't changed again
 			if (activeChatIdAtom.get() !== newChatId) return;
 			// Skip if programmatic switch started while we were waiting
-			if (programmaticSwitchInProgress) return;
+			if (programmaticSwitchInProgress || programmaticSwitchCounter > 0) return;
 
 			// Save the previous conversation before switching
 			// Only do this for browser navigation (back/forward), not programmatic switches
@@ -156,11 +149,7 @@ onMount(conversationsAtom, () => {
 			previousChatId = newChatId;
 		});
 	});
-
-	return () => {
-		unsubscribe();
-	};
-});
+}
 
 /**
  * Prepare messages for localStorage by saving images to IndexedDB
@@ -316,11 +305,16 @@ export const createConversation = (title?: string): Conversation => {
 
 	// Set flag to prevent the subscriber from interfering
 	programmaticSwitchInProgress = true;
+	programmaticSwitchCounter++;
 	previousChatId = conversation.id;
 	setActiveChat(conversation.id);
 	clearMessages();
 	queueMicrotask(() => {
 		programmaticSwitchInProgress = false;
+		// Wait one more microtask to clear the counter to handle the subscriber's microtask
+		queueMicrotask(() => {
+			programmaticSwitchCounter = Math.max(0, programmaticSwitchCounter - 1);
+		});
 	});
 
 	persist();
@@ -328,6 +322,9 @@ export const createConversation = (title?: string): Conversation => {
 };
 
 export const switchConversation = (id: string) => {
+	// Mark that we are syncing to avoid circular updates if this was triggered by URL change
+	// But actually switchConversation is usually UI-triggered
+	
 	// Save current conversation first
 	saveCurrentConversation();
 
@@ -335,6 +332,7 @@ export const switchConversation = (id: string) => {
 	if (conversation) {
 		// Set flag to prevent the subscriber from trying to save again
 		programmaticSwitchInProgress = true;
+		programmaticSwitchCounter++;
 		// Update previousChatId before changing messages to prevent race condition
 		previousChatId = id;
 		setActiveChat(id);
@@ -342,6 +340,9 @@ export const switchConversation = (id: string) => {
 		// Reset flag after a microtask to allow future subscriber handling
 		queueMicrotask(() => {
 			programmaticSwitchInProgress = false;
+			queueMicrotask(() => {
+				programmaticSwitchCounter = Math.max(0, programmaticSwitchCounter - 1);
+			});
 		});
 	}
 };
@@ -397,7 +398,8 @@ const generateTitleAsync = async (
 	}
 
 	try {
-		const title = await generateConversationTitle(firstMessage);
+		const manager = getAIManager();
+		const title = await manager.generateTitle(firstMessage);
 
 		// Update the conversation with the generated title
 		const currentConversations = conversationsAtom.get();
@@ -444,21 +446,29 @@ const generateTitleAsync = async (
 
 /**
  * Trigger title generation for a conversation immediately
- * Called when the first message is sent to generate title in parallel with AI response
+ * @param conversationId - The ID of the conversation
+ * @param force - If true, regenerates even if a title already exists
  */
 export const triggerTitleGeneration = (
 	conversationId: string,
-	firstMessage: string
+	force = false
 ): void => {
 	const conversations = conversationsAtom.get();
 	const conversation = conversations.find((c) => c.id === conversationId);
 
-	// Only generate if conversation exists and needs a title
-	if (
-		conversation &&
-		needsTitleGeneration(conversation.title) &&
-		!titleGenerationInProgress.has(conversationId)
-	) {
+	if (!conversation) return;
+
+	// For re-generation, we need the first message
+	const firstMessage =
+		conversation.messages.find((m) => m.role === "user")?.content || "";
+
+	if (!firstMessage) return;
+
+	// Only generate if conversation needs a title or if forced
+	const needsTitle =
+		force || !conversation.title || conversation.title === "New Chat";
+
+	if (needsTitle && !titleGenerationInProgress.has(conversationId)) {
 		generateTitleAsync(conversationId, firstMessage);
 	}
 };
@@ -800,4 +810,13 @@ export const clearAllConversations = async (): Promise<void> => {
 	} catch (error) {
 		console.error("Failed to clear all images:", error);
 	}
+};
+
+/**
+ * Hydrate conversations from localStorage.
+ * This should be called only on the client inside a useEffect.
+ */
+export const hydrateConversations = () => {
+	if (!isBrowser) return;
+	initializeConversations();
 };
