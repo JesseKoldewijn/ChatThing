@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+	appearanceAtom,
 	themeAtom,
 	outputLanguageAtom,
 	temperatureUnitAtom,
@@ -10,6 +11,7 @@ import {
 	thresholdToHours,
 	getSystemTimezone,
 	getResolvedTimezone,
+	setAppearance,
 	setTheme,
 	setTemperatureUnit,
 	setTimezone,
@@ -20,7 +22,8 @@ import {
 describe("settings store - extended coverage", () => {
 	beforeEach(() => {
 		// Reset atoms to defaults
-		themeAtom.set("system");
+		appearanceAtom.set("system");
+		themeAtom.set("default");
 		outputLanguageAtom.set("en");
 		temperatureUnitAtom.set("auto");
 		timezoneAtom.set("auto");
@@ -102,13 +105,16 @@ describe("settings store - extended coverage", () => {
 			expect(stored).toBe(JSON.stringify({ value: 3, unit: "weeks" }));
 		});
 
-		it("should handle multiple theme changes", () => {
-			setTheme("light");
-			expect(localStorage.getItem("theme")).toBe("light");
-			setTheme("dark");
-			expect(localStorage.getItem("theme")).toBe("dark");
-			setTheme("system");
-			expect(localStorage.getItem("theme")).toBe("system");
+		it("should handle multiple appearance and theme changes", () => {
+			setAppearance("light");
+			expect(localStorage.getItem("appearance")).toBe("light");
+			setAppearance("dark");
+			expect(localStorage.getItem("appearance")).toBe("dark");
+			
+			setTheme("default");
+			expect(localStorage.getItem("theme")).toBe("default");
+			setTheme("vibrant");
+			expect(localStorage.getItem("theme")).toBe("vibrant");
 		});
 
 		it("should handle multiple temperature unit changes", () => {
@@ -171,20 +177,20 @@ describe("settings store - extended coverage", () => {
 		});
 	});
 
-	describe("all theme options", () => {
-		it("should set light theme correctly", () => {
-			setTheme("light");
-			expect(themeAtom.get()).toBe("light");
+	describe("all appearance options", () => {
+		it("should set light appearance correctly", () => {
+			setAppearance("light");
+			expect(appearanceAtom.get()).toBe("light");
 		});
 
-		it("should set dark theme correctly", () => {
-			setTheme("dark");
-			expect(themeAtom.get()).toBe("dark");
+		it("should set dark appearance correctly", () => {
+			setAppearance("dark");
+			expect(appearanceAtom.get()).toBe("dark");
 		});
 
-		it("should set system theme correctly", () => {
-			setTheme("system");
-			expect(themeAtom.get()).toBe("system");
+		it("should set system appearance correctly", () => {
+			setAppearance("system");
+			expect(appearanceAtom.get()).toBe("system");
 		});
 	});
 

@@ -1,8 +1,8 @@
-import { tool, type Tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 
 export const datetimeTool = tool({
-	description: "Get the current date and time. Use ONLY when user explicitly asks about the current date, current time, what day it is, or what time it is. Do NOT use for greetings or general conversation.",
+	description: "Get the current date and time. Use ONLY if the user EXPLICITLY asks for the current time or date (e.g., 'What time is it?', 'What is today's date?'). NEVER use this for greetings, introductions, or general conversation.",
 	inputSchema: z.object({
 		timezone: z
 			.string()
@@ -56,5 +56,5 @@ export const datetimeTool = tool({
 			};
 		}
 	},
-} satisfies Tool);
+});
 

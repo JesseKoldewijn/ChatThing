@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { ThemeProvider, themeScript } from "./ThemeProvider";
-import { themeAtom } from "@/lib/stores/settings";
+import { appearanceAtom, themeAtom } from "@/lib/stores/settings";
 
 describe("ThemeProvider", () => {
 	beforeEach(() => {
-		// Reset theme atom
-		themeAtom.set("system");
+		// Reset atoms
+		appearanceAtom.set("system");
+		themeAtom.set("default");
 		// Reset document classes
-		document.documentElement.classList.remove("light", "dark");
+		document.documentElement.classList.remove("light", "dark", "vibrant");
 	});
 
 	afterEach(() => {
@@ -40,9 +41,9 @@ describe("ThemeProvider", () => {
 		});
 	});
 
-	describe("theme application", () => {
-		it("should apply light theme class to document", async () => {
-			themeAtom.set("light");
+	describe("appearance and theme application", () => {
+		it("should apply light appearance class to document", async () => {
+			appearanceAtom.set("light");
 
 			render(
 				<ThemeProvider>
@@ -59,8 +60,8 @@ describe("ThemeProvider", () => {
 			expect(document.documentElement.classList.contains("dark")).toBe(false);
 		});
 
-		it("should apply dark theme class to document", async () => {
-			themeAtom.set("dark");
+		it("should apply dark appearance class to document", async () => {
+			appearanceAtom.set("dark");
 
 			render(
 				<ThemeProvider>
@@ -76,16 +77,33 @@ describe("ThemeProvider", () => {
 			expect(document.documentElement.classList.contains("light")).toBe(false);
 		});
 
-		it("should update theme when atom changes", async () => {
+		it("should apply vibrant theme class to document", async () => {
+			themeAtom.set("vibrant");
+
 			render(
 				<ThemeProvider>
 					<div>Content</div>
 				</ThemeProvider>
 			);
 
-			// Start with light
+			await act(async () => {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			});
+
+			expect(document.documentElement.classList.contains("vibrant")).toBe(true);
+		});
+
+		it("should update appearance and theme when atoms change", async () => {
+			render(
+				<ThemeProvider>
+					<div>Content</div>
+				</ThemeProvider>
+			);
+
+			// Start with light default
 			act(() => {
-				themeAtom.set("light");
+				appearanceAtom.set("light");
+				themeAtom.set("default");
 			});
 
 			await act(async () => {
@@ -93,10 +111,12 @@ describe("ThemeProvider", () => {
 			});
 
 			expect(document.documentElement.classList.contains("light")).toBe(true);
+			expect(document.documentElement.classList.contains("vibrant")).toBe(false);
 
-			// Switch to dark
+			// Switch to dark vibrant
 			act(() => {
-				themeAtom.set("dark");
+				appearanceAtom.set("dark");
+				themeAtom.set("vibrant");
 			});
 
 			await act(async () => {
@@ -104,14 +124,14 @@ describe("ThemeProvider", () => {
 			});
 
 			expect(document.documentElement.classList.contains("dark")).toBe(true);
-			expect(document.documentElement.classList.contains("light")).toBe(false);
+			expect(document.documentElement.classList.contains("vibrant")).toBe(true);
 		});
 	});
 
-	describe("system theme", () => {
-		it("should apply system preference when theme is system", async () => {
+	describe("system appearance", () => {
+		it("should apply system preference when appearance is system", async () => {
 			// matchMedia is mocked to return matches: false (light mode)
-			themeAtom.set("system");
+			appearanceAtom.set("system");
 
 			render(
 				<ThemeProvider>
@@ -123,7 +143,7 @@ describe("ThemeProvider", () => {
 				await new Promise((resolve) => setTimeout(resolve, 0));
 			});
 
-			// Since matchMedia mock returns false, should apply light theme
+			// Since matchMedia mock returns false, should apply light appearance
 			expect(document.documentElement.classList.contains("light")).toBe(true);
 		});
 	});
@@ -137,7 +157,8 @@ describe("themeScript", () => {
 
 	it("should contain localStorage access", () => {
 		expect(themeScript).toContain("localStorage");
-		expect(themeScript).toContain("theme-preference");
+		expect(themeScript).toContain("appearance");
+		expect(themeScript).toContain("theme");
 	});
 
 	it("should contain media query for system theme", () => {

@@ -64,6 +64,7 @@ export function useChatSearchParams() {
 					}
 					return newSearch;
 				},
+				replace: true,
 			});
 		},
 		[navigate]
@@ -81,6 +82,7 @@ export function useChatSearchParams() {
 				}
 				return newSearch;
 			},
+			replace: true,
 		});
 	}, [navigate]);
 
@@ -96,6 +98,7 @@ export function useChatSearchParams() {
 					}
 					return newSearch;
 				},
+				replace: true,
 			});
 		},
 		[navigate]
@@ -113,6 +116,7 @@ export function useChatSearchParams() {
 				}
 				return newSearch;
 			},
+			replace: true,
 		});
 	}, [navigate]);
 
@@ -128,6 +132,7 @@ export function useChatSearchParams() {
 					}
 					return newSearch;
 				},
+				replace: true,
 			});
 		},
 		[navigate]
@@ -145,6 +150,7 @@ export function useChatSearchParams() {
 				}
 				return newSearch;
 			},
+			replace: true,
 		});
 	}, [navigate]);
 
@@ -160,6 +166,7 @@ export function useChatSearchParams() {
 					}
 					return newSearch;
 				},
+				replace: true,
 			});
 		},
 		[navigate]
@@ -182,4 +189,3 @@ export function useChatSearchParams() {
 		setShowDeleted,
 	};
 }
-

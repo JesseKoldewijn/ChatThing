@@ -6,6 +6,8 @@ export interface ChatContainerUIProps {
 	header?: ReactNode;
 	messageList: ReactNode;
 	input: ReactNode;
+	unlockSession?: ReactNode;
+	isLocked?: boolean;
 	errorBanner?: ReactNode;
 	isSidebarOpen?: boolean;
 	onCloseSidebar?: () => void;
@@ -16,6 +18,8 @@ export const ChatContainerUI = ({
 	header,
 	messageList,
 	input,
+	unlockSession,
+	isLocked = false,
 	errorBanner,
 	isSidebarOpen = false,
 	onCloseSidebar,
@@ -28,7 +32,12 @@ export const ChatContainerUI = ({
 			{/* Sidebar */}
 			{sidebar && (
 				<aside
+					id="chat-sidebar"
 					data-testid="chat-sidebar"
+					aria-label="Conversation list"
+					aria-hidden={!isSidebarOpen}
+					inert={!isSidebarOpen ? true : undefined}
+					tabIndex={!isSidebarOpen ? -1 : undefined}
 					className={cn(
 						"flex h-full w-72 shrink-0 flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
 						// On mobile: fixed positioning, slide in/out
@@ -73,11 +82,11 @@ export const ChatContainerUI = ({
 					data-testid="chat-message-list-container"
 					className="min-w-0 flex-1 overflow-hidden"
 				>
-					{messageList}
+					{isLocked ? unlockSession : messageList}
 				</div>
 
 				{/* Error banner - above input, fixed height when visible */}
-				{errorBanner && (
+				{!isLocked && errorBanner && (
 					<div
 						data-testid="chat-error-banner-container"
 						className="shrink-0"
@@ -87,7 +96,7 @@ export const ChatContainerUI = ({
 				)}
 
 				{/* Input - fixed at bottom */}
-				{input && (
+				{!isLocked && input && (
 					<div
 						data-testid="chat-input-container"
 						className="shrink-0"

@@ -126,11 +126,11 @@ describe("Conversations Store Integration", () => {
 	});
 
 	describe("switchConversation", () => {
-		it("should switch to the specified conversation", () => {
+		it("should switch to the specified conversation", async () => {
 			const conv1 = createConversation("First");
 			createConversation("Second"); // Creates second conversation but we switch back to first
 
-			switchConversation(conv1.id);
+			await switchConversation(conv1.id);
 
 			expect(activeChatIdAtom.get()).toBe(conv1.id);
 		});
@@ -176,13 +176,13 @@ describe("Conversations Store Integration", () => {
 			expect(conversations[0].deletedAt).toBeDefined();
 		});
 
-		it("should switch to another active conversation when deleting the active one", () => {
+		it("should switch to another active conversation when deleting the active one", async () => {
 			const conv1 = createConversation("First");
 			const conv2 = createConversation("Second");
 
 			expect(activeChatIdAtom.get()).toBe(conv2.id);
 
-			deleteConversation(conv2.id);
+			await deleteConversation(conv2.id);
 
 			expect(activeChatIdAtom.get()).toBe(conv1.id);
 		});
@@ -206,11 +206,11 @@ describe("Conversations Store Integration", () => {
 			expect(conversations[0].status).toBe("archived");
 		});
 
-		it("should switch to another active conversation when archiving the active one", () => {
+		it("should switch to another active conversation when archiving the active one", async () => {
 			const conv1 = createConversation("First");
 			const conv2 = createConversation("Second");
 
-			archiveConversation(conv2.id);
+			await archiveConversation(conv2.id);
 
 			expect(activeChatIdAtom.get()).toBe(conv1.id);
 		});

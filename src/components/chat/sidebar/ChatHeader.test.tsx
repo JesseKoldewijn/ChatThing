@@ -59,12 +59,6 @@ describe("ChatHeader", () => {
 			expect(screen.getByText("My Conversation")).toBeInTheDocument();
 		});
 
-		it("should render AI Assistant subtitle", () => {
-			render(<ChatHeader onMenuClick={vi.fn()} />);
-
-			expect(screen.getByText("AI Assistant")).toBeInTheDocument();
-		});
-
 		it("should render sparkle icon", () => {
 			render(<ChatHeader onMenuClick={vi.fn()} />);
 

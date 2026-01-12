@@ -235,7 +235,7 @@ interface MarkdownRendererProps {
 	isStreaming?: boolean;
 }
 
-export const MarkdownRenderer = ({ content, isStreaming = false }: MarkdownRendererProps) => {
+export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 	return (
 		<Markdown
 			remarkPlugins={[remarkGfm]}

@@ -107,6 +107,7 @@ export const ConversationSidebarUI = ({
 					<button
 						data-testid={`section-toggle-${title.toLowerCase()}`}
 						onClick={onToggle}
+						aria-expanded={isOpen}
 						className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px]"
 					>
 						{isOpen ? (
@@ -164,6 +165,7 @@ export const ConversationSidebarUI = ({
 						size="icon"
 						onClick={onNewChat}
 						className="h-10 w-10"
+						aria-label="Start new chat"
 					>
 						<Plus className="h-5 w-5" />
 					</Button>
@@ -174,6 +176,7 @@ export const ConversationSidebarUI = ({
 							size="icon"
 							onClick={onClose}
 							className="h-10 w-10 lg:hidden"
+							aria-label="Close sidebar"
 						>
 							<X className="h-5 w-5" />
 						</Button>
@@ -281,13 +284,25 @@ const ConversationRow = ({
 	return (
 		<div
 			data-testid={`conversation-item-${conversation.id}`}
+			role="button"
+			tabIndex={0}
+			aria-current={conversation.isActive ? "true" : undefined}
+			aria-label={`Conversation: ${conversation.title}`}
 			className={cn(
-				"group relative flex items-center rounded-lg px-3 py-3 cursor-pointer min-h-[52px]",
+				"group relative flex items-center rounded-lg px-3 py-3 cursor-pointer min-h-[52px] outline-none focus-visible:ring-2 focus-visible:ring-sidebar-primary focus-visible:ring-inset",
 				"hover:bg-sidebar-accent active:bg-sidebar-accent",
 				conversation.isActive && "bg-sidebar-accent",
 				isDeleted && "opacity-60"
 			)}
 			onClick={() => !isMenuOpen && onSelect(conversation.id)}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						if (!isMenuOpen) {
+							onSelect(conversation.id);
+						}
+					}
+				}}
 		>
 			<MessageSquare
 				className={cn(
@@ -308,16 +323,16 @@ const ConversationRow = ({
 						</span>
 					</div>
 				) : (
-					<p
+					<span
 						className={cn(
-							"truncate text-sm font-medium max-w-[180px]",
+							"truncate text-sm font-medium max-w-[180px] inline-block first-letter:uppercase",
 							isDeleted
 								? "text-muted-foreground line-through"
 								: "text-sidebar-foreground"
 						)}
 					>
 						{conversation.title}
-					</p>
+					</span>
 				)}
 				<p className="text-xs text-muted-foreground h-4">
 					{displayDate}

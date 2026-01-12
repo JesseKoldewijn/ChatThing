@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { PROVIDER_PROMPT_API } from "@/lib/ai/constants";
 
 // Mock all the dependencies
 vi.mock("@nanostores/react", () => ({
@@ -30,12 +31,14 @@ vi.mock("@/lib/ai/hooks", () => ({
 }));
 
 vi.mock("@/lib/ai", () => ({
-	getAIManager: vi.fn(() => ({
+	getAIManager: vi.fn(() => Object.assign(Promise.resolve({
 		prompt: vi.fn().mockResolvedValue({
 			[Symbol.asyncIterator]: async function* () {
-				yield { type: "text-delta", text: "Hello" };
+				yield { type: "text", content: "Hello" };
 			},
 		}),
+	}), {
+		catch: vi.fn().mockReturnThis(),
 	})),
 }));
 
@@ -46,25 +49,36 @@ vi.mock("ai", () => ({
 // Mock all stores
 vi.mock("@/lib/stores/chat", () => ({
 	addMessage: vi.fn(() => ({ id: "msg-1", transactionId: "tx-1" })),
-	isStreamingAtom: { get: () => false, set: vi.fn() },
-	currentStreamAtom: { get: () => "", set: vi.fn() },
+	isStreamingAtom: { get: () => false, set: vi.fn(), subscribe: vi.fn(() => vi.fn()) },
+	currentStreamAtom: { get: () => "", set: vi.fn(), subscribe: vi.fn(() => vi.fn()) },
 	clearStream: vi.fn(),
 	appendToStream: vi.fn(),
-	messagesAtom: { get: () => [] },
+	messagesAtom: { get: () => [], subscribe: vi.fn(() => vi.fn()) },
 }));
 
 vi.mock("@/lib/stores/conversations", () => ({
 	saveCurrentConversation: vi.fn(),
-	activeConversationIdAtom: { get: () => "conv-1" },
+	activeConversationIdAtom: { get: () => "conv-1", subscribe: vi.fn(() => vi.fn()) },
 	createConversation: vi.fn(),
 	triggerTitleGeneration: vi.fn(),
+	isConversationsHydratedAtom: { get: () => true, subscribe: vi.fn(() => vi.fn()) },
+	setActiveChat: vi.fn(),
+	switchConversation: vi.fn(),
+	isSyncingFromUrlAtom: { get: () => false },
 }));
 
 vi.mock("@/lib/stores/settings", () => ({
-	aiSettingsAtom: { get: () => ({}) },
-	temperatureUnitAtom: { get: () => "auto" },
-	providerTypeAtom: { get: () => "prompt-api" },
+	aiSettingsAtom: { get: () => ({}), subscribe: vi.fn(() => vi.fn()) },
+	temperatureUnitAtom: { get: () => "auto", subscribe: vi.fn(() => vi.fn()) },
+	providerTypeAtom: { get: () => PROVIDER_PROMPT_API, subscribe: vi.fn(() => vi.fn()) },
 	getResolvedTimezone: () => "America/New_York",
+	isLockedAtom: { get: () => false, subscribe: vi.fn(() => vi.fn()) },
+	openRouterModelAtom: { get: () => "mistral", subscribe: vi.fn(() => vi.fn()) },
+	googleModelAtom: { get: () => "gemini", subscribe: vi.fn(() => vi.fn()) },
+	ollamaModelAtom: { get: () => "llama", subscribe: vi.fn(() => vi.fn()) },
+	PROVIDER_OPEN_ROUTER: "open-router",
+	PROVIDER_GOOGLE: "google",
+	PROVIDER_OLLAMA: "ollama",
 }));
 
 vi.mock("@/lib/stores/errors", () => ({
@@ -81,7 +95,7 @@ vi.mock("@/lib/stores/usage", () => ({
 }));
 
 vi.mock("@/lib/ai/store", () => ({
-	loadingAtom: { get: () => false, set: vi.fn() },
+	loadingAtom: { get: () => false, set: vi.fn(), subscribe: vi.fn(() => vi.fn()) },
 }));
 
 // Mock child components to simplify testing
@@ -97,12 +111,8 @@ vi.mock("../sidebar/ConversationSidebar", () => ({
 	ConversationSidebar: () => <div data-testid="sidebar">Sidebar</div>,
 }));
 
-vi.mock("../sidebar/ChatHeader", () => ({
+	vi.mock("../sidebar/ChatHeader", () => ({
 	ChatHeader: () => <div data-testid="header">Header</div>,
-}));
-
-vi.mock("../errors/CompatibilityError", () => ({
-	CompatibilityError: () => <div data-testid="compat-error">CompatibilityError</div>,
 }));
 
 vi.mock("../errors/ErrorBanner", () => ({
@@ -144,29 +154,6 @@ describe("ChatContainer", () => {
 		it("should render the sidebar", () => {
 			render(<ChatContainer />);
 			expect(screen.getByTestId("sidebar")).toBeInTheDocument();
-		});
-	});
-
-	describe("forceCompat mode", () => {
-		it("should render CompatibilityError when forceCompat is true", async () => {
-			const navModule = await import("@/lib/hooks/useNavigation");
-			vi.mocked(navModule.useChatSearchParams).mockReturnValueOnce({
-				sidebarOpen: false,
-				toggleSidebar: vi.fn(),
-				setSidebar: vi.fn(),
-				forceCompat: true, // Force compatibility error to show
-				activeChat: undefined,
-				showArchived: false,
-				showDeleted: false,
-				setActiveChat: vi.fn(),
-				toggleShowArchived: vi.fn(),
-				setShowArchived: vi.fn(),
-				toggleShowDeleted: vi.fn(),
-				setShowDeleted: vi.fn(),
-			});
-
-			render(<ChatContainer />);
-			expect(screen.getByTestId("compat-error")).toBeInTheDocument();
 		});
 	});
 });

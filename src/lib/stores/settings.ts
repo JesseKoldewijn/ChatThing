@@ -1,7 +1,23 @@
-import { atom } from "nanostores";
-import type { BuiltInAIChatSettings } from "@built-in-ai/core";
+import { atom, computed } from "nanostores";
+import { encrypt, decrypt } from "@/lib/utils/crypto";
+import { 
+	type ProviderType, 
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+	PROVIDER_PROMPT_API,
+} from "@/lib/ai/constants";
+import { clearAIManagerCache } from "@/lib/ai";
 
-export type Theme = "light" | "dark" | "system";
+export {
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+	PROVIDER_PROMPT_API,
+};
+
+export type Appearance = "light" | "dark" | "system";
+export type Theme = "default" | "vibrant";
 
 // Temperature unit preference
 export type TemperatureUnit = "auto" | "fahrenheit" | "celsius";
@@ -43,8 +59,11 @@ const detectBrowserLanguage = (): PromptApiLanguage => {
 // Check if we're in browser environment
 const isBrowser = typeof window !== "undefined";
 
-// Theme state
-export const themeAtom = atom<Theme>("system");
+// Appearance state (light/dark/system)
+export const appearanceAtom = atom<Appearance>("system");
+
+// Theme state (default/vibrant)
+export const themeAtom = atom<Theme>("default");
 
 // Output language state - auto-detected from browser, always a supported language
 export const outputLanguageAtom = atom<PromptApiLanguage>("en");
@@ -78,16 +97,49 @@ export const getResolvedTimezone = (): string => {
 	return setting;
 };
 
-// AI model settings
-export const aiSettingsAtom = atom<BuiltInAIChatSettings>({});
-
 // AI Provider settings
-export type ProviderType = "prompt-api" | "open-router" | "ollama";
-export const providerTypeAtom = atom<ProviderType>("open-router");
-export const openRouterApiKeyAtom = atom<string>("");
+export const providerTypeAtom = atom<ProviderType>(PROVIDER_OLLAMA);
+
+// Master password for unlocking API keys (session only)
+export const masterPasswordAtom = atom<string | null>(null);
+
+// Encrypted keys (stored in localStorage)
+export const encryptedOpenRouterApiKeyAtom = atom<string | null>(null);
+export const encryptedGoogleApiKeyAtom = atom<string | null>(null);
+export const encryptedOllamaApiKeyAtom = atom<string | null>(null);
+
+// Convenience atom to check if any keys are set
+export const hasKeysAtom = computed(
+	[encryptedOpenRouterApiKeyAtom, encryptedGoogleApiKeyAtom, encryptedOllamaApiKeyAtom],
+	(orKey, gKey, olKey) => !!(orKey || gKey || olKey)
+);
+
+// Global locked status
+export const isLockedAtom = computed(
+	[masterPasswordAtom, hasKeysAtom],
+	(password, hasKeys) => {
+		// Only "locked" if we have keys to unlock but no password
+		return hasKeys && !password;
+	}
+);
+
 export const openRouterModelAtom = atom<string>("mistralai/devstral-2512:free");
+export const googleModelAtom = atom<string>("gemini-2.0-flash-exp");
 export const ollamaModelAtom = atom<string>("deepseek-r1:1.5b");
 export const ollamaBaseUrlAtom = atom<string>("http://localhost:11434");
+
+// AI settings for built-in models and general overrides
+export interface AiSettings {
+	expectedInputs?: Array<{ type: string; [key: string]: unknown }>;
+	[key: string]: unknown;
+}
+
+export const aiSettingsAtom = atom<AiSettings>({});
+
+// Actions
+export const updateAiSettings = (settings: Record<string, unknown>) => {
+	aiSettingsAtom.set({ ...aiSettingsAtom.get(), ...settings });
+};
 
 // Archive threshold units
 export type ArchiveThresholdUnit = "hours" | "days" | "weeks" | "months";
@@ -147,19 +199,33 @@ const OUTPUT_LANGUAGE_KEY = "output-language";
 
 // Storage keys for AI providers
 const PROVIDER_TYPE_KEY = "ai-provider-type";
-const OPENROUTER_API_KEY_KEY = "openrouter-api-key";
+const ENCRYPTED_OPENROUTER_API_KEY_KEY = "encrypted-openrouter-api-key";
+const ENCRYPTED_GOOGLE_API_KEY_KEY = "encrypted-google-api-key";
+const ENCRYPTED_OLLAMA_API_KEY_KEY = "encrypted-ollama-api-key";
 const OPENROUTER_MODEL_KEY = "openrouter-model";
+const GOOGLE_MODEL_KEY = "google-model";
 const OLLAMA_MODEL_KEY = "ollama-model";
 const OLLAMA_BASE_URL_KEY = "ollama-base-url";
 
 /**
- * Load theme from localStorage
+ * Load appearance and theme from localStorage
  */
 const loadThemeFromStorage = () => {
 	if (!isBrowser) return;
-	const stored = localStorage.getItem("theme") as Theme | null;
-	if (stored) {
-		themeAtom.set(stored);
+	const storedAppearance = localStorage.getItem("appearance") as Appearance | null;
+	if (storedAppearance && ["light", "dark", "system"].includes(storedAppearance)) {
+		appearanceAtom.set(storedAppearance);
+	}
+	
+	const storedTheme = localStorage.getItem("theme") as Theme | null;
+	if (storedTheme && ["default", "vibrant"].includes(storedTheme)) {
+		themeAtom.set(storedTheme);
+	} else if ((storedAppearance as string) === "vibrant") {
+		// Migration from old combined theme
+		appearanceAtom.set("dark");
+		themeAtom.set("vibrant");
+		localStorage.setItem("appearance", "dark");
+		localStorage.setItem("theme", "vibrant");
 	}
 };
 
@@ -236,18 +302,33 @@ const loadAiProviderSettingsFromStorage = () => {
 	if (!isBrowser) return;
 	
 	const type = localStorage.getItem(PROVIDER_TYPE_KEY) as ProviderType | null;
-	if (type && ["prompt-api", "open-router", "ollama"].includes(type)) {
+	if (type && [PROVIDER_OPEN_ROUTER, PROVIDER_GOOGLE, PROVIDER_OLLAMA, PROVIDER_PROMPT_API].includes(type)) {
 		providerTypeAtom.set(type);
 	}
 	
-	const apiKey = localStorage.getItem(OPENROUTER_API_KEY_KEY);
-	if (apiKey) {
-		openRouterApiKeyAtom.set(apiKey);
+	const encryptedOpenRouterKey = localStorage.getItem(ENCRYPTED_OPENROUTER_API_KEY_KEY);
+	if (encryptedOpenRouterKey) {
+		encryptedOpenRouterApiKeyAtom.set(encryptedOpenRouterKey);
+	}
+
+	const encryptedGoogleKey = localStorage.getItem(ENCRYPTED_GOOGLE_API_KEY_KEY);
+	if (encryptedGoogleKey) {
+		encryptedGoogleApiKeyAtom.set(encryptedGoogleKey);
+	}
+
+	const encryptedOllamaKey = localStorage.getItem(ENCRYPTED_OLLAMA_API_KEY_KEY);
+	if (encryptedOllamaKey) {
+		encryptedOllamaApiKeyAtom.set(encryptedOllamaKey);
 	}
 	
-	const model = localStorage.getItem(OPENROUTER_MODEL_KEY);
-	if (model) {
-		openRouterModelAtom.set(model);
+	const openRouterModel = localStorage.getItem(OPENROUTER_MODEL_KEY);
+	if (openRouterModel) {
+		openRouterModelAtom.set(openRouterModel);
+	}
+
+	const googleModel = localStorage.getItem(GOOGLE_MODEL_KEY);
+	if (googleModel) {
+		googleModelAtom.set(googleModel);
 	}
 
 	const ollamaModel = localStorage.getItem(OLLAMA_MODEL_KEY);
@@ -262,41 +343,106 @@ const loadAiProviderSettingsFromStorage = () => {
 };
 
 // Actions
+export const setAppearance = (appearance: Appearance) => {
+	appearanceAtom.set(appearance);
+	if (isBrowser) {
+		localStorage.setItem("appearance", appearance);
+	}
+};
+
 export const setTheme = (theme: Theme) => {
 	themeAtom.set(theme);
 	if (isBrowser) {
 		localStorage.setItem("theme", theme);
 	}
-	// Theme application is handled by ThemeProvider component
-};
-
-export const updateAiSettings = (settings: Partial<BuiltInAIChatSettings>) => {
-	aiSettingsAtom.set({ ...aiSettingsAtom.get(), ...settings });
 };
 
 export const setProviderType = (type: ProviderType) => {
 	providerTypeAtom.set(type);
+	clearAIManagerCache();
 	if (isBrowser) {
 		localStorage.setItem(PROVIDER_TYPE_KEY, type);
 	}
 };
 
-export const setOpenRouterApiKey = (key: string) => {
-	openRouterApiKeyAtom.set(key);
+export const setMasterPassword = (password: string | null) => {
+	masterPasswordAtom.set(password);
+	clearAIManagerCache();
+};
+
+export const setOpenRouterApiKey = async (key: string, password?: string) => {
+	const currentPassword = password || masterPasswordAtom.get();
+	if (!currentPassword) throw new Error("Master password required to set API key");
+	
+	const encrypted = await encrypt(key, currentPassword);
+	encryptedOpenRouterApiKeyAtom.set(encrypted);
 	if (isBrowser) {
-		localStorage.setItem(OPENROUTER_API_KEY_KEY, key);
+		localStorage.setItem(ENCRYPTED_OPENROUTER_API_KEY_KEY, encrypted);
 	}
+};
+
+export const setGoogleApiKey = async (key: string, password?: string) => {
+	const currentPassword = password || masterPasswordAtom.get();
+	if (!currentPassword) throw new Error("Master password required to set API key");
+	
+	const encrypted = await encrypt(key, currentPassword);
+	encryptedGoogleApiKeyAtom.set(encrypted);
+	if (isBrowser) {
+		localStorage.setItem(ENCRYPTED_GOOGLE_API_KEY_KEY, encrypted);
+	}
+};
+
+export const setOllamaApiKey = async (key: string, password?: string) => {
+	const currentPassword = password || masterPasswordAtom.get();
+	if (!currentPassword) throw new Error("Master password required to set API key");
+	
+	const encrypted = await encrypt(key, currentPassword);
+	encryptedOllamaApiKeyAtom.set(encrypted);
+	if (isBrowser) {
+		localStorage.setItem(ENCRYPTED_OLLAMA_API_KEY_KEY, encrypted);
+	}
+};
+
+export const getDecryptedOpenRouterApiKey = async (password?: string): Promise<string | null> => {
+	const currentPassword = password || masterPasswordAtom.get();
+	const encrypted = encryptedOpenRouterApiKeyAtom.get();
+	if (!encrypted || !currentPassword) return null;
+	return decrypt(encrypted, currentPassword);
+};
+
+export const getDecryptedGoogleApiKey = async (password?: string): Promise<string | null> => {
+	const currentPassword = password || masterPasswordAtom.get();
+	const encrypted = encryptedGoogleApiKeyAtom.get();
+	if (!encrypted || !currentPassword) return null;
+	return decrypt(encrypted, currentPassword);
+};
+
+export const getDecryptedOllamaApiKey = async (password?: string): Promise<string | null> => {
+	const currentPassword = password || masterPasswordAtom.get();
+	const encrypted = encryptedOllamaApiKeyAtom.get();
+	if (!encrypted || !currentPassword) return null;
+	return decrypt(encrypted, currentPassword);
 };
 
 export const setOpenRouterModel = (model: string) => {
 	openRouterModelAtom.set(model);
+	clearAIManagerCache();
 	if (isBrowser) {
 		localStorage.setItem(OPENROUTER_MODEL_KEY, model);
 	}
 };
 
+export const setGoogleModel = (model: string) => {
+	googleModelAtom.set(model);
+	clearAIManagerCache();
+	if (isBrowser) {
+		localStorage.setItem(GOOGLE_MODEL_KEY, model);
+	}
+};
+
 export const setOllamaModel = (model: string) => {
 	ollamaModelAtom.set(model);
+	clearAIManagerCache();
 	if (isBrowser) {
 		localStorage.setItem(OLLAMA_MODEL_KEY, model);
 	}
@@ -304,6 +450,7 @@ export const setOllamaModel = (model: string) => {
 
 export const setOllamaBaseUrl = (url: string) => {
 	ollamaBaseUrlAtom.set(url);
+	clearAIManagerCache();
 	if (isBrowser) {
 		localStorage.setItem(OLLAMA_BASE_URL_KEY, url);
 	}
@@ -343,6 +490,22 @@ export const setOutputLanguage = (language: PromptApiLanguage) => {
 	outputLanguageAtom.set(language);
 	if (isBrowser) {
 		localStorage.setItem(OUTPUT_LANGUAGE_KEY, language);
+	}
+};
+
+/**
+ * Reset all security settings, including master password and encrypted API keys
+ */
+export const resetSecuritySettings = () => {
+	masterPasswordAtom.set(null);
+	encryptedOpenRouterApiKeyAtom.set(null);
+	encryptedGoogleApiKeyAtom.set(null);
+	encryptedOllamaApiKeyAtom.set(null);
+	
+	if (isBrowser) {
+		localStorage.removeItem(ENCRYPTED_OPENROUTER_API_KEY_KEY);
+		localStorage.removeItem(ENCRYPTED_GOOGLE_API_KEY_KEY);
+		localStorage.removeItem(ENCRYPTED_OLLAMA_API_KEY_KEY);
 	}
 };
 

@@ -1,35 +1,39 @@
 import {
-	type AsyncIterableStream,
-	type TextStreamPart,
-	type ToolSet,
-	type CoreMessage,
+	type ModelMessage as CoreMessage,
 	streamText,
 	generateText,
+	type LanguageModel,
 } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { type Message } from "@/lib/stores/chat";
-import { tools } from "../tools";
-import type { AIProvider, PromptOptions, ProviderType } from "../types";
+import { weatherTool } from "../tools/weather";
+import { datetimeTool } from "../tools/datetime";
+import { type AIProvider, type PromptOptions, type ProviderType, PROVIDER_OPEN_ROUTER, type StreamPart } from "../types";
 
 export interface OpenRouterSettings {
 	apiKey: string;
 	model?: string;
 }
 
-const isToolUIMessage = (content: string): boolean => {
-	if (content.startsWith("🔧 Using tool:")) return true;
-	if (content.startsWith("❌ Error:")) return true;
-	return false;
+/**
+ * Strip data URL prefix if present
+ * e.g. "data:image/jpeg;base64,..." -> "..."
+ */
+const stripDataUrlPrefix = (data: string): string => {
+	if (data.startsWith("data:")) {
+		const base64Index = data.indexOf(";base64,");
+		if (base64Index !== -1) {
+			return data.slice(base64Index + 8);
+		}
+	}
+	return data;
 };
 
 const convertHistoryToMessages = (history?: Message[]): CoreMessage[] => {
 	if (!history || history.length === 0) return [];
 
 	return history
-		.filter((msg) => {
-			if (msg.role === "assistant" && isToolUIMessage(msg.content)) return false;
-			return true;
-		})
+		.filter((msg) => msg.role !== "system")
 		.map((msg): CoreMessage => {
 			if (msg.role === "user") {
 				if (msg.images && msg.images.length > 0) {
@@ -39,7 +43,7 @@ const convertHistoryToMessages = (history?: Message[]): CoreMessage[] => {
 							{ type: "text", text: msg.content },
 							...msg.images.map((img) => ({
 								type: "image" as const,
-								image: img.data,
+								image: stripDataUrlPrefix(img.data),
 							})),
 						],
 					};
@@ -51,7 +55,7 @@ const convertHistoryToMessages = (history?: Message[]): CoreMessage[] => {
 };
 
 export class OpenRouterProvider implements AIProvider {
-	readonly type: ProviderType = "open-router";
+	readonly type: ProviderType = PROVIDER_OPEN_ROUTER;
 	private client;
 	private settings: OpenRouterSettings;
 
@@ -62,14 +66,14 @@ export class OpenRouterProvider implements AIProvider {
 		});
 	}
 
-	private get model() {
+	private get model(): LanguageModel {
 		return this.client.chat(this.settings.model || "mistralai/devstral-2512:free");
 	}
 
 	async prompt(
 		prompt: string,
 		options?: PromptOptions
-	): Promise<AsyncIterableStream<TextStreamPart<ToolSet>>> {
+	): Promise<AsyncIterable<StreamPart>> {
 		const messages: CoreMessage[] = [
 			...convertHistoryToMessages(options?.history),
 			{
@@ -80,9 +84,9 @@ export class OpenRouterProvider implements AIProvider {
 								{ type: "text", text: prompt },
 								...options.images.map((img) => ({
 									type: "image" as const,
-									image: img.data,
+									image: stripDataUrlPrefix(img.data),
 								})),
-						  ]
+							]
 						: prompt,
 			},
 		];
@@ -90,11 +94,48 @@ export class OpenRouterProvider implements AIProvider {
 		const result = streamText({
 			model: this.model,
 			messages,
-			tools: tools as unknown as ToolSet,
-			system: "You are a helpful AI assistant. Use the provided tools when necessary to answer user questions accurately.",
+			tools: {
+				weather: weatherTool,
+				datetime: datetimeTool,
+			},
+			// @ts-expect-error - maxSteps is available when tools are used
+			maxSteps: 5,
+			system: `You are a helpful AI assistant. 
+Current Date and Time: ${new Date().toLocaleString()}
+
+CRITICAL TOOL RULES:
+1. Use tools ONLY when specifically requested or absolutely necessary to answer a factual question.
+2. datetime tool: ONLY use if the user explicitly asks for the current time or date. DO NOT use it for greetings, general conversation, or to "timestamp" your own responses.
+3. weather tool: ONLY use if the user explicitly asks about weather or temperature.
+4. If you need to know about the conversation history, refer to the messages provided in the context; do NOT attempt to use tools to fetch previous messages. 
+5. Do NOT hallucinate tools that are not provided in the toolset.
+6. If no tool is strictly required to answer the user, respond naturally without using any tools.`,
 		});
 
-		return result.fullStream;
+		return (async function* () {
+			try {
+				for await (const part of result.fullStream) {
+					switch (part.type) {
+						case "text-delta":
+							yield { type: "text", content: part.text };
+							break;
+						case "tool-call":
+							yield { 
+								type: "tool-call", 
+								toolName: part.toolName, 
+								toolCallId: part.toolCallId,
+								args: "args" in part ? part.args : ("input" in part ? part.input : {})
+							};
+							break;
+						case "error":
+							yield { type: "error", error: part.error };
+							break;
+					}
+				}
+			} catch (error) {
+				yield { type: "error", error };
+			}
+		})();
 	}
 
 	async generateTitle(firstMessage: string): Promise<string> {
@@ -103,11 +144,16 @@ export class OpenRouterProvider implements AIProvider {
 		try {
 			const { text } = await generateText({
 				model: this.model,
-				prompt: `Generate a very short title (maximum 4-5 words, under 30 characters) for a conversation that starts with this message. Return ONLY the title, no quotes, no explanation, no punctuation at the end.
+				messages: [
+					{
+						role: "user",
+						content: `Generate a very short title (maximum 4-5 words, under 30 characters) for a conversation that starts with this message. Return ONLY the title, no quotes, no explanation, no punctuation at the end.
 
 Message: "${firstMessage.slice(0, 200)}"
 
 Title:`,
+					},
+				],
 			});
 
 			let title = text
@@ -126,8 +172,8 @@ Title:`,
 			}
 
 			return title || this.fallbackTitle(firstMessage);
-		} catch (error) {
-			console.warn("Failed to generate title with OpenRouter:", error);
+		} catch {
+			// Fail silently or fallback
 			return this.fallbackTitle(firstMessage);
 		}
 	}

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { MessageItemUI } from "./MessageItem.ui";
-import { messagesAtom, removeAssistantMessagesFromTransaction, lastUserMessageAtom, type ImageAttachment } from "@/lib/stores/chat";
+import { messagesAtom, removeMessagesFromTransaction, lastUserMessageAtom, type ImageAttachment } from "@/lib/stores/chat";
 import type { Message } from "@/lib/stores/chat";
 import { getImages } from "@/lib/stores/imageStorage";
 
@@ -86,8 +86,8 @@ export const MessageItem = ({
 
 	const handleRegenerate = useCallback(() => {
 		if (onRegenerate && lastUserMessage) {
-			// Remove all assistant messages from this transaction (includes tool announcements)
-			removeAssistantMessagesFromTransaction(lastUserMessage.transactionId);
+			// Remove all assistant and system messages from this transaction (includes tool announcements and errors)
+			removeMessagesFromTransaction(lastUserMessage.transactionId);
 			// Regenerate with the last user message, preserving the transaction ID
 			onRegenerate(lastUserMessage.content, lastUserMessage.transactionId);
 		}

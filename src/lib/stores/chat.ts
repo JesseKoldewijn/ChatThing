@@ -12,16 +12,10 @@ export interface ImageAttachment {
 	storedInDb?: boolean; // True if image data is stored in IndexedDB
 }
 
-// Message content can be text or multimodal (text + images)
-export interface MessageContent {
-	text: string;
-	images?: ImageAttachment[];
-}
-
 export interface Message {
 	id: string;
 	transactionId: string; // Links prompts with their responses
-	role: "user" | "assistant";
+	role: "user" | "assistant" | "system";
 	content: string; // Keep as string for backwards compatibility and simple display
 	images?: ImageAttachment[]; // Optional images attached to the message
 	timestamp: number;
@@ -62,11 +56,12 @@ export const addMessage = (
 
 	// If this is an assistant message with a transactionId, check if one already exists
 	// for this transaction to avoid duplicates during retries/regeneration
+	// and to support streaming updates.
 	if (role === "assistant" && options?.transactionId) {
 		const index = currentMessages.findIndex(
 			(m) =>
 				m.transactionId === options.transactionId &&
-				m.role === "assistant"
+				m.role === role
 		);
 		if (index !== -1) {
 			const updatedMessages = [...currentMessages];
@@ -77,6 +72,20 @@ export const addMessage = (
 			};
 			messagesAtom.set(updatedMessages);
 			return updatedMessages[index];
+		}
+	}
+
+	// For system messages, we only deduplicate if the content is EXACTLY the same
+	// to avoid spamming the same tool announcement or error multiple times.
+	if (role === "system" && options?.transactionId) {
+		const index = currentMessages.findIndex(
+			(m) =>
+				m.transactionId === options.transactionId &&
+				m.role === role &&
+				m.content === content
+		);
+		if (index !== -1) {
+			return currentMessages[index];
 		}
 	}
 
@@ -113,14 +122,18 @@ export const removeLastMessage = () => {
 };
 
 /**
- * Remove all assistant messages from a specific transaction
- * Used when regenerating a response to remove tool announcements and previous responses
+ * Remove all assistant and system messages from a specific transaction
+ * Used when regenerating a response to remove tool announcements, errors and previous responses
  */
-export const removeAssistantMessagesFromTransaction = (transactionId: string) => {
+export const removeMessagesFromTransaction = (transactionId: string) => {
 	const messages = messagesAtom.get();
 	messagesAtom.set(
 		messages.filter(
-			(m) => !(m.transactionId === transactionId && m.role === "assistant")
+			(m) =>
+				!(
+					m.transactionId === transactionId &&
+					(m.role === "assistant" || m.role === "system")
+				)
 		)
 	);
 };
@@ -184,11 +197,13 @@ export const saveImagesToIndexedDB = async (
 				name: image.name,
 				storedInDb: true,
 			});
-		} catch (error) {
-			console.error("Failed to save image to IndexedDB:", image.id, error);
-			// If IndexedDB fails, keep the data inline (fallback)
-			savedImages.push(image);
-		}
+			} catch (error) {
+				if (import.meta.env.DEV) {
+					console.error("Failed to save image to IndexedDB:", image.id, error);
+				}
+				// If IndexedDB fails, keep the data inline (fallback)
+				savedImages.push(image);
+			}
 	}
 
 	return savedImages;
@@ -261,7 +276,10 @@ export const fileToImageAttachment = async (
 					mimeType: isGif ? file.type : "image/jpeg",
 					name: file.name,
 				});
-			} catch {
+			} catch (compressError) {
+				if (import.meta.env.DEV) {
+					console.error("Failed to compress image:", compressError);
+				}
 				// If compression fails, use original
 				resolve({
 					id: crypto.randomUUID(),

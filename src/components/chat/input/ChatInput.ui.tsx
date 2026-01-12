@@ -117,6 +117,7 @@ export const ChatInputUI = ({
 						disabled={isDisabled || isLoading}
 						className="h-[52px] w-[52px] shrink-0 rounded-xl transition-none"
 						title="Attach image"
+						aria-label="Attach image"
 					>
 						<ImagePlus className="h-5 w-5" />
 					</Button>
@@ -153,6 +154,7 @@ export const ChatInputUI = ({
 							variant="destructive"
 							onClick={onStop}
 							className="h-[52px] w-[52px] shrink-0 rounded-xl transition-none"
+							aria-label="Stop generating"
 						>
 							<Square className="h-5 w-5" />
 						</Button>
@@ -164,6 +166,7 @@ export const ChatInputUI = ({
 							onClick={onSubmit}
 							disabled={isDisabled || !canSubmit}
 							className="h-[52px] w-[52px] shrink-0 rounded-xl transition-none"
+							aria-label="Send message"
 						>
 							{isLoading ? (
 								<Loader2 className="h-5 w-5 animate-spin" />

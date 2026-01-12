@@ -23,6 +23,7 @@ vi.mock("@/lib/ai/compat", () => ({
 // Import after mocks
 import { SettingsPage } from "./SettingsPage";
 import {
+	appearanceAtom,
 	themeAtom,
 	temperatureUnitAtom,
 	timezoneAtom,
@@ -32,7 +33,8 @@ import {
 describe("SettingsPage", () => {
 	beforeEach(() => {
 		// Reset settings to defaults
-		themeAtom.set("system");
+		appearanceAtom.set("system");
+		themeAtom.set("default");
 		temperatureUnitAtom.set("auto");
 		timezoneAtom.set("auto");
 		outputLanguageAtom.set("en");

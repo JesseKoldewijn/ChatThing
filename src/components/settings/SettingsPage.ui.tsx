@@ -21,6 +21,7 @@ import {
 	Loader2,
 	Clock,
 	MessageSquare,
+	Sparkles,
 	Archive,
 	AlertTriangle,
 	Thermometer,
@@ -31,15 +32,25 @@ import {
 	Eye,
 	EyeOff,
 	Server,
+	Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+	type ProviderType, 
+	SUPPORTED_PROVIDERS,
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+	PROVIDER_PROMPT_API,
+} from "@/lib/ai/constants";
+import type { GoogleModel } from "@/lib/ai/google/models";
 import type {
+	Appearance,
 	Theme,
 	ArchiveThreshold,
 	ArchiveThresholdUnit,
 	TemperatureUnit,
 	TimezonePreference,
-	ProviderType,
 } from "@/lib/stores/settings";
 import type { OpenRouterModel } from "@/lib/ai/open-router/models";
 import type { PullProgress, OllamaModel } from "@/lib/ai/ollama/api";
@@ -47,14 +58,25 @@ import type { OllamaStatus } from "./SettingsPage";
 
 export interface SettingsPageUIProps {
 	isHydrated?: boolean;
+	currentAppearance: Appearance;
 	currentTheme: Theme;
 	temperatureUnit: TemperatureUnit;
 	timezone: TimezonePreference;
 	systemTimezone: string | null;
 	providerType: ProviderType;
-	openRouterApiKey: string;
+	encryptedOpenRouterApiKey: string | null;
+	unlockedOpenRouterApiKey: string | null;
+	encryptedGoogleApiKey: string | null;
+	unlockedGoogleApiKey: string | null;
+	encryptedOllamaApiKey: string | null;
+	unlockedOllamaApiKey: string | null;
 	openRouterModel: string;
 	openRouterModels: OpenRouterModel[];
+	googleModel: string;
+	googleModels: GoogleModel[];
+	isLoadingGoogleModels: boolean;
+	isLocked: boolean;
+	masterPassword: string | null;
 	ollamaModel: string;
 	ollamaBaseUrl: string;
 	ollamaModels: OllamaModel[];
@@ -68,12 +90,18 @@ export interface SettingsPageUIProps {
 	deletedCount: number;
 	archiveThreshold: ArchiveThreshold;
 	isImporting: boolean;
+	onAppearanceChange: (appearance: Appearance) => void;
 	onThemeChange: (theme: Theme) => void;
 	onTemperatureUnitChange: (unit: TemperatureUnit) => void;
 	onTimezoneChange: (timezone: TimezonePreference) => void;
 	onProviderTypeChange: (type: ProviderType) => void;
+	onMasterPasswordChange: (password: string | null) => void;
+	onResetSecurity: () => void;
 	onOpenRouterApiKeyChange: (key: string) => void;
 	onOpenRouterModelChange: (model: string) => void;
+	onGoogleApiKeyChange: (key: string) => void;
+	onOllamaApiKeyChange: (key: string) => void;
+	onGoogleModelChange: (model: string) => void;
 	onOllamaModelChange: (model: string) => void;
 	onOllamaBaseUrlChange: (url: string) => void;
 	onCheckOllama: () => void;
@@ -191,14 +219,25 @@ const Progress = ({ value, className }: { value?: number; className?: string }) 
 
 export const SettingsPageUI = ({
 	isHydrated = false,
+	currentAppearance,
 	currentTheme,
 	temperatureUnit,
 	timezone,
 	systemTimezone,
 	providerType,
-	openRouterApiKey,
+	encryptedOpenRouterApiKey,
+	unlockedOpenRouterApiKey,
+	encryptedGoogleApiKey,
+	unlockedGoogleApiKey,
+	encryptedOllamaApiKey,
+	unlockedOllamaApiKey,
 	openRouterModel,
 	openRouterModels,
+	googleModel,
+	googleModels,
+	isLoadingGoogleModels,
+	isLocked,
+	masterPassword,
 	ollamaModel,
 	ollamaBaseUrl,
 	ollamaModels,
@@ -212,12 +251,18 @@ export const SettingsPageUI = ({
 	deletedCount,
 	archiveThreshold,
 	isImporting,
+	onAppearanceChange,
 	onThemeChange,
 	onTemperatureUnitChange,
 	onTimezoneChange,
 	onProviderTypeChange,
+	onMasterPasswordChange,
+	onResetSecurity,
 	onOpenRouterApiKeyChange,
 	onOpenRouterModelChange,
+	onGoogleApiKeyChange,
+	onOllamaApiKeyChange,
+	onGoogleModelChange,
 	onOllamaModelChange,
 	onOllamaBaseUrlChange,
 	onCheckOllama,
@@ -235,6 +280,21 @@ export const SettingsPageUI = ({
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [showOllamaSuggestions, setShowOllamaSuggestions] = useState(false);
 	const [showApiKey, setShowApiKey] = useState(false);
+	const [passwordInput, setPasswordInput] = useState("");
+
+	const isUnlocked = !!masterPassword;
+
+	const handlePasswordSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (passwordInput) {
+			onMasterPasswordChange(passwordInput);
+			setPasswordInput("");
+		}
+	};
+
+	const handleLock = () => {
+		onMasterPasswordChange(null);
+	};
 
 	const filteredModels = useMemo(() => {
 		const models = (openRouterModels || []).filter(m => m && (m.id || m.name));
@@ -337,7 +397,7 @@ export const SettingsPageUI = ({
 						<SettingsSection
 							icon={Sun}
 							title="Appearance"
-							description="Choose your preferred color theme"
+							description="Choose your preferred color mode"
 							testId="settings-section-appearance"
 						>
 							{!isHydrated ? (
@@ -353,19 +413,74 @@ export const SettingsPageUI = ({
 								<div className="flex flex-wrap gap-2">
 									{[
 										{
-											value: "light" as Theme,
+											value: "light" as Appearance,
 											icon: Sun,
 											label: "Light",
 										},
 										{
-											value: "dark" as Theme,
+											value: "dark" as Appearance,
 											icon: Moon,
 											label: "Dark",
 										},
 										{
-											value: "system" as Theme,
+											value: "system" as Appearance,
 											icon: Monitor,
 											label: "System",
+										},
+									].map(
+										({ value, icon: ThemeIcon, label }) => (
+											<button
+												key={value}
+												id={`appearance-button-${value}`}
+												type="button"
+												data-testid={`appearance-button-${value}`}
+												onClick={() =>
+													onAppearanceChange(value)
+												}
+												className={cn(
+													"flex flex-1 min-w-[90px] items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
+													currentAppearance === value
+														? "border-primary bg-primary text-primary-foreground"
+														: "border-border bg-background hover:bg-muted"
+												)}
+											>
+												<ThemeIcon className="h-4 w-4" />
+												{label}
+											</button>
+										)
+									)}
+								</div>
+							)}
+						</SettingsSection>
+
+						{/* Theme */}
+						<SettingsSection
+							icon={Sparkles}
+							title="Theme"
+							description="Select a color palette for the interface"
+							testId="settings-section-theme"
+						>
+							{!isHydrated ? (
+								<div className="flex flex-wrap gap-2">
+									{[1, 2].map((i) => (
+										<Skeleton
+											key={i}
+											className="h-[42px] flex-1 min-w-[120px] rounded-lg"
+										/>
+									))}
+								</div>
+							) : (
+								<div className="flex flex-wrap gap-2">
+									{[
+										{
+											value: "default" as Theme,
+											icon: Zap,
+											label: "Default",
+										},
+										{
+											value: "vibrant" as Theme,
+											icon: Sparkles,
+											label: "Vibrant",
 										},
 									].map(
 										({ value, icon: ThemeIcon, label }) => (
@@ -378,7 +493,7 @@ export const SettingsPageUI = ({
 													onThemeChange(value)
 												}
 												className={cn(
-													"flex flex-1 min-w-[90px] items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
+													"flex flex-1 min-w-[120px] items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all",
 													currentTheme === value
 														? "border-primary bg-primary text-primary-foreground"
 														: "border-border bg-background hover:bg-muted"
@@ -550,6 +665,130 @@ export const SettingsPageUI = ({
 							</div>
 						</SettingsSection>
 
+						{/* Security */}
+						<SettingsSection
+							icon={Lock}
+							title="Security"
+							description="Manage your master password to lock/unlock API keys"
+							testId="settings-section-security"
+						>
+							<div className="space-y-4">
+								{isLocked ? (
+									<div className="space-y-2">
+										<p className="text-xs text-muted-foreground">
+											Enter your master password to unlock and manage your API keys.
+										</p>
+										<div className="flex gap-2">
+											{/* Hidden username field for password managers accessibility */}
+											<input
+												type="text"
+												name="username"
+												value="ai-chat-user"
+												readOnly
+												autoComplete="username"
+												className="sr-only"
+												aria-hidden="true"
+												tabIndex={-1}
+											/>
+											<input
+												type="password"
+												value={passwordInput}
+												onChange={(e) => setPasswordInput(e.target.value)}
+												placeholder="Master Password"
+												autoComplete="current-password"
+												className="flex-1 rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+												onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit(e)}
+											/>
+											<Button
+												type="button"
+												onClick={handlePasswordSubmit}
+												disabled={!passwordInput}
+											>
+												Unlock
+											</Button>
+										</div>
+										<button
+											type="button"
+											onClick={onResetSecurity}
+											className="text-[10px] text-destructive hover:underline self-start"
+										>
+											Forgot password? Reset security settings
+										</button>
+									</div>
+								) : isUnlocked ? (
+									<div className="space-y-4">
+										<div className="flex items-center justify-between gap-4 rounded-lg bg-green-500/10 p-3 border border-green-500/20">
+											<div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+												<div className="h-2 w-2 rounded-full bg-current animate-pulse" />
+												<span className="text-sm font-medium">Session Unlocked</span>
+											</div>
+											<div className="flex gap-2">
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													onClick={handleLock}
+													className="h-8"
+												>
+													Lock
+												</Button>
+											</div>
+										</div>
+										
+										<div className="flex flex-col gap-2 pt-2 border-t">
+											<p className="text-[10px] text-muted-foreground">
+												Forgotten your password? You can reset it, but this will erase all stored API keys.
+											</p>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												onClick={onResetSecurity}
+												className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10 self-start"
+											>
+												Reset Master Password
+											</Button>
+										</div>
+									</div>
+								) : (
+									<div className="space-y-2">
+										<p className="text-xs text-muted-foreground">
+											Set a master password to encrypt your API keys. This password is only stored in memory for the current session.
+										</p>
+										<div className="flex gap-2">
+											{/* Hidden username field for password managers accessibility */}
+											<input
+												type="text"
+												name="username"
+												value="ai-chat-user"
+												readOnly
+												autoComplete="username"
+												className="sr-only"
+												aria-hidden="true"
+												tabIndex={-1}
+											/>
+											<input
+												type="password"
+												value={passwordInput}
+												onChange={(e) => setPasswordInput(e.target.value)}
+												placeholder="New Master Password"
+												autoComplete="new-password"
+												className="flex-1 rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+												onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit(e)}
+											/>
+											<Button
+												type="button"
+												onClick={handlePasswordSubmit}
+												disabled={!passwordInput}
+											>
+												Set Password
+											</Button>
+										</div>
+									</div>
+								)}
+							</div>
+						</SettingsSection>
+
 						{/* AI Provider */}
 						<SettingsSection
 							icon={Zap}
@@ -565,40 +804,21 @@ export const SettingsPageUI = ({
 									</div>
 								) : (
 									<div className="flex flex-wrap gap-2">
-										{[
-											{
-												value: "prompt-api" as ProviderType,
-												label: "Prompt API",
-												description:
-													"Built-in browser AI",
-											},
-											{
-												value: "open-router" as ProviderType,
-												label: "OpenRouter",
-												description:
-													"Cloud-based models",
-											},
-											{
-												value: "ollama" as ProviderType,
-												label: "Ollama",
-												description:
-													"Local LLM (Ollama)",
-											},
-										].map(
-											({ value, label, description }) => (
+										{SUPPORTED_PROVIDERS.map(
+											({ id, label, description }) => (
 												<button
-													key={value}
-													id={`provider-button-${value}`}
+													key={id}
+													id={`provider-button-${id}`}
 													type="button"
-													data-testid={`provider-button-${value}`}
+													data-testid={`provider-button-${id}`}
 													onClick={() =>
 														onProviderTypeChange(
-															value
+															id
 														)
 													}
 													className={cn(
 														"flex flex-1 min-w-[120px] flex-col items-center justify-center gap-0.5 rounded-lg border px-4 py-2.5 transition-all",
-														providerType === value
+														providerType === id
 															? "border-primary bg-primary text-primary-foreground"
 															: "border-border bg-background hover:bg-muted"
 													)}
@@ -610,7 +830,7 @@ export const SettingsPageUI = ({
 														className={cn(
 															"text-[10px]",
 															providerType ===
-																value
+																id
 																? "text-primary-foreground/70"
 																: "text-muted-foreground"
 														)}
@@ -649,7 +869,7 @@ export const SettingsPageUI = ({
 										</div>
 									) : (
 										<div className="h-full">
-											{providerType === "open-router" ? (
+											{providerType === PROVIDER_OPEN_ROUTER ? (
 												<div className="space-y-4 rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
 													<div className="space-y-2">
 														<div className="flex items-center gap-2">
@@ -661,20 +881,28 @@ export const SettingsPageUI = ({
 														<div className="relative">
 															<input
 																type={showApiKey ? "text" : "password"}
-																value={openRouterApiKey}
+																value={unlockedOpenRouterApiKey || ""}
 																onChange={(e) => onOpenRouterApiKeyChange(e.target.value)}
+																disabled={isLocked}
 																autoComplete="off"
-																placeholder="sk-or-..."
-																className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none"
+																placeholder={encryptedOpenRouterApiKey ? "•••••••• (Saved)" : "sk-or-..."}
+																className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
 															/>
-															<button
-																type="button"
-																onClick={() => setShowApiKey(!showApiKey)}
-																className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-															>
-																{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-															</button>
+															{!isLocked && (
+																<button
+																	type="button"
+																	onClick={() => setShowApiKey(!showApiKey)}
+																	className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+																>
+																	{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+																</button>
+															)}
 														</div>
+														{isLocked && encryptedOpenRouterApiKey && (
+															<p className="text-[10px] text-muted-foreground">
+																Unlock session to manage this key
+															</p>
+														)}
 													</div>
 													<div className="space-y-2">
 														<div className="flex items-center justify-between">
@@ -721,10 +949,115 @@ export const SettingsPageUI = ({
 														</div>
 													</div>
 												</div>
-											) : providerType === "ollama" ? (
+											) : providerType === PROVIDER_GOOGLE ? (
 												<div className="space-y-4 rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
-												<div className="space-y-2">
-													<div className="flex items-center justify-between">
+													<div className="space-y-2">
+														<div className="flex items-center gap-2">
+															<Key className="h-3.5 w-3.5 text-muted-foreground" />
+															<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																API Key
+															</label>
+														</div>
+														<div className="relative">
+															<input
+																type={showApiKey ? "text" : "password"}
+																value={unlockedGoogleApiKey || ""}
+																onChange={(e) => onGoogleApiKeyChange(e.target.value)}
+																disabled={isLocked}
+																autoComplete="off"
+																placeholder={encryptedGoogleApiKey ? "•••••••• (Saved)" : "Enter Gemini API Key"}
+																className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+															/>
+															{!isLocked && (
+																<button
+																	type="button"
+																	onClick={() => setShowApiKey(!showApiKey)}
+																	className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+																>
+																	{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+																</button>
+															)}
+														</div>
+														{isLocked && encryptedGoogleApiKey && (
+															<p className="text-[10px] text-muted-foreground">
+																Unlock session to manage this key
+															</p>
+														)}
+													</div>
+													<div className="space-y-2">
+														<div className="flex items-center justify-between">
+															<div className="flex items-center gap-2">
+																<Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+																<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																	Model
+																</label>
+															</div>
+															{isLoadingGoogleModels && (
+																<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+															)}
+														</div>
+														<Select
+															value={googleModel}
+															onValueChange={(value) => onGoogleModelChange(value)}
+															disabled={googleModels.length === 0 && !isLoadingGoogleModels}
+														>
+															<SelectTrigger className="w-full bg-background">
+																<SelectValue placeholder={isLoadingGoogleModels ? "Loading models..." : (googleModels.length > 0 ? "Select model..." : "Enter API key to load models")} />
+															</SelectTrigger>
+															<SelectContent>
+																{googleModels.length > 0 ? (
+																	googleModels.map((m) => (
+																		<SelectItem key={m.id} value={m.id}>
+																			<div className="flex flex-col">
+																				<span>{m.name}</span>
+																				<span className="text-[10px] text-muted-foreground line-clamp-1">{m.description}</span>
+																			</div>
+																		</SelectItem>
+																	))
+																) : (
+																	<SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp (Default)</SelectItem>
+																)}
+															</SelectContent>
+														</Select>
+													</div>
+												</div>
+											) : providerType === PROVIDER_OLLAMA ? (
+												<div className="space-y-4 rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
+													<div className="space-y-2">
+														<div className="flex items-center gap-2">
+															<Key className="h-3.5 w-3.5 text-muted-foreground" />
+															<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+																API Key (Optional)
+															</label>
+														</div>
+														<div className="relative">
+															<input
+																type={showApiKey ? "text" : "password"}
+																value={unlockedOllamaApiKey || ""}
+																onChange={(e) => onOllamaApiKeyChange(e.target.value)}
+																disabled={isLocked}
+																autoComplete="off"
+																placeholder={encryptedOllamaApiKey ? "•••••••• (Saved)" : "Optional key for proxies"}
+																className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+															/>
+															{!isLocked && (
+																<button
+																	type="button"
+																	onClick={() => setShowApiKey(!showApiKey)}
+																	className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+																>
+																	{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+																</button>
+															)}
+														</div>
+														{isLocked && encryptedOllamaApiKey && (
+															<p className="text-[10px] text-muted-foreground">
+																Unlock session to manage this key
+															</p>
+														)}
+													</div>
+													<div className="space-y-2">
+														<div className="flex items-center justify-between">
 														<div className="flex items-center gap-2">
 															<Server className="h-3.5 w-3.5 text-muted-foreground" />
 															<label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -850,25 +1183,42 @@ export const SettingsPageUI = ({
 														<div className="space-y-2 bg-background/50 p-3 rounded-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300">
 															<div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
 																<span className="text-primary truncate mr-2">{pullProgress.status}</span>
-																{pullProgress.total > 0 && (
+																{pullProgress.total && pullProgress.total > 0 && pullProgress.completed !== undefined && (
 																	<span className="text-muted-foreground">
 																		{Math.round((pullProgress.completed / pullProgress.total) * 100)}%
 																	</span>
 																)}
 															</div>
-															<Progress value={pullProgress.total > 0 ? (pullProgress.completed / pullProgress.total) * 100 : 0} />
-														</div>
-													)}
-												</div>
-											) : (
-												<div className="rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
-													<p className="text-xs text-muted-foreground">
-														Prompt API uses the built-in
-														AI model in your browser
-														(Chrome/Edge v138+).
-													</p>
+													<Progress
+														value={
+															pullProgress.total && pullProgress.total > 0 && pullProgress.completed !== undefined
+																? (pullProgress.completed / pullProgress.total) * 100
+																: 0
+														}
+													/>
 												</div>
 											)}
+										</div>
+									) : providerType === PROVIDER_PROMPT_API ? (
+										<div className="space-y-4 rounded-lg bg-muted/50 p-4 animate-in fade-in duration-300">
+											<div className="flex items-center gap-3">
+												<div className="rounded-full bg-primary/10 p-2">
+													<Sparkles className="h-5 w-5 text-primary" />
+												</div>
+												<div>
+													<h4 className="text-sm font-semibold">Browser Built-in AI</h4>
+													<p className="text-xs text-muted-foreground">
+														Using Gemini Nano running directly in your browser.
+													</p>
+												</div>
+											</div>
+											<div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+												<p className="text-[11px] leading-relaxed text-primary/80">
+													This provider uses your device's hardware and doesn't require an internet connection or API keys.
+												</p>
+											</div>
+										</div>
+									) : null}
 										</div>
 									)}
 								</div>

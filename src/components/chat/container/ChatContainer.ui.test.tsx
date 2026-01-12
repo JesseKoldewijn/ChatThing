@@ -92,8 +92,7 @@ describe("ChatContainerUI", () => {
 			);
 
 			// Should have overlay div
-			const overlay = document.querySelector('[aria-hidden="true"]');
-			expect(overlay).toBeInTheDocument();
+			expect(screen.getByTestId("chat-sidebar-overlay")).toBeInTheDocument();
 		});
 
 		it("should not render overlay when sidebar is closed", () => {
@@ -105,8 +104,7 @@ describe("ChatContainerUI", () => {
 				/>
 			);
 
-			const overlay = document.querySelector('[aria-hidden="true"]');
-			expect(overlay).not.toBeInTheDocument();
+			expect(screen.queryByTestId("chat-sidebar-overlay")).not.toBeInTheDocument();
 		});
 	});
 
@@ -122,8 +120,8 @@ describe("ChatContainerUI", () => {
 				/>
 			);
 
-			const overlay = document.querySelector('[aria-hidden="true"]');
-			fireEvent.click(overlay!);
+			const overlay = screen.getByTestId("chat-sidebar-overlay");
+			fireEvent.click(overlay);
 
 			expect(onCloseSidebar).toHaveBeenCalled();
 		});

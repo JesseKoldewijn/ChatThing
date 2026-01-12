@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, RefreshCw, User, Bot, X } from "lucide-react";
+import { Copy, Check, RefreshCw, User, Bot, X, Info, AlertCircle } from "lucide-react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -12,7 +12,7 @@ import { type ImageAttachment } from "@/lib/stores/chat";
 
 export interface MessageItemUIProps {
 	content: string;
-	role: "user" | "assistant";
+	role: "user" | "assistant" | "system";
 	images?: ImageAttachment[];
 	isStreaming?: boolean;
 	isCopied?: boolean;
@@ -32,10 +32,39 @@ export const MessageItemUI = ({
 	renderContent,
 }: MessageItemUIProps) => {
 	const isUser = role === "user";
+	const isSystem = role === "system";
+	const isError = isSystem && content.includes("❌");
 	const hasImages = images && images.length > 0;
 	const [lightboxImage, setLightboxImage] = useState<ImageAttachment | null>(
 		null
 	);
+
+	if (isSystem) {
+		return (
+			<div
+				data-testid={`message-${role}`}
+				className="flex w-full justify-center px-4 py-2"
+			>
+				<div
+					className={cn(
+						"flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border shadow-sm",
+						isError
+							? "bg-destructive/10 text-destructive border-destructive/20"
+							: "bg-muted text-muted-foreground border-border"
+					)}
+				>
+					{isError ? (
+						<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+					) : (
+						<Info className="h-3.5 w-3.5 shrink-0" />
+					)}
+					<div className="flex-1 overflow-hidden text-ellipsis">
+						{content}
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<>
