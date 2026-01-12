@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+	appearanceAtom,
 	themeAtom,
 	temperatureUnitAtom,
 	timezoneAtom,
 	outputLanguageAtom,
 	archiveThresholdAtom,
+	setAppearance,
 	setTheme,
 	setTemperatureUnit,
 	setTimezone,
@@ -18,7 +20,8 @@ import {
 
 describe("Settings Store Integration", () => {
 	beforeEach(() => {
-		themeAtom.set("system");
+		appearanceAtom.set("system");
+		themeAtom.set("default");
 		temperatureUnitAtom.set("auto");
 		timezoneAtom.set("auto");
 		outputLanguageAtom.set("en");
@@ -26,23 +29,33 @@ describe("Settings Store Integration", () => {
 		localStorage.clear();
 	});
 
-	describe("theme persistence", () => {
-		it("should persist theme changes to localStorage", () => {
-			setTheme("dark");
-			expect(themeAtom.get()).toBe("dark");
-			expect(localStorage.getItem("theme")).toBe("dark");
+	describe("appearance and theme persistence", () => {
+		it("should persist appearance changes to localStorage", () => {
+			setAppearance("dark");
+			expect(appearanceAtom.get()).toBe("dark");
+			expect(localStorage.getItem("appearance")).toBe("dark");
 
-			setTheme("light");
-			expect(themeAtom.get()).toBe("light");
-			expect(localStorage.getItem("theme")).toBe("light");
+			setAppearance("light");
+			expect(appearanceAtom.get()).toBe("light");
+			expect(localStorage.getItem("appearance")).toBe("light");
 		});
 
-		it("should handle all theme options", () => {
-			const themes = ["light", "dark", "system"] as const;
-			themes.forEach((theme) => {
-				setTheme(theme);
-				expect(themeAtom.get()).toBe(theme);
+		it("should handle all appearance options", () => {
+			const appearances = ["light", "dark", "system"] as const;
+			appearances.forEach((appearance) => {
+				setAppearance(appearance);
+				expect(appearanceAtom.get()).toBe(appearance);
 			});
+		});
+
+		it("should persist theme changes to localStorage", () => {
+			setTheme("vibrant");
+			expect(themeAtom.get()).toBe("vibrant");
+			expect(localStorage.getItem("theme")).toBe("vibrant");
+
+			setTheme("default");
+			expect(themeAtom.get()).toBe("default");
+			expect(localStorage.getItem("theme")).toBe("default");
 		});
 	});
 

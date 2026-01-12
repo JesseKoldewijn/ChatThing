@@ -8,7 +8,7 @@ import {
 	addMessage,
 	updateLastAssistantMessage,
 	removeLastMessage,
-	removeAssistantMessagesFromTransaction,
+	removeMessagesFromTransaction,
 	clearMessages,
 	appendToStream,
 	clearStream,
@@ -85,6 +85,29 @@ describe("chat store", () => {
 			expect(messages[1].content).toBe("Second");
 			expect(messages[2].content).toBe("Third");
 		});
+
+		it("should update existing assistant message if transactionId matches", () => {
+			const txId = "tx-1";
+			addMessage("user", "Hello", { transactionId: txId });
+			addMessage("assistant", "Thinking...", { transactionId: txId });
+			
+			// Update the same assistant message
+			addMessage("assistant", "Actual response", { transactionId: txId });
+
+			const messages = messagesAtom.get();
+			expect(messages).toHaveLength(2);
+			expect(messages[1].role).toBe("assistant");
+			expect(messages[1].content).toBe("Actual response");
+		});
+
+		it("should deduplicate identical system messages with same transactionId", () => {
+			const txId = "tx-1";
+			addMessage("system", "Tool called", { transactionId: txId });
+			addMessage("system", "Tool called", { transactionId: txId });
+
+			const messages = messagesAtom.get();
+			expect(messages).toHaveLength(1);
+		});
 	});
 
 	describe("updateLastAssistantMessage", () => {
@@ -132,14 +155,14 @@ describe("chat store", () => {
 		});
 	});
 
-	describe("removeAssistantMessagesFromTransaction", () => {
+	describe("removeMessagesFromTransaction", () => {
 		it("should remove all assistant messages with given transactionId", () => {
 			const txId = "test-tx";
 			addMessage("user", "Question", { transactionId: txId });
 			addMessage("assistant", "Tool announcement", { transactionId: txId });
 			addMessage("assistant", "Response", { transactionId: txId });
 
-			removeAssistantMessagesFromTransaction(txId);
+			removeMessagesFromTransaction(txId);
 
 			const messages = messagesAtom.get();
 			expect(messages).toHaveLength(1);
@@ -151,7 +174,7 @@ describe("chat store", () => {
 			addMessage("user", "Question", { transactionId: txId });
 			addMessage("assistant", "Response", { transactionId: txId });
 
-			removeAssistantMessagesFromTransaction(txId);
+			removeMessagesFromTransaction(txId);
 
 			const messages = messagesAtom.get();
 			expect(messages).toHaveLength(1);
@@ -164,7 +187,7 @@ describe("chat store", () => {
 			addMessage("user", "Q2", { transactionId: "tx2" });
 			addMessage("assistant", "A2", { transactionId: "tx2" });
 
-			removeAssistantMessagesFromTransaction("tx1");
+			removeMessagesFromTransaction("tx1");
 
 			const messages = messagesAtom.get();
 			expect(messages).toHaveLength(3);

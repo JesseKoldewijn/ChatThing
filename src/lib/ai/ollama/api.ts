@@ -36,7 +36,7 @@ export async function checkOllamaAvailability(baseUrl: string): Promise<boolean>
 			method: "GET",
 		});
 		return response.ok;
-	} catch (error) {
+	} catch {
 		return false;
 	}
 }
@@ -102,7 +102,9 @@ export async function pullOllamaModel(
 					throw new Error(progress.error);
 				}
 			} catch (e) {
-				console.error("Failed to parse progress line:", line, e);
+				if (import.meta.env.DEV) {
+					console.error("Failed to parse progress line:", line, e);
+				}
 			}
 		}
 	}
@@ -115,7 +117,9 @@ export async function pullOllamaModel(
 				throw new Error(progress.error);
 			}
 		} catch (e) {
-			console.error("Failed to parse final progress line:", buffer, e);
+			if (import.meta.env.DEV) {
+				console.error("Failed to parse final progress line:", buffer, e);
+			}
 		}
 	}
 }

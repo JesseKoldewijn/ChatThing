@@ -1,5 +1,10 @@
 import { atom } from "nanostores";
-import { providerTypeAtom } from "./settings";
+import { 
+	providerTypeAtom, 
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+} from "./settings";
 
 export type ErrorCategory = 
 	| "network"      // Network/connection issues
@@ -46,9 +51,20 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
 		error.constructor?.name === "AI_APICallError";
 
 	if (isAiCallError) {
-		// @ts-ignore - AI SDK errors have statusCode
+		// @ts-expect-error - AI SDK errors have statusCode, statusText, body
 		const statusCode = error.statusCode || error.status || error.errorCode;
-		
+		// @ts-expect-error - statusText is not in Error type
+		const statusText = error.statusText || error.message;
+		// @ts-expect-error - body is not in Error type
+		const responseBody = error.body || error.data;
+
+		console.error(`AI_APICallError Details:
+Provider: ${providerTypeAtom.get()}
+Status Code: ${statusCode}
+Status Text: ${statusText}
+Response Body: ${JSON.stringify(responseBody, null, 2)}
+Original Error:`, error);
+
 		if (statusCode === 429) {
 			return {
 				category: "rate_limit",
@@ -195,7 +211,6 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
  * Get a user-friendly message for an error
  */
 const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string => {
-	const message = error.message.toLowerCase();
 	const name = error.name.toLowerCase();
 
 	// Handle APICallError specifically for better messages
@@ -210,9 +225,13 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 		error.constructor?.name === "AI_APICallError";
 
 	if (isAiCallError) {
-		// @ts-ignore - AI SDK errors have statusCode
+		// @ts-expect-error - AI SDK errors have statusCode
 		const statusCode = error.statusCode || error.status || error.errorCode;
-		const provider = providerTypeAtom.get() === "open-router" ? "OpenRouter" : "Built-in AI";
+		const providerType = providerTypeAtom.get();
+		const provider = 
+			providerType === PROVIDER_OPEN_ROUTER ? "OpenRouter" : 
+			providerType === PROVIDER_GOOGLE ? "Google Gemini" :
+			providerType === PROVIDER_OLLAMA ? "Ollama" : "AI Provider";
 		
 		switch (statusCode) {
 			case 401:
@@ -231,6 +250,7 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 				if (statusCode && statusCode >= 400) {
 					return `The AI provider (${provider}) returned an error (HTTP ${statusCode}). ${error.message}`;
 				}
+				return `The AI provider (${provider}) encountered a call error: ${error.message}`;
 		}
 	}
 
@@ -248,11 +268,11 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 			const providerType = providerTypeAtom.get();
 			const msg = error.message.toLowerCase();
 			if (msg.includes("image input") || msg.includes("multimodal")) {
-				if (providerType === "open-router") {
+				if (providerType === PROVIDER_OPEN_ROUTER) {
 					return "The selected model does not support image input. Please choose a multimodal model (like Gemini 1.5 Flash or Claude 3.5 Sonnet) to use this feature.";
 				}
-				if (providerType === "prompt-api") {
-					return "The built-in AI (Gemini Nano) requires the 'Prompt API Multimodal' flag to be enabled in Chrome (chrome://flags/#optimization-guide-on-device-multimodal) to support image input.";
+				if (providerType === PROVIDER_GOOGLE) {
+					return "The selected Gemini model does not support image input. Please choose a multimodal model like Gemini 1.5 Flash or Pro.";
 				}
 			}
 			return "The AI model is temporarily unavailable. This might be due to the model still downloading or a temporary issue. Please try again in a moment.";

@@ -18,9 +18,12 @@ export const MessageList = ({ onRegenerate, renderContent }: MessageListProps) =
 	// Auto-scroll to bottom on new messages or stream updates
 	useEffect(() => {
 		if (scrollRef.current) {
-			scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+			// Use "auto" for stream updates to avoid stuttering/chunking appearance
+			// and "smooth" only when a message is completed
+			const behavior = isStreaming ? "auto" : "smooth";
+			scrollRef.current.scrollIntoView({ behavior, block: "end" });
 		}
-	}, [messages, currentStream]);
+	}, [messages, currentStream, isStreaming]);
 
 	// When streaming starts, add an assistant message placeholder
 	// This is handled in the chat hook, but we show the streaming content

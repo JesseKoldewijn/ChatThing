@@ -14,7 +14,7 @@ vi.mock("@nanostores/react", () => ({
 vi.mock("@/lib/stores/chat", () => ({
 	messagesAtom: { name: "messagesAtom", get: () => mockMessages },
 	lastUserMessageAtom: { name: "lastUserMessageAtom", get: () => mockLastUserMessage },
-	removeAssistantMessagesFromTransaction: vi.fn(),
+	removeMessagesFromTransaction: vi.fn(),
 }));
 
 vi.mock("@/lib/stores/imageStorage", () => ({
@@ -61,7 +61,7 @@ vi.mock("./MessageItem.ui", () => ({
 }));
 
 import { MessageItem } from "./MessageItem";
-import { removeAssistantMessagesFromTransaction } from "@/lib/stores/chat";
+import { removeMessagesFromTransaction } from "@/lib/stores/chat";
 import { getImages } from "@/lib/stores/imageStorage";
 import { useStore } from "@nanostores/react";
 import type { ReadableAtom } from "nanostores";
@@ -216,7 +216,7 @@ describe("MessageItem", () => {
 
 			await user.click(screen.getByTestId("regenerate-btn"));
 
-			expect(removeAssistantMessagesFromTransaction).toHaveBeenCalledWith("tx-1");
+			expect(removeMessagesFromTransaction).toHaveBeenCalledWith("tx-1");
 			expect(onRegenerate).toHaveBeenCalledWith("Question", "tx-1");
 		});
 	});

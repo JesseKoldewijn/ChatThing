@@ -12,6 +12,7 @@ import {
 	estimateTokens,
 	type DailyUsage,
 } from "./usage";
+import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
 
 describe("usage store extended tests", () => {
 	beforeEach(() => {
@@ -23,7 +24,7 @@ describe("usage store extended tests", () => {
 
 	describe("recordMessage", () => {
 		it("should record a message event", () => {
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
 			const events = usageEventsAtom.get();
 			expect(events).toHaveLength(1);
@@ -33,8 +34,8 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should prepend new events", () => {
-			recordMessage("conv-1", 50);
-			recordMessage("conv-2", 100);
+			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
+			recordMessage("conv-2", 100, PROVIDER_OLLAMA, "m1");
 
 			const events = usageEventsAtom.get();
 			expect(events[0].conversationId).toBe("conv-2");
@@ -42,7 +43,7 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should update daily aggregation", () => {
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
 			const daily = dailyUsageAtom.get();
 			expect(daily).toHaveLength(1);
@@ -50,9 +51,9 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should accumulate message counts on same day", () => {
-			recordMessage("conv-1", 50);
-			recordMessage("conv-1", 100);
-			recordMessage("conv-2", 75);
+			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordMessage("conv-2", 75, PROVIDER_OLLAMA, "m1");
 
 			const daily = dailyUsageAtom.get();
 			expect(daily).toHaveLength(1);
@@ -63,7 +64,7 @@ describe("usage store extended tests", () => {
 
 	describe("recordResponse", () => {
 		it("should record a response event", () => {
-			recordResponse("conv-1", 500);
+			recordResponse("conv-1", 500, PROVIDER_OLLAMA, "m1");
 
 			const events = usageEventsAtom.get();
 			expect(events).toHaveLength(1);
@@ -72,8 +73,8 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should update daily response count", () => {
-			recordResponse("conv-1", 100);
-			recordResponse("conv-1", 200);
+			recordResponse("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordResponse("conv-1", 200, PROVIDER_OLLAMA, "m1");
 
 			const daily = dailyUsageAtom.get();
 			expect(daily[0].responseCount).toBe(2);
@@ -82,7 +83,7 @@ describe("usage store extended tests", () => {
 
 	describe("recordToolCall", () => {
 		it("should record a tool call event", () => {
-			recordToolCall("conv-1", "weather");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
 
 			const events = usageEventsAtom.get();
 			expect(events).toHaveLength(1);
@@ -92,9 +93,9 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should update tool breakdown", () => {
-			recordToolCall("conv-1", "weather");
-			recordToolCall("conv-1", "weather");
-			recordToolCall("conv-1", "datetime");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "datetime", PROVIDER_OLLAMA, "m1");
 
 			const daily = dailyUsageAtom.get();
 			expect(daily[0].toolCallCount).toBe(3);
@@ -108,6 +109,7 @@ describe("usage store extended tests", () => {
 			recordTokenUsage(100, 200);
 
 			const daily = dailyUsageAtom.get();
+			expect(daily).toHaveLength(1);
 			expect(daily[0].inputTokens).toBe(100);
 			expect(daily[0].outputTokens).toBe(200);
 		});
@@ -159,10 +161,11 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should aggregate data correctly", () => {
-			recordMessage("conv-1", 100);
-			recordMessage("conv-1", 50);
-			recordResponse("conv-1", 300);
-			recordToolCall("conv-1", "weather");
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
+			recordResponse("conv-1", 300, PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
+			// Record tokens explicitly
 			recordTokenUsage(25, 75);
 
 			const summary = getUsageSummary();
@@ -176,9 +179,9 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should calculate average response length", () => {
-			recordResponse("conv-1", 100);
-			recordResponse("conv-1", 200);
-			recordResponse("conv-1", 300);
+			recordResponse("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordResponse("conv-1", 200, PROVIDER_OLLAMA, "m1");
+			recordResponse("conv-1", 300, PROVIDER_OLLAMA, "m1");
 
 			const summary = getUsageSummary();
 
@@ -186,9 +189,9 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should include tool breakdown", () => {
-			recordToolCall("conv-1", "weather");
-			recordToolCall("conv-1", "weather");
-			recordToolCall("conv-1", "datetime");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "datetime", PROVIDER_OLLAMA, "m1");
 
 			const summary = getUsageSummary();
 
@@ -197,7 +200,7 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should include daily usage", () => {
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
 			const summary = getUsageSummary();
 
@@ -207,9 +210,9 @@ describe("usage store extended tests", () => {
 
 	describe("clearUsageData", () => {
 		it("should clear all usage data", () => {
-			recordMessage("conv-1", 100);
-			recordResponse("conv-1", 200);
-			recordToolCall("conv-1", "weather");
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordResponse("conv-1", 200, PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
 
 			expect(usageEventsAtom.get().length).toBeGreaterThan(0);
 			expect(dailyUsageAtom.get().length).toBeGreaterThan(0);
@@ -231,7 +234,7 @@ describe("usage store extended tests", () => {
 		});
 
 		it("should include existing data", () => {
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
 			const recent = getRecentDailyUsage(30);
 
@@ -255,7 +258,7 @@ describe("usage store extended tests", () => {
 		it("should limit events to 1000", () => {
 			// Record more than 1000 events
 			for (let i = 0; i < 1010; i++) {
-				recordMessage(`conv-${i}`, 10);
+				recordMessage(`conv-${i}`, 10, PROVIDER_OLLAMA, "m1");
 			}
 
 			const events = usageEventsAtom.get();
@@ -280,12 +283,14 @@ describe("usage store extended tests", () => {
 					inputTokens: 0,
 					outputTokens: 0,
 					toolBreakdown: {},
+					providerBreakdown: {},
+					modelBreakdown: {},
 				});
 			}
 			dailyUsageAtom.set(manyDays);
 
 			// Record a new event to trigger cleanup
-			recordMessage("conv-1", 10);
+			recordMessage("conv-1", 10, PROVIDER_OLLAMA, "m1");
 
 			const daily = dailyUsageAtom.get();
 			expect(daily.length).toBeLessThanOrEqual(90);
@@ -294,9 +299,9 @@ describe("usage store extended tests", () => {
 
 	describe("event ID uniqueness", () => {
 		it("should generate unique IDs for events", () => {
-			recordMessage("conv-1", 100);
-			recordMessage("conv-1", 100);
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
 			const events = usageEventsAtom.get();
 			const ids = events.map((e) => e.id);
@@ -309,7 +314,7 @@ describe("usage store extended tests", () => {
 	describe("timestamp accuracy", () => {
 		it("should record accurate timestamps", () => {
 			const before = Date.now();
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			const after = Date.now();
 
 			const events = usageEventsAtom.get();
@@ -318,4 +323,3 @@ describe("usage store extended tests", () => {
 		});
 	});
 });
-

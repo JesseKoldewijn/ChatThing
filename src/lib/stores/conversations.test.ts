@@ -26,6 +26,15 @@ import {
 import { messagesAtom } from "./chat";
 import { activeChatIdAtom } from "./conversations";
 
+// Mock AI manager
+vi.mock("@/lib/ai", () => {
+	return {
+		getAIManager: vi.fn().mockResolvedValue({
+			generateTitle: vi.fn().mockResolvedValue("Generated Title"),
+		}),
+	};
+});
+
 describe("conversations store", () => {
 	beforeEach(() => {
 		// Reset atoms
@@ -33,6 +42,7 @@ describe("conversations store", () => {
 		messagesAtom.set([]);
 		activeChatIdAtom.set(null);
 		localStorage.clear();
+		vi.clearAllMocks();
 	});
 
 	describe("conversationsAtom", () => {
@@ -85,7 +95,7 @@ describe("conversations store", () => {
 	});
 
 	describe("deleteConversation", () => {
-		it("should soft delete a conversation", () => {
+		it("should soft delete a conversation", async () => {
 			const conv: Conversation = {
 				id: "del-1",
 				title: "To Delete",
@@ -96,20 +106,20 @@ describe("conversations store", () => {
 			};
 			conversationsAtom.set([conv]);
 
-			deleteConversation("del-1");
+			await deleteConversation("del-1");
 
 			const deleted = conversationsAtom.get().find((c) => c.id === "del-1");
 			expect(deleted?.status).toBe("deleted");
 			expect(deleted?.deletedAt).toBeDefined();
 		});
 
-		it("should not throw for non-existent conversation", () => {
-			expect(() => deleteConversation("non-existent")).not.toThrow();
+		it("should not throw for non-existent conversation", async () => {
+			await expect(deleteConversation("non-existent")).resolves.not.toThrow();
 		});
 	});
 
 	describe("archiveConversation", () => {
-		it("should archive an active conversation", () => {
+		it("should archive an active conversation", async () => {
 			const conv: Conversation = {
 				id: "arch-1",
 				title: "To Archive",
@@ -120,7 +130,7 @@ describe("conversations store", () => {
 			};
 			conversationsAtom.set([conv]);
 
-			archiveConversation("arch-1");
+			await archiveConversation("arch-1");
 
 			const archived = conversationsAtom.get().find((c) => c.id === "arch-1");
 			expect(archived?.status).toBe("archived");

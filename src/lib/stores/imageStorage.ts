@@ -22,7 +22,9 @@ export const initImageStorage = (): Promise<IDBDatabase> => {
 		const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 		request.onerror = () => {
-			console.error("Failed to open image storage:", request.error);
+			if (import.meta.env.DEV) {
+				console.error("Failed to open image storage:", request.error);
+			}
 			reject(request.error);
 		};
 
@@ -85,7 +87,9 @@ export const saveImage = async (
 		
 		request.onsuccess = () => resolve();
 		request.onerror = () => {
-			console.error("Failed to save image:", request.error);
+			if (import.meta.env.DEV) {
+				console.error("Failed to save image:", request.error);
+			}
 			reject(request.error);
 		};
 	});
@@ -104,7 +108,9 @@ export const getImage = async (id: string): Promise<StoredImage | null> => {
 		
 		request.onsuccess = () => resolve(request.result || null);
 		request.onerror = () => {
-			console.error("Failed to get image:", request.error);
+			if (import.meta.env.DEV) {
+				console.error("Failed to get image:", request.error);
+			}
 			reject(request.error);
 		};
 	});
@@ -142,7 +148,9 @@ export const getImages = async (ids: string[]): Promise<Map<string, StoredImage>
 			};
 			
 			request.onerror = () => {
-				console.error("Failed to get image:", id, request.error);
+				if (import.meta.env.DEV) {
+					console.error("Failed to get image:", id, request.error);
+				}
 				completed++;
 				if (completed === ids.length) {
 					resolve(results);
@@ -165,7 +173,9 @@ export const deleteImage = async (id: string): Promise<void> => {
 		
 		request.onsuccess = () => resolve();
 		request.onerror = () => {
-			console.error("Failed to delete image:", request.error);
+			if (import.meta.env.DEV) {
+				console.error("Failed to delete image:", request.error);
+			}
 			reject(request.error);
 		};
 	});
@@ -197,7 +207,9 @@ export const deleteConversationImages = async (conversationId: string): Promise<
 		};
 		
 		request.onerror = () => {
-			console.error("Failed to delete conversation images:", request.error);
+			if (import.meta.env.DEV) {
+				console.error("Failed to delete conversation images:", request.error);
+			}
 			reject(request.error);
 		};
 	});
@@ -216,7 +228,9 @@ export const clearAllImages = async (): Promise<void> => {
 		
 		request.onsuccess = () => resolve();
 		request.onerror = () => {
-			console.error("Failed to clear images:", request.error);
+			if (import.meta.env.DEV) {
+				console.error("Failed to clear images:", request.error);
+			}
 			reject(request.error);
 		};
 	});

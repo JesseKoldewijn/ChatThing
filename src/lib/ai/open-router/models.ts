@@ -17,6 +17,9 @@ export const isLoadingModelsAtom = atom<boolean>(false);
  * Fetch available models from OpenRouter API
  */
 export const fetchOpenRouterModels = async () => {
+	// Don't fetch if already loading
+	if (isLoadingModelsAtom.get()) return;
+
 	// Don't refetch if we already have models
 	if (openRouterModelsAtom.get().length > 0) return;
 

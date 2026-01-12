@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+	appearanceAtom,
 	themeAtom,
 	outputLanguageAtom,
 	temperatureUnitAtom,
@@ -10,6 +11,7 @@ import {
 	formatThreshold,
 	getSystemTimezone,
 	getResolvedTimezone,
+	setAppearance,
 	setTheme,
 	setTemperatureUnit,
 	setTimezone,
@@ -22,7 +24,8 @@ import {
 describe("settings store", () => {
 	beforeEach(() => {
 		// Reset atoms to defaults
-		themeAtom.set("system");
+		appearanceAtom.set("system");
+		themeAtom.set("default");
 		outputLanguageAtom.set("en");
 		temperatureUnitAtom.set("auto");
 		timezoneAtom.set("auto");
@@ -30,19 +33,30 @@ describe("settings store", () => {
 		archiveThresholdAtom.set({ value: 1, unit: "weeks" });
 	});
 
-	describe("themeAtom", () => {
+	describe("appearanceAtom", () => {
 		it("should default to system", () => {
-			expect(themeAtom.get()).toBe("system");
+			expect(appearanceAtom.get()).toBe("system");
 		});
 
-		it("should accept light theme", () => {
-			themeAtom.set("light");
-			expect(themeAtom.get()).toBe("light");
+		it("should accept light appearance", () => {
+			appearanceAtom.set("light");
+			expect(appearanceAtom.get()).toBe("light");
 		});
 
-		it("should accept dark theme", () => {
-			themeAtom.set("dark");
-			expect(themeAtom.get()).toBe("dark");
+		it("should accept dark appearance", () => {
+			appearanceAtom.set("dark");
+			expect(appearanceAtom.get()).toBe("dark");
+		});
+	});
+
+	describe("themeAtom", () => {
+		it("should default to default", () => {
+			expect(themeAtom.get()).toBe("default");
+		});
+
+		it("should accept vibrant theme", () => {
+			themeAtom.set("vibrant");
+			expect(themeAtom.get()).toBe("vibrant");
 		});
 	});
 
@@ -181,22 +195,38 @@ describe("settings store", () => {
 			expect(formatThreshold({ value: 1, unit: "hours" })).toBe("1 hour");
 			expect(formatThreshold({ value: 1, unit: "days" })).toBe("1 day");
 			expect(formatThreshold({ value: 1, unit: "weeks" })).toBe("1 week");
-			expect(formatThreshold({ value: 1, unit: "months" })).toBe("1 month");
+			expect(formatThreshold({ value: 1, unit: "months" })).toBe(
+				"1 month"
+			);
 		});
 
 		it("should format plural units correctly", () => {
-			expect(formatThreshold({ value: 2, unit: "hours" })).toBe("2 hours");
+			expect(formatThreshold({ value: 2, unit: "hours" })).toBe(
+				"2 hours"
+			);
 			expect(formatThreshold({ value: 3, unit: "days" })).toBe("3 days");
-			expect(formatThreshold({ value: 4, unit: "weeks" })).toBe("4 weeks");
-			expect(formatThreshold({ value: 6, unit: "months" })).toBe("6 months");
+			expect(formatThreshold({ value: 4, unit: "weeks" })).toBe(
+				"4 weeks"
+			);
+			expect(formatThreshold({ value: 6, unit: "months" })).toBe(
+				"6 months"
+			);
+		});
+	});
+
+	describe("setAppearance", () => {
+		it("should set appearance and persist to localStorage", () => {
+			setAppearance("dark");
+			expect(appearanceAtom.get()).toBe("dark");
+			expect(localStorage.getItem("appearance")).toBe("dark");
 		});
 	});
 
 	describe("setTheme", () => {
 		it("should set theme and persist to localStorage", () => {
-			setTheme("dark");
-			expect(themeAtom.get()).toBe("dark");
-			expect(localStorage.getItem("theme")).toBe("dark");
+			setTheme("vibrant");
+			expect(themeAtom.get()).toBe("vibrant");
+			expect(localStorage.getItem("theme")).toBe("vibrant");
 		});
 	});
 
@@ -245,8 +275,10 @@ describe("settings store", () => {
 	describe("updateAiSettings", () => {
 		it("should merge settings with existing", () => {
 			aiSettingsAtom.set({ expectedInputs: [{ type: "text" }] });
-			updateAiSettings({ expectedInputs: [{ type: "text" }, { type: "image" }] });
-			
+			updateAiSettings({
+				expectedInputs: [{ type: "text" }, { type: "image" }],
+			});
+
 			const settings = aiSettingsAtom.get();
 			expect(settings.expectedInputs).toHaveLength(2);
 			expect(settings.expectedInputs?.[0].type).toBe("text");
@@ -254,4 +286,3 @@ describe("settings store", () => {
 		});
 	});
 });
-

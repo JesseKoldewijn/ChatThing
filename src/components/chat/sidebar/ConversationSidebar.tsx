@@ -20,6 +20,9 @@ import {
 	permanentlyDeleteConversation,
 } from "@/lib/stores/conversations";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
+import { confirmAction } from "@/lib/stores/confirmation";
+import { promptAction } from "@/lib/stores/prompt";
+import { showSuccess } from "@/lib/stores/notifications";
 
 // Desktop breakpoint (lg)
 const DESKTOP_BREAKPOINT = 1024;
@@ -104,18 +107,28 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 
 			if (conversation.status === "deleted") {
 				// Already deleted - permanently delete
-				if (
-					confirm(
-						"This will permanently delete the conversation. This cannot be undone. Continue?"
-					)
-				) {
-					permanentlyDeleteConversation(id);
-				}
+				confirmAction({
+					title: "Permanently Delete",
+					message: "This will permanently delete the conversation. This cannot be undone. Continue?",
+					confirmText: "Delete Permanently",
+					variant: "destructive",
+					onConfirm: () => {
+						permanentlyDeleteConversation(id);
+						showSuccess("Conversation permanently deleted.");
+					},
+				});
 			} else {
 				// Soft delete
-				if (confirm("Move this conversation to trash?")) {
-					deleteConversation(id);
-				}
+				confirmAction({
+					title: "Move to Trash",
+					message: "Move this conversation to trash?",
+					confirmText: "Move to Trash",
+					variant: "destructive",
+					onConfirm: () => {
+						deleteConversation(id);
+						showSuccess("Conversation moved to trash.");
+					},
+				});
 			}
 		},
 		[conversations]
@@ -126,10 +139,18 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 			const conversation = conversations.find((c) => c.id === id);
 			if (!conversation) return;
 
-			const newTitle = prompt("Enter new title:", conversation.title);
-			if (newTitle && newTitle.trim()) {
-				updateConversationTitle(id, newTitle.trim());
-			}
+			promptAction({
+				title: "Rename Conversation",
+				message: "Enter a new title for this conversation:",
+				defaultValue: conversation.title,
+				placeholder: "Conversation title...",
+				onConfirm: (newTitle) => {
+					if (newTitle && newTitle.trim()) {
+						updateConversationTitle(id, newTitle.trim());
+						showSuccess("Conversation renamed.");
+					}
+				},
+			});
 		},
 		[conversations]
 	);

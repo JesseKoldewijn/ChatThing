@@ -6,17 +6,23 @@ import {
 	usageEventsAtom,
 	dailyUsageAtom,
 	recordMessage,
-	recordResponse,
 	recordToolCall,
 	recordTokenUsage,
 } from "@/lib/stores/usage";
+import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
+import type { Confirmation } from "@/lib/stores/confirmation";
 
-// Mock window.confirm
-vi.stubGlobal("confirm", vi.fn(() => true));
+// Mock confirmation store
+const mockConfirmAction = vi.fn();
+vi.mock("@/lib/stores/confirmation", () => ({
+	confirmAction: (options: Confirmation) => mockConfirmAction(options),
+}));
 
-// Mock goBack
-vi.mock("@/lib/stores/navigation", () => ({
-	goBack: vi.fn(),
+// Mock useNavigation
+vi.mock("@/lib/hooks/useNavigation", () => ({
+	useNavigation: () => ({
+		goBack: vi.fn(),
+	}),
 }));
 
 // Mock ResizeObserver for Recharts
@@ -54,86 +60,67 @@ describe("UsagePage component", () => {
 		it("should render empty state when no data", () => {
 			render(<UsagePage />);
 
-			expect(screen.getByText("No usage data yet")).toBeInTheDocument();
-			expect(
-				screen.getByText("Start chatting to see your metrics")
-			).toBeInTheDocument();
+			expect(screen.getByTestId("chart-empty-state")).toBeInTheDocument();
+			expect(screen.getByTestId("table-empty-state")).toBeInTheDocument();
 		});
 
-		it("should render activity over time section", () => {
+		it("should render activity visualization section", () => {
 			render(<UsagePage />);
 
-			expect(screen.getByText("Activity Over Time")).toBeInTheDocument();
-			expect(screen.getByText("Last 30 days of usage")).toBeInTheDocument();
+			expect(screen.getByText("Activity Visualization")).toBeInTheDocument();
+			expect(screen.getByText("Trend for selected range")).toBeInTheDocument();
 		});
 
-		it("should render daily breakdown section", () => {
+		it("should render interaction history section", () => {
 			render(<UsagePage />);
 
-			expect(screen.getByText("Daily Breakdown")).toBeInTheDocument();
-			expect(screen.getByText("Detailed usage by day")).toBeInTheDocument();
+			expect(screen.getByText("Interaction History")).toBeInTheDocument();
+			expect(screen.getByText("Individual events for the selected period")).toBeInTheDocument();
 		});
 	});
 
 	describe("with usage data", () => {
-		it("should display total tokens", () => {
-			recordMessage("conv-1", 100);
+		it("should display Total Tokens hero stat", () => {
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			recordTokenUsage(25, 50);
 			render(<UsagePage />);
 
-			expect(screen.getByText("Total Tokens")).toBeInTheDocument();
+			expect(screen.getByTestId("hero-stat-total-tokens")).toBeInTheDocument();
 		});
 
-		it("should display conversations count", () => {
-			recordMessage("conv-1", 100);
+		it("should display Conversations hero stat", () => {
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			render(<UsagePage />);
 
-			expect(screen.getByText("Conversations")).toBeInTheDocument();
+			expect(screen.getByTestId("hero-stat-conversations")).toBeInTheDocument();
 		});
 
-		it("should display tool calls count", () => {
-			recordToolCall("conv-1", "weather");
+		it("should display Tool Calls hero stat", () => {
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
 			render(<UsagePage />);
 
-			expect(screen.getByText("Tool Calls")).toBeInTheDocument();
+			expect(screen.getByTestId("hero-stat-tool-calls")).toBeInTheDocument();
 		});
 
-		it("should display messages sent stat", () => {
-			recordMessage("conv-1", 100);
+		it("should display AI providers breakdown", () => {
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			render(<UsagePage />);
 
-			expect(screen.getByText("Messages Sent")).toBeInTheDocument();
+			expect(screen.getByText("AI Providers")).toBeInTheDocument();
 		});
 
-		it("should display AI responses stat", () => {
-			recordResponse("conv-1", 200);
+		it("should display AI models breakdown", () => {
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			render(<UsagePage />);
 
-			expect(screen.getByText("AI Responses")).toBeInTheDocument();
-		});
-
-		it("should display input tokens stat", () => {
-			recordTokenUsage(25, 50);
-			render(<UsagePage />);
-
-			expect(screen.getByText("Input Tokens")).toBeInTheDocument();
-		});
-
-		it("should display output tokens stat", () => {
-			recordTokenUsage(25, 50);
-			render(<UsagePage />);
-
-			expect(screen.getByText("Output Tokens")).toBeInTheDocument();
+			expect(screen.getByText("AI Models")).toBeInTheDocument();
 		});
 
 		it("should show clear data button when data exists", () => {
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			render(<UsagePage />);
 
-			expect(screen.getByText("Clear All Usage Data")).toBeInTheDocument();
-			expect(
-				screen.getByRole("button", { name: /clear data/i })
-			).toBeInTheDocument();
+			expect(screen.getByTestId("clear-data-button")).toBeInTheDocument();
 		});
 	});
 
@@ -146,30 +133,22 @@ describe("UsagePage component", () => {
 			expect(buttons.length).toBeGreaterThan(0);
 		});
 
-		it("should call confirm when clear data is clicked", async () => {
+		it("should call confirmAction when clear data is clicked", async () => {
 			const user = userEvent.setup();
 
 			// Add data first
-			recordMessage("conv-1", 100);
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
 			render(<UsagePage />);
 
-			const clearButton = screen.getByRole("button", { name: /clear data/i });
+			const clearButton = await screen.findByTestId("clear-data-button");
 			await user.click(clearButton);
 
-			expect(window.confirm).toHaveBeenCalledWith(
-				"Are you sure you want to clear all usage data? This cannot be undone."
+			expect(mockConfirmAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					title: "Clear Usage Data",
+				})
 			);
-		});
-	});
-
-	describe("chart legend", () => {
-		it("should display legend items", () => {
-			render(<UsagePage />);
-
-			expect(screen.getByText("Messages")).toBeInTheDocument();
-			expect(screen.getByText("Responses")).toBeInTheDocument();
-			expect(screen.getByText("Tools")).toBeInTheDocument();
 		});
 	});
 });

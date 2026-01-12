@@ -1,4 +1,4 @@
-import { tool, type Tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 import { getResolvedTimezone } from "@/lib/stores/settings";
 
@@ -136,7 +136,7 @@ async function fetchWeather(
 }
 
 export const weatherTool = tool({
-	description: "Get the current weather in a location. Use ONLY when user explicitly asks about weather, forecast, or temperature. If no location is specified, uses the user's timezone location.",
+	description: "Get the current weather in a location. Use ONLY if the user EXPLICITLY asks about weather, forecast, or temperature. NEVER use this for general conversation.",
 	inputSchema: z.object({
 		location: z
 			.string()
@@ -144,10 +144,8 @@ export const weatherTool = tool({
 			.describe("The city or location to get the weather for. If not provided, uses the user's timezone location."),
 	}),
 	execute: async ({ location: providedLocation }) => {
+		const location = providedLocation || getCityFromTimezone(getResolvedTimezone());
 		try {
-			// If no location provided, derive from user's timezone
-			const location = providedLocation || getCityFromTimezone(getResolvedTimezone());
-			
 			// First, geocode the location
 			const geo = await geocodeLocation(location);
 
@@ -184,4 +182,4 @@ export const weatherTool = tool({
 			};
 		}
 	},
-} satisfies Tool);
+});

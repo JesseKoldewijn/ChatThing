@@ -1,11 +1,10 @@
-import { useCallback, useRef, useEffect, useState, useMemo } from "react";
+import { useCallback, useRef, useEffect, useMemo } from "react";
 import { useStore } from "@nanostores/react";
 import { ChatContainerUI } from "./ChatContainer.ui";
 import { MessageList } from "../messages/MessageList";
 import { ChatInput } from "../input/ChatInput";
 import { ConversationSidebar } from "../sidebar/ConversationSidebar";
 import { ChatHeader } from "../sidebar/ChatHeader";
-import { CompatibilityError } from "../errors/CompatibilityError";
 import { ErrorBanner } from "../errors/ErrorBanner";
 import { createMarkdownRenderer } from "@/lib/utils/markdown";
 import {
@@ -23,14 +22,19 @@ import {
 	setActiveChat as setActiveChatAtom,
 	createConversation,
 	triggerTitleGeneration,
-	conversationsAtom,
 	isSyncingFromUrlAtom,
+	switchConversation,
+	isConversationsHydratedAtom,
 } from "@/lib/stores/conversations";
 import {
-	aiSettingsAtom,
-	temperatureUnitAtom,
-	type TemperatureUnit,
-	getResolvedTimezone,
+	isLockedAtom,
+	providerTypeAtom,
+	openRouterModelAtom,
+	googleModelAtom,
+	ollamaModelAtom,
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
 } from "@/lib/stores/settings";
 import { setError, clearError } from "@/lib/stores/errors";
 import {
@@ -42,152 +46,87 @@ import {
 } from "@/lib/stores/usage";
 import { getAIManager } from "@/lib/ai";
 import { loadingAtom } from "@/lib/ai/store";
-import { useCompatibility } from "@/lib/ai/hooks";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
-import { providerTypeAtom } from "@/lib/stores/settings";
+import { UnlockSession } from "../UnlockSession";
 
 // Abort controller for stopping streams
 let abortController: AbortController | null = null;
 
-/**
- * Strip tool result tags from content that may have leaked through the middleware
- */
-const stripToolResultTags = (content: string): string => {
-	return content.replace(/<result>[\s\S]*?<\/result>/g, "").trim();
-};
-
-// Countries that primarily use Fahrenheit for temperature
-const FAHRENHEIT_COUNTRIES = new Set([
-	"US", // United States
-	"BS", // Bahamas
-	"BZ", // Belize
-	"KY", // Cayman Islands
-	"PW", // Palau
-	"FM", // Micronesia
-	"MH", // Marshall Islands
-]);
-
-/**
- * Detect user's preferred temperature unit based on locale
- */
-const detectTemperatureUnitFromLocale = (): "fahrenheit" | "celsius" => {
-	try {
-		const locale = navigator.language || "en-US";
-		const regionMatch = locale.match(/-([A-Z]{2})$/i);
-		const region = regionMatch ? regionMatch[1].toUpperCase() : null;
-
-		if (region && FAHRENHEIT_COUNTRIES.has(region)) {
-			return "fahrenheit";
-		}
-
-		if (typeof Intl !== "undefined" && Intl.Locale) {
-			const intlLocale = new Intl.Locale(locale);
-			const intlRegion = intlLocale.region?.toUpperCase();
-			if (intlRegion && FAHRENHEIT_COUNTRIES.has(intlRegion)) {
-				return "fahrenheit";
-			}
-		}
-
-		return "celsius";
-	} catch {
-		return "celsius";
-	}
-};
-
-/**
- * Get the resolved temperature unit (handles "auto" setting)
- */
-const getResolvedTemperatureUnit = (
-	setting: TemperatureUnit
-): "fahrenheit" | "celsius" => {
-	if (setting === "auto") {
-		return detectTemperatureUnitFromLocale();
-	}
-	return setting;
-};
-
-/**
- * Convert Fahrenheit to Celsius
- */
-const fahrenheitToCelsius = (f: number): number => {
-	return Math.round(((f - 32) * 5) / 9);
-};
-
-/**
- * Format temperature with the user's preferred unit
- * Assumes input temperature is in Fahrenheit (from the weather tool)
- */
-const formatTemperature = (
-	tempF: number,
-	unit: "fahrenheit" | "celsius"
-): string => {
-	if (unit === "celsius") {
-		return `${fahrenheitToCelsius(tempF)}°C`;
-	}
-	return `${tempF}°F`;
-};
-
 export const ChatContainer = () => {
-	const { activeChat, sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, forceCompat, setActiveChat } =
+	const { activeChat, sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, setActiveChat } =
 		useChatSearchParams();
 	const activeConversationId = useStore(activeConversationIdAtom);
-	const aiSettings = useStore(aiSettingsAtom);
-	const providerType = useStore(providerTypeAtom);
-	const { compatibility } = useCompatibility();
 
 	const isStreaming = useStore(isStreamingAtom);
-	const lastUrlChatRef = useRef<string | undefined>(activeChat);
+	const isConversationsHydrated = useStore(isConversationsHydratedAtom);
+	const lastUrlChatRef = useRef<string | undefined>(undefined);
+	const hasInitializedRef = useRef(false);
 
 	// Sync URL -> Atom
 	useEffect(() => {
-		// Skip if URL haven't changed since last sync
-		if (activeChat === lastUrlChatRef.current && activeChat === activeConversationId) {
+		// Wait for conversations to be hydrated before trying to sync from URL
+		if (!isConversationsHydrated) {
 			return;
 		}
 
-		if (activeChat && activeChat !== activeConversationId) {
-			// Save current conversation before switching
-			saveCurrentConversation();
-			
-			// Trigger switch WITHOUT pushing back to URL (it's already there)
-			setActiveChatAtom(activeChat, false);
-			
-			// Load the messages
-			const conversations = conversationsAtom.get();
-			const conversation = conversations.find((c) => c.id === activeChat);
-			if (conversation) {
-				messagesAtom.set(conversation.messages);
-			}
-			lastUrlChatRef.current = activeChat;
-		} else if (!activeChat && activeConversationId) {
-			// ONLY clear if we're not streaming AND we're not in the middle of creating a chat
-			// We check for "New Chat" title as a proxy for a just-created chat
-			const conversations = conversationsAtom.get();
-			const activeConv = conversations.find(c => c.id === activeConversationId);
-			const isInitialChat = activeConv?.title === "New Chat" && activeConv?.messages.length === 0;
+		const currentUrlId = activeChat || undefined;
+		const currentAtomId = activeConversationId || undefined;
 
-			if (!isStreaming && !isInitialChat) {
-				setActiveChatAtom(null, false);
-				lastUrlChatRef.current = undefined;
+		// Initial sync from URL to Atom
+		if (!hasInitializedRef.current) {
+			if (currentUrlId && currentUrlId !== currentAtomId) {
+				switchConversation(currentUrlId, false);
 			}
+			hasInitializedRef.current = true;
+			lastUrlChatRef.current = currentUrlId;
+			return;
 		}
-	}, [activeChat, activeConversationId, isStreaming]);
+
+		// Subsequent syncs
+		if (currentUrlId !== lastUrlChatRef.current) {
+			const wasJustInitialized = lastUrlChatRef.current === undefined;
+			// Strict check: only clear if the URL param was present and is now GONE, 
+			// and we are NOT in the middle of a hydration/initialization phase.
+			const transitionedFromIdToNone = lastUrlChatRef.current !== undefined && lastUrlChatRef.current !== null && !currentUrlId;
+			
+			if (currentUrlId && currentUrlId !== currentAtomId) {
+				switchConversation(currentUrlId, false);
+			} else if (transitionedFromIdToNone && currentAtomId && !isStreaming && !wasJustInitialized) {
+				// We only clear the atom if the URL was previously set and is now cleared. 
+				// This prevents accidental clearing during hydration if the router briefly reports undefined.
+				setActiveChatAtom(null, false);
+			}
+			lastUrlChatRef.current = currentUrlId;
+		}
+	}, [activeChat, activeConversationId, isStreaming, isConversationsHydrated]);
 
 	// Sync Atom -> URL
 	useEffect(() => {
 		const unsubscribe = activeConversationIdAtom.subscribe((id) => {
-			if (!isSyncingFromUrlAtom.get() && id !== activeChat) {
-				setActiveChat(id ?? undefined);
+			const currentAtomId = id ?? undefined;
+			const currentUrlId = activeChat || undefined;
+
+			// Only sync to URL if initialized, hydrated, not currently syncing FROM the URL,
+			// and the values actually differ.
+			if (hasInitializedRef.current && isConversationsHydrated && !isSyncingFromUrlAtom.get() && currentAtomId !== currentUrlId) {
+				setActiveChat(currentAtomId);
 			}
 		});
 		return unsubscribe;
-	}, [activeChat, setActiveChat]);
+	}, [setActiveChat, isConversationsHydrated, activeChat]);
 
 	// Keep track of last message and images for retry functionality
 	const lastMessageRef = useRef<string>("");
 	const lastImagesRef = useRef<ImageAttachment[] | undefined>(undefined);
 	// Keep track of current transaction ID for stop functionality
 	const currentTransactionIdRef = useRef<string | null>(null);
+
+	// Pre-warm AI manager once hydrated
+	useEffect(() => {
+		if (isConversationsHydrated) {
+			getAIManager().catch(() => {});
+		}
+	}, [isConversationsHydrated]);
 
 	/**
 	 * Core function to stream AI response for a given prompt
@@ -205,15 +144,6 @@ export const ChatContainer = () => {
 		) => {
 			const { addUserMessage = true, images } = options;
 
-			// Start streaming state immediately to guard against URL sync clearing
-			isStreamingAtom.set(true);
-			loadingAtom.set(true);
-			clearStream();
-
-			// Generate a transaction ID to link the prompt with all its responses
-			const transactionId = options.transactionId ?? crypto.randomUUID();
-			currentTransactionIdRef.current = transactionId;
-
 			// Clear any existing error
 			clearError();
 
@@ -222,164 +152,192 @@ export const ChatContainer = () => {
 			lastImagesRef.current = images;
 
 			// Create a new conversation if none exists
-			let conversationId = activeConversationId;
+			let conversationId = activeConversationIdAtom.get();
 			if (!conversationId) {
 				const newConversation = createConversation();
 				conversationId = newConversation.id;
 			}
 
+			// Start streaming state AFTER conversation is established/cleared
+			isStreamingAtom.set(true);
+			loadingAtom.set(true);
+			clearStream();
+
+			// Generate a transaction ID to link the prompt with all its responses
+			const transactionId = options.transactionId ?? crypto.randomUUID();
+			currentTransactionIdRef.current = transactionId;
+
 			// Get the current message history for context BEFORE adding the new user message
 			const currentMessages = messagesAtom.get();
 
 			// Add user message only if this is a new message (not a retry/regenerate)
+			const provider = providerTypeAtom.get();
+			const model = provider === PROVIDER_OPEN_ROUTER ? openRouterModelAtom.get() :
+						  provider === PROVIDER_GOOGLE ? googleModelAtom.get() :
+						  provider === PROVIDER_OLLAMA ? ollamaModelAtom.get() : "prompt-api";
+
 			if (addUserMessage) {
 				addMessage("user", prompt, { images, transactionId });
-				// Track usage
-				recordMessage(conversationId, prompt.length);
-				// Save immediately to avoid race conditions with URL sync
-				saveCurrentConversation();
+				
+				// Run non-critical tasks in background
+				queueMicrotask(() => {
+					if (conversationId) {
+						recordMessage(conversationId, prompt.length, provider, model);
+					}
+					saveCurrentConversation();
+					if (conversationId) {
+						// Trigger title generation early and in parallel
+						triggerTitleGeneration(conversationId, false, prompt);
+					}
+				});
 			}
 
 			try {
 				abortController = new AbortController();
 
 				// Get the current manager based on settings
-				const manager = getAIManager();
+				const manager = await getAIManager();
 
 				// Get the stream from the AI (pass images and history)
 				const stream = await manager.prompt(prompt, {
-					...aiSettings,
 					images,
 					history: currentMessages,
 				});
 
 				// Process the stream
-				for await (const chunk of stream) {
+				let textBuffer = "";
+				let streamImages: ImageAttachment[] = [];
+				let animationFrameId: number | null = null;
+
+				const updateUI = () => {
+					if (textBuffer) {
+						appendToStream(textBuffer);
+						textBuffer = "";
+					}
+					animationFrameId = null;
+				};
+
+				const scheduleUpdate = () => {
+					if (animationFrameId === null && textBuffer) {
+						animationFrameId = requestAnimationFrame(updateUI);
+					}
+				};
+
+				for await (const part of stream) {
 					if (abortController?.signal.aborted) {
 						break;
 					}
 
-					switch (chunk.type) {
-						case "text-delta":
-							appendToStream(chunk.text);
-							break;
-						case "tool-call": {
-							// Discard any content before the tool call - it's typically a guess
-							// The model should wait for tool results, but sometimes generates text first
+					if (!part) continue;
+
+					try {
+						if (part.type === "text") {
+							textBuffer += part.content;
+							scheduleUpdate();
+						} else if (part.type === "image") {
+							streamImages.push({
+								id: crypto.randomUUID(),
+								data: part.data,
+								mimeType: part.mimeType,
+								name: part.name,
+							});
+						} else if (part.type === "tool-call") {
+							// Flash any buffered text before tool call
+							if (animationFrameId !== null) {
+								cancelAnimationFrame(animationFrameId);
+							}
+							updateUI();
 							clearStream();
-							// Check if we already announced this tool in this transaction (avoid duplicates on retry)
-							const toolAnnouncement = `🔧 Using tool: ${chunk.toolName}`;
+							const toolAnnouncement = `🔧 Using tool: ${part.toolName}`;
 							const existingAnnouncement = messagesAtom
 								.get()
 								.find(
 									(m) =>
 										m.transactionId === transactionId &&
-										m.role === "assistant" &&
+										m.role === "system" &&
 										m.content === toolAnnouncement
 								);
 							if (!existingAnnouncement) {
-								addMessage("assistant", toolAnnouncement, {
+								addMessage("system", toolAnnouncement, {
 									transactionId,
 								});
-								// Track tool usage
-								recordToolCall(conversationId, chunk.toolName);
+								recordToolCall(conversationId!, part.toolName, provider, model);
 							}
-							break;
+						} else if (part.type === "error") {
+							addMessage("system", `❌ Stream Error: ${part.error instanceof Error ? part.error.message : String(part.error)}`, { transactionId });
 						}
-						case "tool-result": {
-							// Tool completed - format the response based on the tool type
-							const result = chunk.output as Record<
-								string,
-								unknown
-							>;
-							if (chunk.toolName === "weather" && result) {
-								// Check for errors
-								if (result.error) {
-									appendToStream(
-										`I couldn't get the weather: ${result.error}`
-									);
-								} else {
-									const tempUnit = getResolvedTemperatureUnit(
-										temperatureUnitAtom.get()
-									);
-									const formattedTemp = formatTemperature(
-										result.temperature as number,
-										tempUnit
-									);
-									const formattedFeelsLike =
-										formatTemperature(
-											result.feelsLike as number,
-											tempUnit
-										);
+					} catch (chunkError) {
+						if (import.meta.env.DEV) {
+							console.error("Error processing stream chunk:", chunkError);
+						}
+					}
+				}
+				// Final flush
+				if (animationFrameId !== null) {
+					cancelAnimationFrame(animationFrameId);
+				}
+				updateUI();
 
-									const weatherResponse = [
-										`The weather in ${
-											result.location
-										} is currently ${formattedTemp} and ${result.condition
-											?.toString()
-											.toLowerCase()}.`,
-										`Feels like ${formattedFeelsLike} with ${result.humidity}% humidity and winds at ${result.windSpeed} mph.`,
-									].join(" ");
-									appendToStream(weatherResponse);
-								}
-							} else if (
-								chunk.toolName === "datetime" &&
-								result
-							) {
-// ... existing datetime logic ...
-								const datetimeResponse = `It's currently ${timeStr} on ${dateStr} (${userTimezone}).`;
-								appendToStream(datetimeResponse);
-							}
-							break;
-						}
-						case "tool-error":
-							// Tool failed - show error as its own message
-							addMessage(
-								"assistant",
-								`❌ Error: ${chunk.error}`,
-								{ transactionId }
-							);
-							break;
-						// Other chunk types (step-start, step-finish, etc.) are handled automatically
+				// After streaming completes, add the full message (the final response)
+				let finalContent = currentStreamAtom.get();
+
+				// If the final content looks like a JSON tool call that leaked through as text
+				// (common with smaller models or when tool calling fails), we try to hide it
+				// if it doesn't contain any other meaningful text.
+				if (
+					finalContent.startsWith("{") &&
+					finalContent.endsWith("}") &&
+					(finalContent.includes('"name":') ||
+						finalContent.includes('"tool":'))
+				) {
+					// It's likely a leaked JSON tool call - check if it's the ONLY thing in the message
+					try {
+						JSON.parse(finalContent);
+						// If it's valid JSON and looks like a tool, clear it if we already handled tool calls
+						// or if it's a hallucinated tool.
+						finalContent = "";
+					} catch {
+						// Not valid JSON, keep it
 					}
 				}
 
-				// After streaming completes, add the full message (the final response)
-				const finalContent = stripToolResultTags(
-					currentStreamAtom.get()
-				);
-				if (finalContent) {
-					addMessage("assistant", finalContent, { transactionId });
-					// Track response usage
-					recordResponse(conversationId, finalContent.length);
-
-					// Track token usage (estimated since built-in AI doesn't provide actual counts)
-					// Input tokens: prompt + context from history
-					// Output tokens: the response
-					const inputTokens = estimateTokens(prompt);
-					const outputTokens = estimateTokens(finalContent);
-					recordTokenUsage(inputTokens, outputTokens);
-				}
-
-				// Save the conversation
-				saveCurrentConversation();
-
-				// Trigger title generation asynchronously AFTER the conversation completes
-				// This runs outside the main conversation flow to avoid blocking the UI
-				// and to not compete with the built-in AI for concurrent requests
-				if (addUserMessage && conversationId) {
+				if (finalContent || streamImages.length > 0) {
+					addMessage("assistant", finalContent, { 
+						transactionId,
+						images: streamImages.length > 0 ? streamImages : undefined 
+					});
+					
+					// Run non-critical tasks in background
 					queueMicrotask(() => {
-						triggerTitleGeneration(conversationId);
+						if (finalContent) {
+							recordResponse(conversationId!, finalContent.length, provider, model);
+
+							// Track token usage (estimated since built-in AI doesn't provide actual counts)
+							// Input tokens: prompt + context from history
+							// Output tokens: the response
+							const inputTokens = estimateTokens(prompt);
+							const outputTokens = estimateTokens(finalContent);
+							recordTokenUsage(inputTokens, outputTokens);
+						}
+						
+						// Final save
+						saveCurrentConversation();
 					});
 				}
 			} catch (error) {
-				if ((error as Error).name !== "AbortError") {
-					console.error("Chat Error:", error);
+				const isAbortError = 
+					error instanceof Error && error.name === "AbortError";
+				
+				if (!isAbortError) {
+					// Error handled by UI via system message
 					
+					// Ensure we have an Error object
+					const errorObj = error instanceof Error ? error : new Error(String(error));
+
 					// Set the error with retry action (don't add user message on retry)
 					const retryMessage = lastMessageRef.current;
 					const retryImages = lastImagesRef.current;
-					const promptError = setError(error as Error, () => {
+					const promptError = setError(errorObj, () => {
 						streamResponse(retryMessage, {
 							addUserMessage: false,
 							images: retryImages,
@@ -388,19 +346,12 @@ export const ChatContainer = () => {
 					});
 
 					// ALSO show the error inside the chat conversation for better visibility
-					addMessage("assistant", `❌ ${promptError.title}: ${promptError.message}`, {
+					addMessage("system", `❌ ${promptError.title}: ${promptError.message}`, {
 						transactionId,
 					});
 
 					// Save the conversation even on error to persist the error message
 					saveCurrentConversation();
-
-					// Trigger title generation even on error if it's the first message
-					if (addUserMessage && conversationId) {
-						queueMicrotask(() => {
-							triggerTitleGeneration(conversationId);
-						});
-					}
 				}
 			} finally {
 				isStreamingAtom.set(false);
@@ -410,7 +361,7 @@ export const ChatContainer = () => {
 				currentTransactionIdRef.current = null;
 			}
 		},
-		[activeConversationId, aiSettings]
+		[]
 	);
 
 	// Public handler for sending new messages (with optional images)
@@ -429,7 +380,7 @@ export const ChatContainer = () => {
 		loadingAtom.set(false);
 
 		// Keep what was streamed so far
-		const partialContent = stripToolResultTags(currentStreamAtom.get());
+		const partialContent = currentStreamAtom.get();
 		if (partialContent) {
 			const transactionId = currentTransactionIdRef.current ?? undefined;
 			addMessage("assistant", partialContent + " [stopped]", {
@@ -457,22 +408,23 @@ export const ChatContainer = () => {
 		setSidebar(false);
 	}, [setSidebar]);
 
-	const [hasMounted, setHasMounted] = useState(false);
+	// Move focus to main content when sidebar closes to prevent a11y warnings
 	useEffect(() => {
-		setHasMounted(true);
-	}, []);
+		if (!isSidebarOpen) {
+			const mainContent = document.querySelector('main');
+			if (mainContent && mainContent.contains(document.activeElement)) {
+				// Focus is already in main, good
+			} else if (document.activeElement && document.querySelector('#chat-sidebar')?.contains(document.activeElement)) {
+				// Focus was in sidebar, move it to the menu button or header
+				const menuButton = document.querySelector('[aria-controls="chat-sidebar"]');
+				(menuButton as HTMLElement)?.focus();
+			}
+		}
+	}, [isSidebarOpen]);
 
 	const markdownRenderer = useMemo(() => createMarkdownRenderer(), []);
 
-	// Show compatibility error if not compatible (only for Prompt API) or if forceCompat query param is set (for testing)
-	// We only show this after hydration to avoid SSR mismatch
-	if (
-		hasMounted &&
-		(forceCompat ||
-			(providerType === "prompt-api" && compatibility && !compatibility.isCompatible))
-	) {
-		return <CompatibilityError />;
-	}
+	const isLocked = useStore(isLockedAtom);
 
 	return (
 		<ChatContainerUI
@@ -485,6 +437,8 @@ export const ChatContainer = () => {
 					isSidebarOpen={isSidebarOpen}
 				/>
 			}
+			isLocked={isLocked}
+			unlockSession={<UnlockSession />}
 			messageList={
 				<MessageList
 					onRegenerate={handleRegenerate}

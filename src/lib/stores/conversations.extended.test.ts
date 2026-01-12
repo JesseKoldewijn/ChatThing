@@ -50,7 +50,7 @@ describe("conversations store extended tests", () => {
 	});
 
 	describe("switchConversation", () => {
-		it("should switch to a valid conversation", () => {
+		it("should switch to a valid conversation", async () => {
 			const conv: Conversation = {
 				id: "switch-1",
 				title: "Test",
@@ -63,7 +63,7 @@ describe("conversations store extended tests", () => {
 			};
 			conversationsAtom.set([conv]);
 
-			switchConversation("switch-1");
+			await switchConversation("switch-1");
 
 			expect(messagesAtom.get()).toHaveLength(1);
 			expect(messagesAtom.get()[0].content).toBe("Hello");
@@ -411,7 +411,7 @@ describe("conversations store extended tests", () => {
 	});
 
 	describe("deleteConversation edge cases", () => {
-		it("should switch to next active when deleting active conversation", () => {
+		it("should switch to next active when deleting active conversation", async () => {
 			const convs: Conversation[] = [
 				{
 					id: "active-1",
@@ -436,7 +436,9 @@ describe("conversations store extended tests", () => {
 			deleteConversation("active-1");
 
 			// Should have switched to active-2
-			expect(activeChatIdAtom.get()).toBe("active-2");
+			await vi.waitFor(() => {
+				expect(activeChatIdAtom.get()).toBe("active-2");
+			});
 		});
 
 		it("should clear when deleting last active conversation", () => {
@@ -459,7 +461,7 @@ describe("conversations store extended tests", () => {
 	});
 
 	describe("archiveConversation edge cases", () => {
-		it("should switch to next active when archiving active conversation", () => {
+		it("should switch to next active when archiving active conversation", async () => {
 			const convs: Conversation[] = [
 				{
 					id: "active-1",
@@ -483,7 +485,9 @@ describe("conversations store extended tests", () => {
 
 			archiveConversation("active-1");
 
-			expect(activeChatIdAtom.get()).toBe("active-2");
+			await vi.waitFor(() => {
+				expect(activeChatIdAtom.get()).toBe("active-2");
+			});
 		});
 	});
 

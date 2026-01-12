@@ -1,5 +1,4 @@
-import type { AIProvider, PromptOptions } from "./types";
-import type { AsyncIterableStream, TextStreamPart, ToolSet } from "ai";
+import type { AIProvider, PromptOptions, StreamPart } from "./types";
 
 export class AIManager {
 	private provider: AIProvider;
@@ -11,7 +10,7 @@ export class AIManager {
 	async prompt(
 		prompt: string,
 		options?: PromptOptions
-	): Promise<AsyncIterableStream<TextStreamPart<ToolSet>>> {
+	): Promise<AsyncIterable<StreamPart>> {
 		return this.provider.prompt(prompt, options);
 	}
 
@@ -23,13 +22,3 @@ export class AIManager {
 		return this.provider.type;
 	}
 }
-
-export const promptStreamReader = async (
-	stream: AsyncIterableStream<TextStreamPart<ToolSet>>
-) => {
-	const data = new Array<TextStreamPart<ToolSet>>();
-	for await (const chunk of stream) {
-		data.push(chunk);
-	}
-	return data;
-};

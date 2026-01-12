@@ -23,7 +23,6 @@ export async function registerServiceWorker(): Promise<void> {
 		const registration = await navigator.serviceWorker.register("/sw.js", {
 			scope: "/",
 		});
-
 		console.log("[PWA] Service worker registered");
 
 		// Check for updates immediately
@@ -34,7 +33,9 @@ export async function registerServiceWorker(): Promise<void> {
 			try {
 				await registration.update();
 			} catch (error) {
-				console.warn("[PWA] Update check failed:", error);
+				if (import.meta.env.DEV) {
+					console.warn("[PWA] Update check failed:", error);
+				}
 			}
 		}, UPDATE_CHECK_INTERVAL);
 
@@ -53,7 +54,6 @@ export async function registerServiceWorker(): Promise<void> {
 			newWorker.addEventListener("statechange", () => {
 				if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
 					// New SW installed but waiting - trigger reload
-					console.log("[PWA] New version available, reloading...");
 					handleWaitingServiceWorker(newWorker);
 				}
 			});
@@ -64,12 +64,13 @@ export async function registerServiceWorker(): Promise<void> {
 		navigator.serviceWorker.addEventListener("controllerchange", () => {
 			if (refreshing) return;
 			refreshing = true;
-			console.log("[PWA] Controller changed, reloading page...");
 			window.location.reload();
 		});
 
 	} catch (error) {
-		console.error("[PWA] Service worker registration failed:", error);
+		if (import.meta.env.DEV) {
+			console.error("[PWA] Service worker registration failed:", error);
+		}
 	}
 }
 

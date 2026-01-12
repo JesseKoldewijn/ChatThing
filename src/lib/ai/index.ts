@@ -1,30 +1,72 @@
-import { aiSettingsAtom, providerTypeAtom, openRouterApiKeyAtom, openRouterModelAtom, ollamaModelAtom, ollamaBaseUrlAtom } from "@/lib/stores/settings";
+import { 
+	providerTypeAtom, 
+	getDecryptedOpenRouterApiKey, 
+	getDecryptedGoogleApiKey,
+	getDecryptedOllamaApiKey,
+	openRouterModelAtom, 
+	googleModelAtom,
+	ollamaModelAtom, 
+	ollamaBaseUrlAtom,
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+	PROVIDER_PROMPT_API,
+} from "@/lib/stores/settings";
 import { AIManager } from "./manager";
-import { PromptAPIProvider } from "./prompt-api/provider";
 import { OpenRouterProvider } from "./open-router/provider";
+import { GoogleProvider } from "./google/provider";
 import { OllamaProvider } from "./ollama/provider";
+import { PromptApiProvider } from "./prompt-api/provider";
+
+let cachedManager: AIManager | null = null;
+let cachedManagerConfig: string | null = null;
 
 /**
  * Get the current AI manager based on settings
  */
-export const getAIManager = () => {
+export const getAIManager = async () => {
 	const type = providerTypeAtom.get();
+	const model = type === PROVIDER_OPEN_ROUTER ? openRouterModelAtom.get() :
+				  type === PROVIDER_GOOGLE ? googleModelAtom.get() :
+				  type === PROVIDER_OLLAMA ? ollamaModelAtom.get() : "prompt-api";
+	const baseUrl = type === PROVIDER_OLLAMA ? ollamaBaseUrlAtom.get() : "";
 	
-	if (type === "prompt-api") {
-		const settings = aiSettingsAtom.get();
-		return new AIManager(new PromptAPIProvider(settings));
+	// Create a unique config string to detect changes
+	const currentConfig = JSON.stringify({ type, model, baseUrl });
+	
+	if (cachedManager && cachedManagerConfig === currentConfig) {
+		return cachedManager;
 	}
-	
-	if (type === "ollama") {
-		const model = ollamaModelAtom.get();
-		const baseUrl = ollamaBaseUrlAtom.get();
-		return new AIManager(new OllamaProvider({ model, baseUrl }));
+
+	let manager: AIManager;
+
+	if (type === PROVIDER_PROMPT_API) {
+		manager = new AIManager(new PromptApiProvider());
+	} else if (type === PROVIDER_OLLAMA) {
+		const apiKey = await getDecryptedOllamaApiKey();
+		manager = new AIManager(new OllamaProvider({ model, baseUrl, apiKey: apiKey || undefined }));
+	} else if (type === PROVIDER_GOOGLE) {
+		const apiKey = await getDecryptedGoogleApiKey();
+		if (!apiKey) throw new Error("Google API key is locked or not set. Please unlock it in settings.");
+		manager = new AIManager(new GoogleProvider({ apiKey, model }));
+	} else {
+		// Default to OpenRouter
+		const apiKey = await getDecryptedOpenRouterApiKey();
+		if (!apiKey) throw new Error("OpenRouter API key is locked or not set. Please unlock it in settings.");
+		manager = new AIManager(new OpenRouterProvider({ apiKey, model }));
 	}
-	
-	// Default to OpenRouter
-	const apiKey = openRouterApiKeyAtom.get();
-	const model = openRouterModelAtom.get();
-	return new AIManager(new OpenRouterProvider({ apiKey, model }));
+
+	cachedManager = manager;
+	cachedManagerConfig = currentConfig;
+	return manager;
+};
+
+/**
+ * Clear the AI manager cache (e.g. when unlocking or resetting settings)
+ */
+export const clearAIManagerCache = () => {
+	cachedManager = null;
+	cachedManagerConfig = null;
 };
 
 export * from "./types";

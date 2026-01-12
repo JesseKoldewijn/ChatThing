@@ -8,6 +8,9 @@ import {
 } from "@tanstack/react-router";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { themeScript } from "@/components/providers/ThemeProvider";
+import { NotificationProvider } from "@/components/providers/NotificationProvider";
+import { ConfirmationProvider } from "@/components/providers/ConfirmationProvider";
+import { PromptProvider } from "@/components/providers/PromptProvider";
 import RootLayout from "@/layout/root";
 import appCss from "@/styles/globals.css?url";
 
@@ -96,6 +99,9 @@ function RootComponent() {
 					<RootLayout>
 						<Outlet />
 					</RootLayout>
+					<NotificationProvider />
+					<ConfirmationProvider />
+					<PromptProvider />
 				</ThemeProvider>
 				<Scripts />
 			</body>

@@ -88,6 +88,9 @@ const loadMessagesForChat = (chatId: string | null) => {
 	}
 };
 
+// Flag to indicate if conversations have been hydrated from storage
+export const isConversationsHydratedAtom = atom<boolean>(false);
+
 /**
  * Initialize conversations from localStorage and set up URL syncing
  */
@@ -117,6 +120,9 @@ const initializeConversations = () => {
 	const urlChatId = activeChatIdAtom.get();
 	previousChatId = urlChatId;
 	loadMessagesForChat(urlChatId);
+
+	// Mark as hydrated
+	isConversationsHydratedAtom.set(true);
 };
 
 // Global subscription to activeChatIdAtom changes (e.g., browser back/forward)
@@ -136,7 +142,8 @@ if (isBrowser) {
 			// Double-check the value hasn't changed again
 			if (activeChatIdAtom.get() !== newChatId) return;
 			// Skip if programmatic switch started while we were waiting
-			if (programmaticSwitchInProgress || programmaticSwitchCounter > 0) return;
+			if (programmaticSwitchInProgress || programmaticSwitchCounter > 0)
+				return;
 
 			// Save the previous conversation before switching
 			// Only do this for browser navigation (back/forward), not programmatic switches
@@ -197,56 +204,100 @@ const prepareMessagesForStorage = async (
 	return preparedMessages;
 };
 
+// Track pending persist to debounce
+let pendingPersistTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Save to localStorage with error handling
+// Images are stored in IndexedDB, so localStorage only contains metadata
+const persist = (immediate = false) => {
+	if (!isBrowser) return;
+
+	const performPersist = () => {
+		const conversations = conversationsAtom.get();
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+		} catch (error) {
+			// Check if it's a quota exceeded error
+			if (
+				error instanceof DOMException &&
+				(error.name === "QuotaExceededError" ||
+					error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+			) {
+				if (import.meta.env.DEV) {
+					console.error(
+						"Storage quota exceeded. This shouldn't happen with hybrid storage. " +
+							"Consider clearing old conversations."
+					);
+				}
+			} else if (import.meta.env.DEV) {
+				console.error("Failed to persist conversations:", error);
+			}
+		}
+		pendingPersistTimeout = null;
+	};
+
+	if (immediate) {
+		if (pendingPersistTimeout) {
+			clearTimeout(pendingPersistTimeout);
+			pendingPersistTimeout = null;
+		}
+		performPersist();
+	} else if (!pendingPersistTimeout) {
+		pendingPersistTimeout = setTimeout(performPersist, 500);
+	}
+};
+
 /**
  * Save a specific conversation by ID (used when navigating away)
  */
 const saveCurrentConversationById = async (chatId: string) => {
+	const currentActiveId = activeChatIdAtom.get();
 	const messages = messagesAtom.get();
 	const conversations = conversationsAtom.get();
 	const index = conversations.findIndex((c) => c.id === chatId);
 
-	if (index !== -1 && messages.length > 0) {
+	if (index !== -1) {
+		// If we are saving the CURRENTLY active chat, use the current messagesAtom content.
+		// Otherwise use what's already in the conversation object.
+		const messagesToSave =
+			chatId === currentActiveId
+				? messages
+				: conversations[index].messages;
+
+		// Don't save if there are no messages
+		if (messagesToSave.length === 0) return;
+
 		// Prepare messages (save images to IndexedDB)
 		const preparedMessages = await prepareMessagesForStorage(
-			messages,
+			messagesToSave,
 			chatId
 		);
 
-		const updated = [...conversations];
-		updated[index] = {
-			...updated[index],
-			messages: preparedMessages,
-			updatedAt: Date.now(),
-		};
-		conversationsAtom.set(updated);
-		persist();
+		const currentConversations = conversationsAtom.get();
+		const currentIndex = currentConversations.findIndex(
+			(c) => c.id === chatId
+		);
+
+		if (currentIndex !== -1) {
+			const updated = [...currentConversations];
+			updated[currentIndex] = {
+				...updated[currentIndex],
+				messages: preparedMessages,
+				updatedAt: Date.now(),
+			};
+			conversationsAtom.set(updated);
+			persist();
+		}
 	}
 };
 
-// Save to localStorage with error handling
-// Images are stored in IndexedDB, so localStorage only contains metadata
-const persist = () => {
-	if (!isBrowser) return;
-
-	const conversations = conversationsAtom.get();
-
-	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
-	} catch (error) {
-		// Check if it's a quota exceeded error
-		if (
-			error instanceof DOMException &&
-			(error.name === "QuotaExceededError" ||
-				error.name === "NS_ERROR_DOM_QUOTA_REACHED")
-		) {
-			console.error(
-				"Storage quota exceeded. This shouldn't happen with hybrid storage. " +
-					"Consider clearing old conversations."
-			);
-		} else {
-			console.error("Failed to persist conversations:", error);
-		}
-	}
+/**
+ * Save the currently active conversation
+ */
+export const saveCurrentConversation = async () => {
+	const activeId = activeChatIdAtom.get();
+	if (!activeId) return;
+	await saveCurrentConversationById(activeId);
 };
 
 /**
@@ -313,7 +364,10 @@ export const createConversation = (title?: string): Conversation => {
 		programmaticSwitchInProgress = false;
 		// Wait one more microtask to clear the counter to handle the subscriber's microtask
 		queueMicrotask(() => {
-			programmaticSwitchCounter = Math.max(0, programmaticSwitchCounter - 1);
+			programmaticSwitchCounter = Math.max(
+				0,
+				programmaticSwitchCounter - 1
+			);
 		});
 	});
 
@@ -321,58 +375,52 @@ export const createConversation = (title?: string): Conversation => {
 	return conversation;
 };
 
-export const switchConversation = (id: string) => {
-	// Mark that we are syncing to avoid circular updates if this was triggered by URL change
-	// But actually switchConversation is usually UI-triggered
-	
-	// Save current conversation first
-	saveCurrentConversation();
-
-	const conversation = conversationsAtom.get().find((c) => c.id === id);
-	if (conversation) {
-		// Set flag to prevent the subscriber from trying to save again
-		programmaticSwitchInProgress = true;
-		programmaticSwitchCounter++;
-		// Update previousChatId before changing messages to prevent race condition
-		previousChatId = id;
-		setActiveChat(id);
-		messagesAtom.set(conversation.messages);
-		// Reset flag after a microtask to allow future subscriber handling
-		queueMicrotask(() => {
-			programmaticSwitchInProgress = false;
-			queueMicrotask(() => {
-				programmaticSwitchCounter = Math.max(0, programmaticSwitchCounter - 1);
-			});
-		});
+export const switchConversation = async (id: string, syncToUrl = true) => {
+	// If we are switching from a URL change, set the sync flag immediately
+	// before any async operations to prevent circular updates or accidental clears
+	if (!syncToUrl) {
+		isSyncingFromUrlAtom.set(true);
 	}
-};
 
-export const saveCurrentConversation = async () => {
-	const activeId = activeChatIdAtom.get();
-	if (!activeId) return;
+	try {
+		// Save current conversation first
+		await saveCurrentConversation();
 
-	const messages = messagesAtom.get();
-	const conversations = conversationsAtom.get();
-	const index = conversations.findIndex((c) => c.id === activeId);
+		const conversation = conversationsAtom.get().find((c) => c.id === id);
+		if (conversation) {
+			// Set flag to prevent the subscriber from trying to save again
+			programmaticSwitchInProgress = true;
+			programmaticSwitchCounter++;
+			// Update previousChatId before changing messages to prevent race condition
+			previousChatId = id;
 
-	if (index !== -1) {
-		// Prepare messages (save images to IndexedDB)
-		const preparedMessages = await prepareMessagesForStorage(
-			messages,
-			activeId
-		);
+			// Update messages first so that components see the correct messages
+			// as soon as the activeChatIdAtom updates.
+			messagesAtom.set(conversation.messages);
+			setActiveChat(id, syncToUrl);
 
-		const updated = [...conversations];
-		const currentConversation = updated[index];
-
-		updated[index] = {
-			...currentConversation,
-			messages: preparedMessages,
-			updatedAt: Date.now(),
-			// Keep isGeneratingTitle state - title generation is triggered separately via triggerTitleGeneration
-		};
-		conversationsAtom.set(updated);
-		persist();
+			// Reset flag after a microtask to allow future subscriber handling
+			queueMicrotask(() => {
+				programmaticSwitchInProgress = false;
+				queueMicrotask(() => {
+					programmaticSwitchCounter = Math.max(
+						0,
+						programmaticSwitchCounter - 1
+					);
+				});
+			});
+		} else {
+			// Invalid ID - clear the state and sync back to URL
+			setActiveChat(null, syncToUrl);
+			clearMessages();
+		}
+	} finally {
+		// If setActiveChat wasn't reached or didn't clear the flag, ensure it's cleared eventually
+		if (!syncToUrl) {
+			queueMicrotask(() => {
+				isSyncingFromUrlAtom.set(false);
+			});
+		}
 	}
 };
 
@@ -398,17 +446,17 @@ const generateTitleAsync = async (
 	}
 
 	try {
-		const manager = getAIManager();
+		const manager = await getAIManager();
 		const title = await manager.generateTitle(firstMessage);
 
-		// Update the conversation with the generated title
-		const currentConversations = conversationsAtom.get();
-		const currentIndex = currentConversations.findIndex(
+		// Ensure we use the latest state from the atom to avoid race conditions
+		const latestConversations = conversationsAtom.get();
+		const currentIndex = latestConversations.findIndex(
 			(c) => c.id === conversationId
 		);
 
 		if (currentIndex !== -1) {
-			const updated = [...currentConversations];
+			const updated = [...latestConversations];
 			updated[currentIndex] = {
 				...updated[currentIndex],
 				title,
@@ -418,7 +466,9 @@ const generateTitleAsync = async (
 			persist();
 		}
 	} catch (error) {
-		console.error("Failed to generate conversation title:", error);
+		if (import.meta.env.DEV) {
+			console.error("Failed to generate conversation title:", error);
+		}
 
 		// On error, use fallback title from first message
 		const currentConversations = conversationsAtom.get();
@@ -448,10 +498,12 @@ const generateTitleAsync = async (
  * Trigger title generation for a conversation immediately
  * @param conversationId - The ID of the conversation
  * @param force - If true, regenerates even if a title already exists
+ * @param initialPrompt - Optional initial prompt to use instead of searching messages
  */
 export const triggerTitleGeneration = (
 	conversationId: string,
-	force = false
+	force = false,
+	initialPrompt?: string
 ): void => {
 	const conversations = conversationsAtom.get();
 	const conversation = conversations.find((c) => c.id === conversationId);
@@ -460,7 +512,9 @@ export const triggerTitleGeneration = (
 
 	// For re-generation, we need the first message
 	const firstMessage =
-		conversation.messages.find((m) => m.role === "user")?.content || "";
+		initialPrompt ||
+		conversation.messages.find((m) => m.role === "user")?.content ||
+		"";
 
 	if (!firstMessage) return;
 
@@ -476,7 +530,7 @@ export const triggerTitleGeneration = (
 /**
  * Soft-delete a conversation (marks as deleted, doesn't remove)
  */
-export const deleteConversation = (id: string) => {
+export const deleteConversation = async (id: string) => {
 	const conversations = conversationsAtom.get();
 	const index = conversations.findIndex((c) => c.id === id);
 
@@ -497,7 +551,7 @@ export const deleteConversation = (id: string) => {
 			.get()
 			.filter((c) => c.status === "active");
 		if (activeConversations.length > 0) {
-			switchConversation(activeConversations[0].id);
+			await switchConversation(activeConversations[0].id);
 		} else {
 			setActiveChat(null);
 			clearMessages();
@@ -508,7 +562,7 @@ export const deleteConversation = (id: string) => {
 /**
  * Archive a conversation
  */
-export const archiveConversation = (id: string) => {
+export const archiveConversation = async (id: string) => {
 	const conversations = conversationsAtom.get();
 	const index = conversations.findIndex((c) => c.id === id);
 
@@ -525,7 +579,7 @@ export const archiveConversation = (id: string) => {
 			.get()
 			.filter((c) => c.status === "active");
 		if (activeConversations.length > 0) {
-			switchConversation(activeConversations[0].id);
+			await switchConversation(activeConversations[0].id);
 		} else {
 			setActiveChat(null);
 			clearMessages();
@@ -536,7 +590,7 @@ export const archiveConversation = (id: string) => {
 /**
  * Unarchive a conversation (restore to active)
  */
-export const unarchiveConversation = (id: string) => {
+export const unarchiveConversation = async (id: string) => {
 	const conversations = conversationsAtom.get();
 	const index = conversations.findIndex((c) => c.id === id);
 
@@ -549,13 +603,16 @@ export const unarchiveConversation = (id: string) => {
 		};
 		conversationsAtom.set(updated);
 		persist();
+
+		// Switch to the unarchived conversation
+		await switchConversation(id);
 	}
 };
 
 /**
  * Restore a deleted conversation (back to active)
  */
-export const restoreConversation = (id: string) => {
+export const restoreConversation = async (id: string) => {
 	const conversations = conversationsAtom.get();
 	const index = conversations.findIndex((c) => c.id === id);
 
@@ -569,6 +626,9 @@ export const restoreConversation = (id: string) => {
 		};
 		conversationsAtom.set(updated);
 		persist();
+
+		// Switch to the restored conversation
+		await switchConversation(id);
 	}
 };
 
@@ -583,7 +643,9 @@ export const permanentlyDeleteConversation = async (id: string) => {
 	try {
 		await deleteConversationImages(id);
 	} catch (error) {
-		console.error("Failed to delete conversation images:", error);
+		if (import.meta.env.DEV) {
+			console.error("Failed to delete conversation images:", error);
+		}
 	}
 
 	// If we deleted the active conversation, switch to another or clear
@@ -618,11 +680,13 @@ export const cleanupDeletedConversations = async (): Promise<number> => {
 			try {
 				await deleteConversationImages(conv.id);
 			} catch (error) {
-				console.error(
-					"Failed to delete conversation images:",
-					conv.id,
-					error
-				);
+				if (import.meta.env.DEV) {
+					console.error(
+						"Failed to delete conversation images:",
+						conv.id,
+						error
+					);
+				}
 			}
 		}
 
@@ -808,7 +872,9 @@ export const clearAllConversations = async (): Promise<void> => {
 	try {
 		await clearAllImages();
 	} catch (error) {
-		console.error("Failed to clear all images:", error);
+		if (import.meta.env.DEV) {
+			console.error("Failed to clear all images:", error);
+		}
 	}
 };
 
