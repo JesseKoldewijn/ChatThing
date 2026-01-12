@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" style="stop-color:#1a1a1d"/>
+			<stop offset="100%" style="stop-color:#0a0a0b"/>
+		</linearGradient>
+		<linearGradient id="bubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" style="stop-color:#6366f1"/>
+			<stop offset="100%" style="stop-color:#8b5cf6"/>
+		</linearGradient>
+	</defs>
+	
+	<!-- Background -->
+	<rect width="512" height="512" rx="92.16" fill="url(#bgGrad)"/>
+	
+	<!-- Speech bubble -->
+	<ellipse cx="256" cy="247.808" rx="155.64800000000002" ry="132.3008" fill="url(#bubbleGrad)"/>
+	
+	<!-- Bubble tail -->
+	<path d="M 209.3056 349.3888 
+	         Q 178.176 427.2128 
+	           147.0464 403.86560000000003
+	         Q 209.3056 396.08320000000003
+	           240.4352 364.9536" 
+	      fill="url(#bubbleGrad)"/>
+	
+	<!-- Text "CT" -->
+	<text x="256" y="275.6608" 
+	      font-family="system-ui, -apple-system, sans-serif" 
+	      font-size="131.072" 
+	      font-weight="700" 
+	      fill="#ffffff" 
+	      text-anchor="middle" 
+	      dominant-baseline="middle">CT</text>
+</svg>
