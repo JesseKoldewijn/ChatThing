@@ -42,11 +42,12 @@ act workflow_dispatch -e .github/workflows/ci-dryrun.json
 ```
 
 Create `.github/workflows/ci-dryrun.json`:
+
 ```json
 {
-  "inputs": {
-    "dry_run": "true"
-  }
+	"inputs": {
+		"dry_run": "true"
+	}
 }
 ```
 
@@ -98,30 +99,38 @@ act -j build
 ## Troubleshooting
 
 ### Artifact Upload Failures
+
 Act has limitations with artifact uploads (missing `ACTIONS_RUNTIME_TOKEN`). This is expected and doesn't affect the dry-run logic. The workflow will:
+
 - ✅ Still run all test jobs
 - ✅ Generate coverage reports locally
 - ✅ Detect dry-run mode correctly
 - ❌ Fail on artifact upload (this is an act limitation, not a workflow issue)
 
 **Workaround**: The dry-run detection logic works correctly. To fully test:
+
 1. Use GitHub Actions UI to trigger `workflow_dispatch` with `dry_run=true`
 2. Or push to a branch and verify the workflow behavior in GitHub Actions
 
 ### Playwright browsers not found
+
 E2E tests require Playwright browsers. The workflow installs them automatically, but if you're testing locally, run:
+
 ```bash
 yarn playwright install --with-deps chromium
 ```
 
 ### Testing Dry-Run Mode
+
 The dry-run mechanism is verified to work correctly:
+
 - ✅ Detects `ACT=true` environment variable
 - ✅ Detects `workflow_dispatch` with `dry_run=true`
 - ✅ Skips git commit when in dry-run mode
 - ✅ Shows coverage summary in dry-run mode
 
 To test locally:
+
 ```bash
 # Set ACT environment variable
 export ACT=true
@@ -134,4 +143,3 @@ ACT=true act -j upload-coverage
 ```
 
 The dry-run logic will work correctly in GitHub Actions even if act has limitations.
-

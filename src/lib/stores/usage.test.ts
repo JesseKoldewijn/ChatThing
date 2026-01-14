@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	usageEventsAtom,
+	clearUsageData,
 	dailyUsageAtom,
+	estimateTokens,
+	getAggregatedUsageForRange,
+	getEventsInRange,
+	getRecentDailyUsage,
+	getUsageSummary,
+	getUsageSummaryForRange,
 	recordMessage,
 	recordResponse,
-	recordToolCall,
 	recordTokenUsage,
-	estimateTokens,
-	getUsageSummary,
-	getRecentDailyUsage,
-	clearUsageData,
-	getEventsInRange,
-	getAggregatedUsageForRange,
-	getUsageSummaryForRange,
+	recordToolCall,
+	usageEventsAtom,
 } from "./usage";
-import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
 
 describe("usage store", () => {
 	beforeEach(() => {
@@ -173,10 +173,10 @@ describe("usage store", () => {
 			// Add events at different times
 			vi.setSystemTime(now - 2 * oneDay);
 			recordMessage("old", 10, PROVIDER_OLLAMA, "m1");
-			
+
 			vi.setSystemTime(now - oneDay);
 			recordMessage("yesterday", 20, PROVIDER_OLLAMA, "m1");
-			
+
 			vi.setSystemTime(now);
 			recordMessage("today", 30, PROVIDER_OLLAMA, "m1");
 		});
@@ -188,12 +188,16 @@ describe("usage store", () => {
 		it("should get events in range", () => {
 			const events = getEventsInRange(now - oneDay - 100, now + 100);
 			expect(events).toHaveLength(2);
-			expect(events.map(e => e.conversationId)).toContain("today");
-			expect(events.map(e => e.conversationId)).toContain("yesterday");
+			expect(events.map((e) => e.conversationId)).toContain("today");
+			expect(events.map((e) => e.conversationId)).toContain("yesterday");
 		});
 
 		it("should aggregate usage by day", () => {
-			const daily = getAggregatedUsageForRange(now - 2 * oneDay - 100, now + 100, "day");
+			const daily = getAggregatedUsageForRange(
+				now - 2 * oneDay - 100,
+				now + 100,
+				"day",
+			);
 			expect(daily).toHaveLength(3);
 			expect(daily[0].messageCount).toBe(1); // earliest
 			expect(daily[2].messageCount).toBe(1); // latest
@@ -203,8 +207,12 @@ describe("usage store", () => {
 			vi.setSystemTime(now);
 			recordMessage("h1", 10, PROVIDER_OLLAMA, "m1");
 			recordMessage("h2", 10, PROVIDER_OLLAMA, "m1");
-			
-			const aggregated = getAggregatedUsageForRange(now - 100, now + 100, "hour");
+
+			const aggregated = getAggregatedUsageForRange(
+				now - 100,
+				now + 100,
+				"hour",
+			);
 			expect(aggregated).toHaveLength(1);
 			expect(aggregated[0].messageCount).toBe(3); // 1 from beforeEach + 2 from test
 		});
@@ -267,4 +275,3 @@ describe("usage store", () => {
 		});
 	});
 });
-

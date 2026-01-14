@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import { Separator } from "./separator";
 
@@ -80,7 +80,7 @@ describe("Separator component", () => {
 					<div>Left</div>
 					<Separator orientation="vertical" decorative={false} />
 					<div>Right</div>
-				</div>
+				</div>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
@@ -92,11 +92,10 @@ describe("Separator component", () => {
 					<a href="#home">Home</a>
 					<Separator />
 					<a href="#about">About</a>
-				</nav>
+				</nav>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
 });
-

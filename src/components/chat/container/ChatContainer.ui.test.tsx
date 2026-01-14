@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { ChatContainerUI, type ChatContainerUIProps } from "./ChatContainer.ui";
 
 const defaultProps: ChatContainerUIProps = {
@@ -8,6 +9,8 @@ const defaultProps: ChatContainerUIProps = {
 };
 
 describe("ChatContainerUI", () => {
+	const user = userEvent.setup();
+
 	describe("rendering", () => {
 		it("should render message list", () => {
 			render(<ChatContainerUI {...defaultProps} />);
@@ -26,7 +29,7 @@ describe("ChatContainerUI", () => {
 				<ChatContainerUI
 					{...defaultProps}
 					sidebar={<div data-testid="sidebar">Sidebar</div>}
-				/>
+				/>,
 			);
 
 			expect(screen.getByTestId("sidebar")).toBeInTheDocument();
@@ -37,7 +40,7 @@ describe("ChatContainerUI", () => {
 				<ChatContainerUI
 					{...defaultProps}
 					header={<div data-testid="header">Header</div>}
-				/>
+				/>,
 			);
 
 			expect(screen.getByTestId("header")).toBeInTheDocument();
@@ -48,7 +51,7 @@ describe("ChatContainerUI", () => {
 				<ChatContainerUI
 					{...defaultProps}
 					errorBanner={<div data-testid="error-banner">Error</div>}
-				/>
+				/>,
 			);
 
 			expect(screen.getByTestId("error-banner")).toBeInTheDocument();
@@ -58,10 +61,7 @@ describe("ChatContainerUI", () => {
 	describe("sidebar visibility", () => {
 		it("should have sidebar hidden by default", () => {
 			render(
-				<ChatContainerUI
-					{...defaultProps}
-					sidebar={<div>Sidebar</div>}
-				/>
+				<ChatContainerUI {...defaultProps} sidebar={<div>Sidebar</div>} />,
 			);
 
 			// Sidebar should have translate class for hidden state
@@ -75,7 +75,7 @@ describe("ChatContainerUI", () => {
 					{...defaultProps}
 					sidebar={<div>Sidebar</div>}
 					isSidebarOpen={true}
-				/>
+				/>,
 			);
 
 			const sidebar = document.querySelector("aside");
@@ -88,7 +88,7 @@ describe("ChatContainerUI", () => {
 					{...defaultProps}
 					sidebar={<div>Sidebar</div>}
 					isSidebarOpen={true}
-				/>
+				/>,
 			);
 
 			// Should have overlay div
@@ -101,15 +101,17 @@ describe("ChatContainerUI", () => {
 					{...defaultProps}
 					sidebar={<div>Sidebar</div>}
 					isSidebarOpen={false}
-				/>
+				/>,
 			);
 
-			expect(screen.queryByTestId("chat-sidebar-overlay")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("chat-sidebar-overlay"),
+			).not.toBeInTheDocument();
 		});
 	});
 
 	describe("interactions", () => {
-		it("should call onCloseSidebar when overlay is clicked", () => {
+		it("should call onCloseSidebar when overlay is clicked", async () => {
 			const onCloseSidebar = vi.fn();
 			render(
 				<ChatContainerUI
@@ -117,11 +119,11 @@ describe("ChatContainerUI", () => {
 					sidebar={<div>Sidebar</div>}
 					isSidebarOpen={true}
 					onCloseSidebar={onCloseSidebar}
-				/>
+				/>,
 			);
 
 			const overlay = screen.getByTestId("chat-sidebar-overlay");
-			fireEvent.click(overlay);
+			await user.click(overlay);
 
 			expect(onCloseSidebar).toHaveBeenCalled();
 		});
@@ -146,12 +148,14 @@ describe("ChatContainerUI", () => {
 				<ChatContainerUI
 					{...defaultProps}
 					header={<div data-testid="header-content">Header</div>}
-				/>
+				/>,
 			);
 
 			const header = document.querySelector("header");
 			expect(header).toBeInTheDocument();
-			expect(header?.querySelector('[data-testid="header-content"]')).toBeInTheDocument();
+			expect(
+				header?.querySelector('[data-testid="header-content"]'),
+			).toBeInTheDocument();
 		});
 	});
 
@@ -165,10 +169,7 @@ describe("ChatContainerUI", () => {
 
 		it("should have sidebar background class", () => {
 			render(
-				<ChatContainerUI
-					{...defaultProps}
-					sidebar={<div>Sidebar</div>}
-				/>
+				<ChatContainerUI {...defaultProps} sidebar={<div>Sidebar</div>} />,
 			);
 
 			const sidebar = document.querySelector(".bg-sidebar");
@@ -177,10 +178,7 @@ describe("ChatContainerUI", () => {
 
 		it("should have border on sidebar", () => {
 			render(
-				<ChatContainerUI
-					{...defaultProps}
-					sidebar={<div>Sidebar</div>}
-				/>
+				<ChatContainerUI {...defaultProps} sidebar={<div>Sidebar</div>} />,
 			);
 
 			const sidebar = document.querySelector(".border-r");
@@ -191,10 +189,7 @@ describe("ChatContainerUI", () => {
 	describe("responsive behavior", () => {
 		it("should have fixed position on mobile for sidebar", () => {
 			render(
-				<ChatContainerUI
-					{...defaultProps}
-					sidebar={<div>Sidebar</div>}
-				/>
+				<ChatContainerUI {...defaultProps} sidebar={<div>Sidebar</div>} />,
 			);
 
 			const sidebar = document.querySelector("aside");
@@ -204,10 +199,7 @@ describe("ChatContainerUI", () => {
 
 		it("should have proper z-index for sidebar", () => {
 			render(
-				<ChatContainerUI
-					{...defaultProps}
-					sidebar={<div>Sidebar</div>}
-				/>
+				<ChatContainerUI {...defaultProps} sidebar={<div>Sidebar</div>} />,
 			);
 
 			const sidebar = document.querySelector("aside");
@@ -235,4 +227,3 @@ describe("ChatContainerUI", () => {
 		});
 	});
 });
-

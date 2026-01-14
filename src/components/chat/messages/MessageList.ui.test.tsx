@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { MessageListUI, type MessageListUIProps } from "./MessageList.ui";
 
 const defaultProps: MessageListUIProps = {
@@ -13,9 +13,7 @@ describe("MessageListUI", () => {
 			render(<MessageListUI {...defaultProps} isEmpty />);
 
 			// Should show welcome or empty state with sparkles icon
-			expect(
-				screen.getByText(/start|chat|conversation/i)
-			).toBeInTheDocument();
+			expect(screen.getByText(/start|chat|conversation/i)).toBeInTheDocument();
 		});
 	});
 
@@ -24,7 +22,7 @@ describe("MessageListUI", () => {
 			render(
 				<MessageListUI {...defaultProps} isEmpty={false}>
 					<div data-testid="child-message">Hello World</div>
-				</MessageListUI>
+				</MessageListUI>,
 			);
 
 			expect(screen.getByTestId("child-message")).toBeInTheDocument();
@@ -37,7 +35,7 @@ describe("MessageListUI", () => {
 					<div>Message 1</div>
 					<div>Message 2</div>
 					<div>Message 3</div>
-				</MessageListUI>
+				</MessageListUI>,
 			);
 
 			expect(screen.getByText("Message 1")).toBeInTheDocument();
@@ -67,15 +65,14 @@ describe("MessageListUI", () => {
 			const { container } = render(
 				<MessageListUI {...defaultProps} isEmpty={false}>
 					<div>Content</div>
-				</MessageListUI>
+				</MessageListUI>,
 			);
 
 			// Should have a scrollable container
 			const scrollContainer = container.querySelector(
-				'[data-slot="scroll-area"]'
+				'[data-slot="scroll-area"]',
 			);
 			expect(scrollContainer).toBeInTheDocument();
 		});
 	});
 });
-

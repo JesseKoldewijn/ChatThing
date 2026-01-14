@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock stores
 vi.mock("@nanostores/react", () => ({
@@ -42,11 +42,17 @@ vi.mock("./ErrorBanner.ui", () => ({
 	),
 }));
 
-import { ErrorBanner } from "./ErrorBanner";
 import { clearError } from "@/lib/stores/errors";
 import { useStore } from "@nanostores/react";
+import { ErrorBanner } from "./ErrorBanner";
 
-let mockError: { title: string; message: string; isRetryable: boolean; retryAction?: () => void; category: string } | null = null;
+let mockError: {
+	title: string;
+	message: string;
+	isRetryable: boolean;
+	retryAction?: () => void;
+	category: string;
+} | null = null;
 
 describe("ErrorBanner", () => {
 	beforeEach(() => {
@@ -85,7 +91,9 @@ describe("ErrorBanner", () => {
 			vi.mocked(useStore).mockReturnValue(mockError);
 
 			render(<ErrorBanner />);
-			expect(screen.getByTestId("error-title")).toHaveTextContent("Network Error");
+			expect(screen.getByTestId("error-title")).toHaveTextContent(
+				"Network Error",
+			);
 		});
 
 		it("should display error message", () => {
@@ -98,7 +106,9 @@ describe("ErrorBanner", () => {
 			vi.mocked(useStore).mockReturnValue(mockError);
 
 			render(<ErrorBanner />);
-			expect(screen.getByTestId("error-message")).toHaveTextContent("Something went wrong");
+			expect(screen.getByTestId("error-message")).toHaveTextContent(
+				"Something went wrong",
+			);
 		});
 	});
 
@@ -170,4 +180,3 @@ describe("ErrorBanner", () => {
 		});
 	});
 });
-

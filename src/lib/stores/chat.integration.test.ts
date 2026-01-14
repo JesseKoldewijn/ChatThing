@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	messagesAtom,
+	addMessage,
+	addPendingImage,
+	appendToStream,
+	clearPendingImages,
+	clearStream,
 	currentStreamAtom,
 	isStreamingAtom,
+	messagesAtom,
 	pendingImagesAtom,
-	addMessage,
-	appendToStream,
-	clearStream,
-	addPendingImage,
 	removePendingImage,
-	clearPendingImages,
 } from "./chat";
 import { activeConversationIdAtom } from "./conversations";
 
@@ -148,4 +148,3 @@ describe("Chat Store Integration", () => {
 		});
 	});
 });
-

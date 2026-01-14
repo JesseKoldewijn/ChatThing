@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock imageStorage before importing conversations
 vi.mock("./imageStorage", () => ({
@@ -16,27 +16,28 @@ vi.mock("@/lib/ai", () => ({
 	})),
 }));
 
+import { getAIManager } from "@/lib/ai";
+import { messagesAtom } from "./chat";
 import {
-	conversationsAtom,
-	deleteConversation,
+	activeChatIdAtom,
 	archiveConversation,
-	unarchiveConversation,
-	permanentlyDeleteConversation,
-	getConversationCounts,
 	cleanupDeletedConversations,
 	clearAllConversations,
-	switchConversation,
-	saveCurrentConversation,
-	runAutoArchive,
-	triggerTitleGeneration,
-	importConversations,
 	type Conversation,
+	conversationsAtom,
+	deleteConversation,
+	exportConversations,
 	type ExportData,
+	getConversationCounts,
+	importConversations,
+	permanentlyDeleteConversation,
+	runAutoArchive,
+	saveCurrentConversation,
+	switchConversation,
+	triggerTitleGeneration,
+	unarchiveConversation,
 } from "./conversations";
-import { messagesAtom } from "./chat";
-import { activeChatIdAtom } from "./conversations";
 import { archiveThresholdAtom } from "./settings";
-import { getAIManager } from "@/lib/ai";
 
 describe("conversations store extended tests", () => {
 	beforeEach(() => {
@@ -57,7 +58,13 @@ describe("conversations store extended tests", () => {
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
 				messages: [
-					{ id: "m1", transactionId: "t1", role: "user", content: "Hello", timestamp: Date.now() },
+					{
+						id: "m1",
+						transactionId: "t1",
+						role: "user",
+						content: "Hello",
+						timestamp: Date.now(),
+					},
 				],
 				status: "active",
 			};
@@ -87,7 +94,13 @@ describe("conversations store extended tests", () => {
 			conversationsAtom.set([conv]);
 			activeChatIdAtom.set("save-1");
 			messagesAtom.set([
-				{ id: "m1", transactionId: "t1", role: "user", content: "New message", timestamp: Date.now() },
+				{
+					id: "m1",
+					transactionId: "t1",
+					role: "user",
+					content: "New message",
+					timestamp: Date.now(),
+				},
 			]);
 
 			await saveCurrentConversation();
@@ -205,7 +218,15 @@ describe("conversations store extended tests", () => {
 				title: "New Chat",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				messages: [{ id: "m1", role: "user", content: "Hello", transactionId: "t1", timestamp: Date.now() }],
+				messages: [
+					{
+						id: "m1",
+						role: "user",
+						content: "Hello",
+						transactionId: "t1",
+						timestamp: Date.now(),
+					},
+				],
 				status: "active",
 			};
 			conversationsAtom.set([conv]);
@@ -223,7 +244,15 @@ describe("conversations store extended tests", () => {
 				title: "Already Named",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				messages: [{ id: "m1", role: "user", content: "Hello", transactionId: "t1", timestamp: Date.now() }],
+				messages: [
+					{
+						id: "m1",
+						role: "user",
+						content: "Hello",
+						transactionId: "t1",
+						timestamp: Date.now(),
+					},
+				],
 				status: "active",
 			};
 			conversationsAtom.set([conv]);
@@ -238,7 +267,15 @@ describe("conversations store extended tests", () => {
 				title: "Already Named",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
-				messages: [{ id: "m1", role: "user", content: "Hello", transactionId: "t1", timestamp: Date.now() }],
+				messages: [
+					{
+						id: "m1",
+						role: "user",
+						content: "Hello",
+						transactionId: "t1",
+						timestamp: Date.now(),
+					},
+				],
 				status: "active",
 			};
 			conversationsAtom.set([conv]);
@@ -433,15 +470,13 @@ describe("conversations store extended tests", () => {
 			conversationsAtom.set(convs);
 			activeChatIdAtom.set("active-1");
 
-			deleteConversation("active-1");
+			await deleteConversation("active-1");
 
 			// Should have switched to active-2
-			await vi.waitFor(() => {
-				expect(activeChatIdAtom.get()).toBe("active-2");
-			});
+			expect(activeChatIdAtom.get()).toBe("active-2");
 		});
 
-		it("should clear when deleting last active conversation", () => {
+		it("should clear when deleting last active conversation", async () => {
 			const conv: Conversation = {
 				id: "only-1",
 				title: "Only Active",
@@ -453,7 +488,7 @@ describe("conversations store extended tests", () => {
 			conversationsAtom.set([conv]);
 			activeChatIdAtom.set("only-1");
 
-			deleteConversation("only-1");
+			await deleteConversation("only-1");
 
 			// Should clear active chat
 			expect(activeChatIdAtom.get()).toBeNull();
@@ -572,10 +607,12 @@ describe("conversations store extended tests", () => {
 			];
 			conversationsAtom.set(convs);
 
-			await cleanupDeletedConversations();
+			const count = await cleanupDeletedConversations();
 
+			expect(count).toBe(2);
 			expect(deleteConversationImages).toHaveBeenCalledWith("del-1");
 			expect(deleteConversationImages).toHaveBeenCalledWith("del-2");
+			expect(conversationsAtom.get()).toHaveLength(0);
 		});
 	});
 
@@ -592,12 +629,54 @@ describe("conversations store extended tests", () => {
 	describe("getConversationCounts", () => {
 		it("should count all status types correctly", () => {
 			const convs: Conversation[] = [
-				{ id: "a1", title: "A1", createdAt: Date.now(), updatedAt: Date.now(), messages: [], status: "active" },
-				{ id: "a2", title: "A2", createdAt: Date.now(), updatedAt: Date.now(), messages: [], status: "active" },
-				{ id: "a3", title: "A3", createdAt: Date.now(), updatedAt: Date.now(), messages: [], status: "active" },
-				{ id: "ar1", title: "AR1", createdAt: Date.now(), updatedAt: Date.now(), messages: [], status: "archived" },
-				{ id: "ar2", title: "AR2", createdAt: Date.now(), updatedAt: Date.now(), messages: [], status: "archived" },
-				{ id: "d1", title: "D1", createdAt: Date.now(), updatedAt: Date.now(), messages: [], status: "deleted" },
+				{
+					id: "a1",
+					title: "A1",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "active",
+				},
+				{
+					id: "a2",
+					title: "A2",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "active",
+				},
+				{
+					id: "a3",
+					title: "A3",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "active",
+				},
+				{
+					id: "ar1",
+					title: "AR1",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "archived",
+				},
+				{
+					id: "ar2",
+					title: "AR2",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "archived",
+				},
+				{
+					id: "d1",
+					title: "D1",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "deleted",
+				},
 			];
 			conversationsAtom.set(convs);
 
@@ -608,5 +687,145 @@ describe("conversations store extended tests", () => {
 			expect(counts.deleted).toBe(1);
 		});
 	});
-});
 
+	describe("exportConversations", () => {
+		it("should trigger a download with active and archived conversations", () => {
+			const convs: Conversation[] = [
+				{
+					id: "active-1",
+					title: "Active",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "active",
+				},
+				{
+					id: "archived-1",
+					title: "Archived",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "archived",
+				},
+				{
+					id: "deleted-1",
+					title: "Deleted",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					messages: [],
+					status: "deleted",
+				},
+			];
+			conversationsAtom.set(convs);
+
+			// Mock DOM APIs for export
+			const mockAppend = vi
+				.spyOn(document.body, "appendChild")
+				.mockImplementation(() => ({}) as unknown as Node);
+			const mockRemove = vi
+				.spyOn(document.body, "removeChild")
+				.mockImplementation(() => ({}) as unknown as Node);
+			const mockClick = vi.fn();
+			vi.spyOn(document, "createElement").mockReturnValue({
+				click: mockClick,
+				style: {},
+			} as unknown as HTMLElement);
+			window.URL.createObjectURL = vi.fn(() => "blob:url");
+			window.URL.revokeObjectURL = vi.fn();
+
+			exportConversations();
+
+			expect(mockClick).toHaveBeenCalled();
+			expect(mockAppend).toHaveBeenCalled();
+			expect(mockRemove).toHaveBeenCalled();
+		});
+	});
+
+	describe("activeChatIdAtom and URL syncing", () => {
+		it("should update isSyncingFromUrlAtom during setActiveChat", async () => {
+			const { isSyncingFromUrlAtom, setActiveChat } =
+				await import("./conversations");
+
+			setActiveChat("some-id", false);
+			expect(isSyncingFromUrlAtom.get()).toBe(true);
+
+			// Should clear after microtask
+			return new Promise((resolve) => {
+				setTimeout(() => {
+					expect(isSyncingFromUrlAtom.get()).toBe(false);
+					resolve(null);
+				}, 0);
+			});
+		});
+	});
+
+	describe("updateConversationTitle", () => {
+		it("should update title of existing conversation", async () => {
+			const { updateConversationTitle } = await import("./conversations");
+			conversationsAtom.set([
+				{
+					id: "c1",
+					title: "Old",
+					status: "active",
+					messages: [],
+					createdAt: 0,
+					updatedAt: 0,
+				},
+			]);
+
+			updateConversationTitle("c1", "New Title");
+			expect(conversationsAtom.get()[0].title).toBe("New Title");
+		});
+	});
+
+	describe("restoreConversation", () => {
+		it("should restore deleted conversation to active", async () => {
+			const { restoreConversation } = await import("./conversations");
+			conversationsAtom.set([
+				{
+					id: "d1",
+					title: "Deleted",
+					status: "deleted",
+					messages: [],
+					createdAt: 0,
+					updatedAt: 0,
+				},
+			]);
+
+			await restoreConversation("d1");
+			expect(conversationsAtom.get()[0].status).toBe("active");
+			expect(activeChatIdAtom.get()).toBe("d1");
+		});
+	});
+
+	describe("hydration", () => {
+		it("should hydrate from localStorage", async () => {
+			const { hydrateConversations } = await import("./conversations");
+			const convs = [
+				{
+					id: "h1",
+					title: "Stored",
+					status: "active",
+					messages: [],
+					createdAt: 0,
+					updatedAt: 0,
+				},
+			];
+			localStorage.setItem("ai-chat-conversations", JSON.stringify(convs));
+
+			hydrateConversations();
+
+			expect(conversationsAtom.get()).toHaveLength(1);
+			expect(conversationsAtom.get()[0].title).toBe("Stored");
+		});
+
+		it("should handle invalid JSON during hydration", async () => {
+			const { hydrateConversations } = await import("./conversations");
+			localStorage.setItem("ai-chat-conversations", "invalid-json");
+
+			hydrateConversations();
+
+			expect(conversationsAtom.get()).toHaveLength(0);
+		});
+	});
+});

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock stores
 vi.mock("@nanostores/react", () => ({
@@ -13,7 +13,10 @@ vi.mock("@nanostores/react", () => ({
 
 vi.mock("@/lib/stores/chat", () => ({
 	messagesAtom: { name: "messagesAtom", get: () => mockMessages },
-	lastUserMessageAtom: { name: "lastUserMessageAtom", get: () => mockLastUserMessage },
+	lastUserMessageAtom: {
+		name: "lastUserMessageAtom",
+		get: () => mockLastUserMessage,
+	},
 	removeMessagesFromTransaction: vi.fn(),
 }));
 
@@ -45,7 +48,9 @@ vi.mock("./MessageItem.ui", () => ({
 			<span data-testid="role">{role}</span>
 			<span data-testid="is-streaming">{String(isStreaming)}</span>
 			<span data-testid="is-copied">{String(isCopied)}</span>
-			<span data-testid="has-images">{images ? String(images.length) : "0"}</span>
+			<span data-testid="has-images">
+				{images ? String(images.length) : "0"}
+			</span>
 			{onCopy && (
 				<button data-testid="copy-btn" onClick={onCopy}>
 					Copy
@@ -60,14 +65,20 @@ vi.mock("./MessageItem.ui", () => ({
 	),
 }));
 
-import { MessageItem } from "./MessageItem";
 import { removeMessagesFromTransaction } from "@/lib/stores/chat";
 import { getImages } from "@/lib/stores/imageStorage";
 import { useStore } from "@nanostores/react";
 import type { ReadableAtom } from "nanostores";
+import { MessageItem } from "./MessageItem";
 
-let mockMessages: Array<{ id: string; role: string; content: string; transactionId: string }> = [];
-let mockLastUserMessage: { content: string; transactionId: string } | null = null;
+let mockMessages: Array<{
+	id: string;
+	role: string;
+	content: string;
+	transactionId: string;
+}> = [];
+let mockLastUserMessage: { content: string; transactionId: string } | null =
+	null;
 
 // Store clipboard mock
 const mockWriteText = vi.fn().mockResolvedValue(undefined);
@@ -163,8 +174,18 @@ describe("MessageItem", () => {
 	describe("regenerate functionality", () => {
 		it("should show regenerate button for last assistant message", () => {
 			mockMessages = [
-				{ id: "msg-1", role: "user", content: "Question", transactionId: "tx-1" },
-				{ id: "msg-2", role: "assistant", content: "Answer", transactionId: "tx-1" },
+				{
+					id: "msg-1",
+					role: "user",
+					content: "Question",
+					transactionId: "tx-1",
+				},
+				{
+					id: "msg-2",
+					role: "assistant",
+					content: "Answer",
+					transactionId: "tx-1",
+				},
 			];
 			mockLastUserMessage = { content: "Question", transactionId: "tx-1" };
 
@@ -190,8 +211,18 @@ describe("MessageItem", () => {
 
 		it("should call onRegenerate with correct args when clicked", async () => {
 			mockMessages = [
-				{ id: "msg-1", role: "user", content: "Question", transactionId: "tx-1" },
-				{ id: "msg-2", role: "assistant", content: "Answer", transactionId: "tx-1" },
+				{
+					id: "msg-1",
+					role: "user",
+					content: "Question",
+					transactionId: "tx-1",
+				},
+				{
+					id: "msg-2",
+					role: "assistant",
+					content: "Answer",
+					transactionId: "tx-1",
+				},
 			];
 			mockLastUserMessage = { content: "Question", transactionId: "tx-1" };
 
@@ -224,7 +255,16 @@ describe("MessageItem", () => {
 	describe("image loading", () => {
 		it("should load images from IndexedDB when storedInDb is true", async () => {
 			const mockImageData = new Map([
-				["img-1", { id: "img-1", data: "data:image/png;base64,loaded", mimeType: "image/png", conversationId: "conv-1", createdAt: Date.now() }],
+				[
+					"img-1",
+					{
+						id: "img-1",
+						data: "data:image/png;base64,loaded",
+						mimeType: "image/png",
+						conversationId: "conv-1",
+						createdAt: Date.now(),
+					},
+				],
 			]);
 			vi.mocked(getImages).mockResolvedValueOnce(mockImageData);
 
@@ -233,7 +273,9 @@ describe("MessageItem", () => {
 				transactionId: "tx-1",
 				role: "user" as const,
 				content: "Check this image",
-				images: [{ id: "img-1", data: "", mimeType: "image/png", storedInDb: true }],
+				images: [
+					{ id: "img-1", data: "", mimeType: "image/png", storedInDb: true },
+				],
 				timestamp: Date.now(),
 			};
 
@@ -250,7 +292,13 @@ describe("MessageItem", () => {
 				transactionId: "tx-1",
 				role: "user" as const,
 				content: "Check this image",
-				images: [{ id: "img-1", data: "data:image/png;base64,inline", mimeType: "image/png" }],
+				images: [
+					{
+						id: "img-1",
+						data: "data:image/png;base64,inline",
+						mimeType: "image/png",
+					},
+				],
 				timestamp: Date.now(),
 			};
 
@@ -261,4 +309,3 @@ describe("MessageItem", () => {
 		});
 	});
 });
-

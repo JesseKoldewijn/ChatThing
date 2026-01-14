@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { datetimeTool } from "./datetime";
 
 // Helper to execute the tool with required options
@@ -9,7 +9,13 @@ const executeDatetime = async (input: { timezone?: string } = {}) => {
 		abortSignal: undefined as unknown as AbortSignal,
 	});
 	// The result is always the object type for this tool, not AsyncIterable
-	return result as { date: string; time: string; timezone: string; iso: string; timestamp: number };
+	return result as {
+		date: string;
+		time: string;
+		timezone: string;
+		iso: string;
+		timestamp: number;
+	};
 };
 
 describe("datetime tool", () => {
@@ -77,10 +83,10 @@ describe("datetime tool", () => {
 
 			// Date should contain day of week and month
 			expect(result.date).toMatch(
-				/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/
+				/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/,
 			);
 			expect(result.date).toMatch(
-				/(January|February|March|April|May|June|July|August|September|October|November|December)/
+				/(January|February|March|April|May|June|July|August|September|October|November|December)/,
 			);
 		});
 
@@ -116,4 +122,3 @@ describe("datetime tool", () => {
 		});
 	});
 });
-

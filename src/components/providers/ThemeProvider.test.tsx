@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
-import { ThemeProvider, themeScript } from "./ThemeProvider";
 import { appearanceAtom, themeAtom } from "@/lib/stores/settings";
+import { act, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ThemeProvider, themeScript } from "./ThemeProvider";
 
 describe("ThemeProvider", () => {
 	beforeEach(() => {
@@ -21,7 +21,7 @@ describe("ThemeProvider", () => {
 			render(
 				<ThemeProvider>
 					<div data-testid="child">Hello World</div>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			expect(screen.getByTestId("child")).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe("ThemeProvider", () => {
 				<ThemeProvider>
 					<span>First</span>
 					<span>Second</span>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			expect(screen.getByText("First")).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("ThemeProvider", () => {
 			render(
 				<ThemeProvider>
 					<div>Content</div>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			// Need to wait for useEffect
@@ -66,7 +66,7 @@ describe("ThemeProvider", () => {
 			render(
 				<ThemeProvider>
 					<div>Content</div>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			await act(async () => {
@@ -83,7 +83,7 @@ describe("ThemeProvider", () => {
 			render(
 				<ThemeProvider>
 					<div>Content</div>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			await act(async () => {
@@ -97,7 +97,7 @@ describe("ThemeProvider", () => {
 			render(
 				<ThemeProvider>
 					<div>Content</div>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			// Start with light default
@@ -111,7 +111,9 @@ describe("ThemeProvider", () => {
 			});
 
 			expect(document.documentElement.classList.contains("light")).toBe(true);
-			expect(document.documentElement.classList.contains("vibrant")).toBe(false);
+			expect(document.documentElement.classList.contains("vibrant")).toBe(
+				false,
+			);
 
 			// Switch to dark vibrant
 			act(() => {
@@ -136,7 +138,7 @@ describe("ThemeProvider", () => {
 			render(
 				<ThemeProvider>
 					<div>Content</div>
-				</ThemeProvider>
+				</ThemeProvider>,
 			);
 
 			await act(async () => {
@@ -181,4 +183,3 @@ describe("themeScript", () => {
 		expect(themeScript.trim()).toMatch(/\)\(\);$/);
 	});
 });
-

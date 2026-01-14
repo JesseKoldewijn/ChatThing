@@ -1,25 +1,32 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	messagesAtom,
-	currentStreamAtom,
-	isStreamingAtom,
-	pendingImagesAtom,
-	lastUserMessageAtom,
 	addMessage,
-	updateLastAssistantMessage,
+	addPendingImage,
+	appendToStream,
+	clearMessages,
+	clearPendingImages,
+	clearStream,
+	compressImage,
+	currentStreamAtom,
+	fileToImageAttachment,
+	hydrateMessages,
+	type ImageAttachment,
+	isStreamingAtom,
+	lastUserMessageAtom,
+	messagesAtom,
+	pendingImagesAtom,
 	removeLastMessage,
 	removeMessagesFromTransaction,
-	clearMessages,
-	appendToStream,
-	clearStream,
-	addPendingImage,
 	removePendingImage,
-	clearPendingImages,
-	compressImage,
-	fileToImageAttachment,
 	saveImagesToIndexedDB,
-	type ImageAttachment,
+	updateLastAssistantMessage,
 } from "./chat";
+import { getImages } from "./imageStorage";
+
+vi.mock("./imageStorage", () => ({
+	saveImage: vi.fn().mockResolvedValue(undefined),
+	getImages: vi.fn(),
+}));
 
 describe("chat store", () => {
 	beforeEach(() => {
@@ -61,7 +68,11 @@ describe("chat store", () => {
 
 		it("should add images to message when provided", () => {
 			const images: ImageAttachment[] = [
-				{ id: "img1", data: "data:image/png;base64,abc", mimeType: "image/png" },
+				{
+					id: "img1",
+					data: "data:image/png;base64,abc",
+					mimeType: "image/png",
+				},
 			];
 			const message = addMessage("user", "Check this image", { images });
 
@@ -90,7 +101,7 @@ describe("chat store", () => {
 			const txId = "tx-1";
 			addMessage("user", "Hello", { transactionId: txId });
 			addMessage("assistant", "Thinking...", { transactionId: txId });
-			
+
 			// Update the same assistant message
 			addMessage("assistant", "Actual response", { transactionId: txId });
 
@@ -342,5 +353,71 @@ describe("chat store", () => {
 			expect(msg.timestamp).toBeLessThanOrEqual(after);
 		});
 	});
-});
 
+	describe("hydrateMessages", () => {
+		it("should return messages as-is if no images", async () => {
+			const messages = [
+				{
+					id: "1",
+					role: "user" as const,
+					content: "Hello",
+					timestamp: Date.now(),
+					transactionId: "t1",
+				},
+			];
+			const result = await hydrateMessages(messages);
+			expect(result).toEqual(messages);
+		});
+
+		it("should hydrate images from IndexedDB", async () => {
+			const messages = [
+				{
+					id: "1",
+					role: "user" as const,
+					content: "Check this",
+					images: [
+						{
+							id: "img1",
+							data: "",
+							mimeType: "image/jpeg",
+							storedInDb: true,
+						},
+					],
+					timestamp: Date.now(),
+					transactionId: "t1",
+				},
+			];
+
+			const mockImages = new Map();
+			mockImages.set("img1", { data: "hydrated-data" });
+			vi.mocked(getImages).mockResolvedValue(mockImages);
+
+			const result = await hydrateMessages(messages);
+			expect(result[0].images?.[0].data).toBe("hydrated-data");
+		});
+
+		it("should not overwrite existing image data", async () => {
+			const messages = [
+				{
+					id: "1",
+					role: "user" as const,
+					content: "Check this",
+					images: [
+						{
+							id: "img1",
+							data: "existing-data",
+							mimeType: "image/jpeg",
+							storedInDb: true,
+						},
+					],
+					timestamp: Date.now(),
+					transactionId: "t1",
+				},
+			];
+
+			const result = await hydrateMessages(messages);
+			expect(result[0].images?.[0].data).toBe("existing-data");
+			expect(getImages).not.toHaveBeenCalled();
+		});
+	});
+});

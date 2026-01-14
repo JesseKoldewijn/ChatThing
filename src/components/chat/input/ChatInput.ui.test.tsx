@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatInputUI, type ChatInputUIProps } from "./ChatInput.ui";
 
 const defaultProps: ChatInputUIProps = {
@@ -18,7 +18,7 @@ describe("ChatInputUI", () => {
 		it("should render textarea with placeholder", () => {
 			render(<ChatInputUI {...defaultProps} />);
 			expect(
-				screen.getByPlaceholderText("Type your message...")
+				screen.getByPlaceholderText("Type your message..."),
 			).toBeInTheDocument();
 		});
 
@@ -41,9 +41,11 @@ describe("ChatInputUI", () => {
 		});
 
 		it("should use custom placeholder", () => {
-			render(<ChatInputUI {...defaultProps} placeholder="Custom placeholder" />);
+			render(
+				<ChatInputUI {...defaultProps} placeholder="Custom placeholder" />,
+			);
 			expect(
-				screen.getByPlaceholderText("Custom placeholder")
+				screen.getByPlaceholderText("Custom placeholder"),
 			).toBeInTheDocument();
 		});
 	});
@@ -62,42 +64,55 @@ describe("ChatInputUI", () => {
 
 		it("should call onSubmit when Enter is pressed with content", async () => {
 			const onSubmit = vi.fn();
-			render(<ChatInputUI {...defaultProps} value="Hello" onSubmit={onSubmit} />);
+			const user = userEvent.setup();
+			render(
+				<ChatInputUI {...defaultProps} value="Hello" onSubmit={onSubmit} />,
+			);
 
 			const textarea = screen.getByRole("textbox");
-			fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+			await user.type(textarea, "{Enter}");
 
 			expect(onSubmit).toHaveBeenCalled();
 		});
 
 		it("should not call onSubmit when Enter is pressed without content", async () => {
 			const onSubmit = vi.fn();
+			const user = userEvent.setup();
 			render(<ChatInputUI {...defaultProps} value="" onSubmit={onSubmit} />);
 
 			const textarea = screen.getByRole("textbox");
-			fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+			await user.type(textarea, "{Enter}");
 
 			expect(onSubmit).not.toHaveBeenCalled();
 		});
 
 		it("should not call onSubmit when Shift+Enter is pressed", async () => {
 			const onSubmit = vi.fn();
-			render(<ChatInputUI {...defaultProps} value="Hello" onSubmit={onSubmit} />);
+			const user = userEvent.setup();
+			render(
+				<ChatInputUI {...defaultProps} value="Hello" onSubmit={onSubmit} />,
+			);
 
 			const textarea = screen.getByRole("textbox");
-			fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+			await user.type(textarea, "{Shift>}{Enter}{/Shift}");
 
 			expect(onSubmit).not.toHaveBeenCalled();
 		});
 
 		it("should not call onSubmit when loading", async () => {
 			const onSubmit = vi.fn();
+			const user = userEvent.setup();
 			render(
-				<ChatInputUI {...defaultProps} value="Hello" onSubmit={onSubmit} isLoading />
+				<ChatInputUI
+					{...defaultProps}
+					value="Hello"
+					onSubmit={onSubmit}
+					isLoading
+				/>,
 			);
 
 			const textarea = screen.getByRole("textbox");
-			fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+			await user.type(textarea, "{Enter}");
 
 			expect(onSubmit).not.toHaveBeenCalled();
 		});
@@ -111,7 +126,7 @@ describe("ChatInputUI", () => {
 			// Stop button should be visible (destructive variant)
 			const buttons = screen.getAllByRole("button");
 			const stopButton = buttons.find((b) =>
-				b.className.includes("destructive")
+				b.className.includes("destructive"),
 			);
 			expect(stopButton).toBeDefined();
 		});
@@ -185,7 +200,7 @@ describe("ChatInputUI", () => {
 					{...defaultProps}
 					pendingImages={pendingImages}
 					onRemoveImage={onRemoveImage}
-				/>
+				/>,
 			);
 
 			await user.click(screen.getByLabelText("Remove image"));
@@ -204,12 +219,13 @@ describe("ChatInputUI", () => {
 			render(<ChatInputUI {...defaultProps} pendingImages={pendingImages} />);
 
 			expect(
-				screen.getByPlaceholderText(/Add a message about the image/i)
+				screen.getByPlaceholderText(/Add a description/i),
 			).toBeInTheDocument();
 		});
 
-		it("should allow submit with only images (no text)", () => {
+		it("should allow submit with only images (no text)", async () => {
 			const onSubmit = vi.fn();
+			const user = userEvent.setup();
 			const pendingImages = [
 				{
 					id: "img-1",
@@ -223,14 +239,13 @@ describe("ChatInputUI", () => {
 					value=""
 					pendingImages={pendingImages}
 					onSubmit={onSubmit}
-				/>
+				/>,
 			);
 
 			const textarea = screen.getByRole("textbox");
-			fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+			await user.type(textarea, "{Enter}");
 
 			expect(onSubmit).toHaveBeenCalled();
 		});
 	});
 });
-

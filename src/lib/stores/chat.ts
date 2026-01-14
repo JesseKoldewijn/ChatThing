@@ -1,5 +1,5 @@
 import { atom, computed } from "nanostores";
-import { saveImage } from "./imageStorage";
+import { getImages, saveImage } from "./imageStorage";
 
 // Image attachment type
 export interface ImageAttachment {
@@ -20,6 +20,66 @@ export interface Message {
 	images?: ImageAttachment[]; // Optional images attached to the message
 	timestamp: number;
 }
+
+/**
+ * Hydrate message images from IndexedDB
+ * Restores data strings for messages where storedInDb is true
+ */
+export const hydrateMessages = async (
+	messages: Message[],
+): Promise<Message[]> => {
+	const hydratedMessages: Message[] = [];
+
+	for (const msg of messages) {
+		if (!msg.images || msg.images.length === 0) {
+			hydratedMessages.push(msg);
+			continue;
+		}
+
+		// Check if any images need to be loaded from IndexedDB
+		const imagesNeedingLoad = msg.images.filter(
+			(img) => img.storedInDb && !img.data,
+		);
+
+		if (imagesNeedingLoad.length === 0) {
+			hydratedMessages.push(msg);
+			continue;
+		}
+
+		// Load images from IndexedDB
+		try {
+			const loadedFromDb = await getImages(
+				imagesNeedingLoad.map((img) => img.id),
+			);
+
+			// Merge loaded images with existing ones
+			const hydratedImages = msg.images.map((img) => {
+				if (img.storedInDb && !img.data) {
+					const loaded = loadedFromDb.get(img.id);
+					if (loaded) {
+						return {
+							...img,
+							data: loaded.data,
+						};
+					}
+				}
+				return img;
+			});
+
+			hydratedMessages.push({
+				...msg,
+				images: hydratedImages,
+			});
+		} catch (error) {
+			if (import.meta.env.DEV) {
+				console.error("Failed to hydrate message images:", msg.id, error);
+			}
+			hydratedMessages.push(msg);
+		}
+	}
+
+	return hydratedMessages;
+};
 
 // All messages in the current conversation
 export const messagesAtom = atom<Message[]>([]);
@@ -49,7 +109,7 @@ export interface AddMessageOptions {
 export const addMessage = (
 	role: Message["role"],
 	content: string,
-	options?: AddMessageOptions
+	options?: AddMessageOptions,
 ) => {
 	const currentMessages = messagesAtom.get();
 	const transactionId = options?.transactionId ?? crypto.randomUUID();
@@ -59,9 +119,7 @@ export const addMessage = (
 	// and to support streaming updates.
 	if (role === "assistant" && options?.transactionId) {
 		const index = currentMessages.findIndex(
-			(m) =>
-				m.transactionId === options.transactionId &&
-				m.role === role
+			(m) => m.transactionId === options.transactionId && m.role === role,
 		);
 		if (index !== -1) {
 			const updatedMessages = [...currentMessages];
@@ -82,7 +140,7 @@ export const addMessage = (
 			(m) =>
 				m.transactionId === options.transactionId &&
 				m.role === role &&
-				m.content === content
+				m.content === content,
 		);
 		if (index !== -1) {
 			return currentMessages[index];
@@ -95,9 +153,7 @@ export const addMessage = (
 		role,
 		content,
 		images:
-			options?.images && options.images.length > 0
-				? options.images
-				: undefined,
+			options?.images && options.images.length > 0 ? options.images : undefined,
 		timestamp: Date.now(),
 	};
 	messagesAtom.set([...currentMessages, message]);
@@ -133,8 +189,8 @@ export const removeMessagesFromTransaction = (transactionId: string) => {
 				!(
 					m.transactionId === transactionId &&
 					(m.role === "assistant" || m.role === "system")
-				)
-		)
+				),
+		),
 	);
 };
 
@@ -159,9 +215,7 @@ export const addPendingImage = (image: ImageAttachment) => {
 };
 
 export const removePendingImage = (id: string) => {
-	pendingImagesAtom.set(
-		pendingImagesAtom.get().filter((img) => img.id !== id)
-	);
+	pendingImagesAtom.set(pendingImagesAtom.get().filter((img) => img.id !== id));
 };
 
 export const clearPendingImages = () => {
@@ -174,7 +228,7 @@ export const clearPendingImages = () => {
  */
 export const saveImagesToIndexedDB = async (
 	images: ImageAttachment[],
-	conversationId: string
+	conversationId: string,
 ): Promise<ImageAttachment[]> => {
 	const savedImages: ImageAttachment[] = [];
 
@@ -186,7 +240,7 @@ export const saveImagesToIndexedDB = async (
 				conversationId,
 				image.data,
 				image.mimeType,
-				image.name
+				image.name,
 			);
 
 			// Return reference without data (data is in IndexedDB)
@@ -197,13 +251,13 @@ export const saveImagesToIndexedDB = async (
 				name: image.name,
 				storedInDb: true,
 			});
-			} catch (error) {
-				if (import.meta.env.DEV) {
-					console.error("Failed to save image to IndexedDB:", image.id, error);
-				}
-				// If IndexedDB fails, keep the data inline (fallback)
-				savedImages.push(image);
+		} catch (error) {
+			if (import.meta.env.DEV) {
+				console.error("Failed to save image to IndexedDB:", image.id, error);
 			}
+			// If IndexedDB fails, keep the data inline (fallback)
+			savedImages.push(image);
+		}
 	}
 
 	return savedImages;
@@ -211,12 +265,12 @@ export const saveImagesToIndexedDB = async (
 
 /**
  * Compress an image to reduce storage size
- * Target: max 800px on longest side, JPEG quality 0.7
+ * Target: max 1200px on longest side, JPEG quality 0.8
  */
 export const compressImage = (
 	dataUrl: string,
-	maxSize = 800,
-	quality = 0.7
+	maxSize = 1200,
+	quality = 0.8,
 ): Promise<string> => {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -235,18 +289,27 @@ export const compressImage = (
 			const canvas = document.createElement("canvas");
 			canvas.width = width;
 			canvas.height = height;
-			const ctx = canvas.getContext("2d");
+
+			// Use alpha: false to improve JPEG encoding performance and quality
+			const ctx = canvas.getContext("2d", { alpha: false });
 			if (!ctx) {
 				reject(new Error("Failed to get canvas context"));
 				return;
 			}
+
+			// Set high-quality image smoothing
+			ctx.imageSmoothingEnabled = true;
+			ctx.imageSmoothingQuality = "high";
+
+			// Draw the image onto the canvas with high quality scaling
 			ctx.drawImage(img, 0, 0, width, height);
 
 			// Convert to JPEG with compression
 			const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
 			resolve(compressedDataUrl);
 		};
-		img.onerror = () => reject(new Error("Failed to load image for compression"));
+		img.onerror = () =>
+			reject(new Error("Failed to load image for compression"));
 		img.src = dataUrl;
 	});
 };
@@ -255,21 +318,21 @@ export const compressImage = (
  * Convert a File to an ImageAttachment with compression for storage
  */
 export const fileToImageAttachment = async (
-	file: File
+	file: File,
 ): Promise<ImageAttachment> => {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
 		reader.onload = async () => {
 			const originalDataUrl = reader.result as string;
-			
+
 			try {
 				// Compress the image to reduce storage size
 				// GIFs are kept as-is since they might be animated
 				const isGif = file.type === "image/gif";
-				const dataUrl = isGif 
-					? originalDataUrl 
+				const dataUrl = isGif
+					? originalDataUrl
 					: await compressImage(originalDataUrl);
-				
+
 				resolve({
 					id: crypto.randomUUID(),
 					data: dataUrl,

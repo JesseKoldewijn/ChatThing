@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import { Skeleton } from "./skeleton";
 
@@ -31,7 +31,7 @@ describe("Skeleton component", () => {
 			render(
 				<Skeleton>
 					<span data-testid="child">Loading content</span>
-				</Skeleton>
+				</Skeleton>,
 			);
 
 			expect(screen.getByTestId("child")).toBeInTheDocument();
@@ -40,18 +40,14 @@ describe("Skeleton component", () => {
 
 	describe("styling", () => {
 		it("should support width and height via className", () => {
-			render(
-				<Skeleton className="h-4 w-32" data-testid="skeleton" />
-			);
+			render(<Skeleton className="h-4 w-32" data-testid="skeleton" />);
 
 			const skeleton = screen.getByTestId("skeleton");
 			expect(skeleton).toHaveClass("h-4", "w-32");
 		});
 
 		it("should support rounded variants", () => {
-			render(
-				<Skeleton className="rounded-full" data-testid="skeleton" />
-			);
+			render(<Skeleton className="rounded-full" data-testid="skeleton" />);
 
 			const skeleton = screen.getByTestId("skeleton");
 			expect(skeleton).toHaveClass("rounded-full");
@@ -68,10 +64,10 @@ describe("Skeleton component", () => {
 		it("should have no axe violations with multiple skeletons", async () => {
 			const { container } = render(
 				<div>
-					<Skeleton className="h-4 w-full mb-2" />
-					<Skeleton className="h-4 w-3/4 mb-2" />
+					<Skeleton className="mb-2 h-4 w-full" />
+					<Skeleton className="mb-2 h-4 w-3/4" />
 					<Skeleton className="h-4 w-1/2" />
-				</div>
+				</div>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
@@ -79,11 +75,10 @@ describe("Skeleton component", () => {
 
 		it("should have no axe violations as avatar skeleton", async () => {
 			const { container } = render(
-				<Skeleton className="h-12 w-12 rounded-full" />
+				<Skeleton className="h-12 w-12 rounded-full" />,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
 });
-

@@ -1,18 +1,20 @@
 /// <reference types="vite/client" />
 
-import {
-	Outlet,
-	createRootRoute,
-	HeadContent,
-	Scripts,
-} from "@tanstack/react-router";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { themeScript } from "@/components/providers/ThemeProvider";
-import { NotificationProvider } from "@/components/providers/NotificationProvider";
 import { ConfirmationProvider } from "@/components/providers/ConfirmationProvider";
+import { NotificationProvider } from "@/components/providers/NotificationProvider";
 import { PromptProvider } from "@/components/providers/PromptProvider";
+import {
+	ThemeProvider,
+	themeScript,
+} from "@/components/providers/ThemeProvider";
 import RootLayout from "@/layout/root";
 import appCss from "@/styles/globals.css?url";
+import {
+	createRootRoute,
+	HeadContent,
+	Outlet,
+	Scripts,
+} from "@tanstack/react-router";
 
 export const Route = createRootRoute({
 	head: () => ({

@@ -52,16 +52,16 @@ function displayCoverage(type, silent = false) {
 	console.log(`\n📊 ${typeLabel} Test Coverage:`);
 	console.log("─".repeat(50));
 	console.log(
-		`  Statements: ${total.statements.covered}/${total.statements.total} (${total.statements.pct.toFixed(1)}%)`
+		`  Statements: ${total.statements.covered}/${total.statements.total} (${total.statements.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Branches:   ${total.branches.covered}/${total.branches.total} (${total.branches.pct.toFixed(1)}%)`
+		`  Branches:   ${total.branches.covered}/${total.branches.total} (${total.branches.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Functions:  ${total.functions.covered}/${total.functions.total} (${total.functions.pct.toFixed(1)}%)`
+		`  Functions:  ${total.functions.covered}/${total.functions.total} (${total.functions.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Lines:      ${total.lines.covered}/${total.lines.total} (${total.lines.pct.toFixed(1)}%)`
+		`  Lines:      ${total.lines.covered}/${total.lines.total} (${total.lines.pct.toFixed(1)}%)`,
 	);
 	console.log("─".repeat(50));
 
@@ -73,9 +73,7 @@ function displayCoverage(type, silent = false) {
  * Merges per-file coverage data to get accurate combined totals
  */
 function calculateCombinedTotals(summaries) {
-	const validSummaries = summaries.filter(
-		(s) => s !== null && s !== undefined
-	);
+	const validSummaries = summaries.filter((s) => s !== null && s !== undefined);
 	if (validSummaries.length === 0) {
 		return null;
 	}
@@ -106,19 +104,19 @@ function calculateCombinedTotals(summaries) {
 				// The total should be the same across all test types for the same file
 				existing.statements.covered = Math.max(
 					existing.statements.covered,
-					fileCoverage.statements.covered
+					fileCoverage.statements.covered,
 				);
 				existing.branches.covered = Math.max(
 					existing.branches.covered,
-					fileCoverage.branches.covered
+					fileCoverage.branches.covered,
 				);
 				existing.functions.covered = Math.max(
 					existing.functions.covered,
-					fileCoverage.functions.covered
+					fileCoverage.functions.covered,
 				);
 				existing.lines.covered = Math.max(
 					existing.lines.covered,
-					fileCoverage.lines.covered
+					fileCoverage.lines.covered,
 				);
 			}
 		});
@@ -184,16 +182,16 @@ if (testType === "all") {
 		console.log(`\n📊 Combined Test Coverage (All Types):`);
 		console.log("─".repeat(50));
 		console.log(
-			`  Statements: ${combinedTotal.statements.covered}/${combinedTotal.statements.total} (${combinedTotal.statements.pct.toFixed(1)}%)`
+			`  Statements: ${combinedTotal.statements.covered}/${combinedTotal.statements.total} (${combinedTotal.statements.pct.toFixed(1)}%)`,
 		);
 		console.log(
-			`  Branches:   ${combinedTotal.branches.covered}/${combinedTotal.branches.total} (${combinedTotal.branches.pct.toFixed(1)}%)`
+			`  Branches:   ${combinedTotal.branches.covered}/${combinedTotal.branches.total} (${combinedTotal.branches.pct.toFixed(1)}%)`,
 		);
 		console.log(
-			`  Functions:  ${combinedTotal.functions.covered}/${combinedTotal.functions.total} (${combinedTotal.functions.pct.toFixed(1)}%)`
+			`  Functions:  ${combinedTotal.functions.covered}/${combinedTotal.functions.total} (${combinedTotal.functions.pct.toFixed(1)}%)`,
 		);
 		console.log(
-			`  Lines:      ${combinedTotal.lines.covered}/${combinedTotal.lines.total} (${combinedTotal.lines.pct.toFixed(1)}%)`
+			`  Lines:      ${combinedTotal.lines.covered}/${combinedTotal.lines.total} (${combinedTotal.lines.pct.toFixed(1)}%)`,
 		);
 		console.log("─".repeat(50));
 	}

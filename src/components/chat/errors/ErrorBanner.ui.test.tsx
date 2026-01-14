@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { ErrorBannerUI, type ErrorBannerUIProps } from "./ErrorBanner.ui";
 
 const defaultProps: ErrorBannerUIProps = {
@@ -22,10 +22,10 @@ describe("ErrorBannerUI", () => {
 				<ErrorBannerUI
 					{...defaultProps}
 					message="Check your internet connection."
-				/>
+				/>,
 			);
 			expect(
-				screen.getByText("Check your internet connection.")
+				screen.getByText("Check your internet connection."),
 			).toBeInTheDocument();
 		});
 
@@ -42,7 +42,7 @@ describe("ErrorBannerUI", () => {
 					{...defaultProps}
 					category="network"
 					title="Connection Error"
-				/>
+				/>,
 			);
 			expect(screen.getByText("Connection Error")).toBeInTheDocument();
 		});
@@ -53,7 +53,7 @@ describe("ErrorBannerUI", () => {
 					{...defaultProps}
 					category="rate_limit"
 					title="Rate Limited"
-				/>
+				/>,
 			);
 			expect(screen.getByText("Rate Limited")).toBeInTheDocument();
 		});
@@ -64,7 +64,7 @@ describe("ErrorBannerUI", () => {
 					{...defaultProps}
 					category="context"
 					title="Message Too Long"
-				/>
+				/>,
 			);
 			expect(screen.getByText("Message Too Long")).toBeInTheDocument();
 		});
@@ -75,14 +75,14 @@ describe("ErrorBannerUI", () => {
 					{...defaultProps}
 					category="model"
 					title="AI Model Error"
-				/>
+				/>,
 			);
 			expect(screen.getByText("AI Model Error")).toBeInTheDocument();
 		});
 
 		it("should render api error", () => {
 			render(
-				<ErrorBannerUI {...defaultProps} category="api" title="API Error" />
+				<ErrorBannerUI {...defaultProps} category="api" title="API Error" />,
 			);
 			expect(screen.getByText("API Error")).toBeInTheDocument();
 		});
@@ -93,7 +93,7 @@ describe("ErrorBannerUI", () => {
 					{...defaultProps}
 					category="permission"
 					title="Permission Denied"
-				/>
+				/>,
 			);
 			expect(screen.getByText("Permission Denied")).toBeInTheDocument();
 		});
@@ -108,7 +108,7 @@ describe("ErrorBannerUI", () => {
 			// Find dismiss button (X icon button)
 			const buttons = screen.getAllByRole("button");
 			const dismissButton = buttons.find(
-				(b) => !b.textContent?.toLowerCase().includes("retry")
+				(b) => !b.textContent?.toLowerCase().includes("retry"),
 			);
 			if (dismissButton) {
 				await user.click(dismissButton);
@@ -120,9 +120,7 @@ describe("ErrorBannerUI", () => {
 	describe("retry", () => {
 		it("should show retry button when isRetryable and onRetry provided", () => {
 			const onRetry = vi.fn();
-			render(
-				<ErrorBannerUI {...defaultProps} isRetryable onRetry={onRetry} />
-			);
+			render(<ErrorBannerUI {...defaultProps} isRetryable onRetry={onRetry} />);
 
 			// Look for any button that could be retry
 			const buttons = screen.getAllByRole("button");
@@ -141,15 +139,13 @@ describe("ErrorBannerUI", () => {
 		it("should call onRetry when retry button clicked", async () => {
 			const onRetry = vi.fn();
 			const user = userEvent.setup();
-			render(
-				<ErrorBannerUI {...defaultProps} isRetryable onRetry={onRetry} />
-			);
+			render(<ErrorBannerUI {...defaultProps} isRetryable onRetry={onRetry} />);
 
 			// Find all buttons and click the retry one
 			const buttons = screen.getAllByRole("button");
 			// First button with "Retry" text or just click the first one
 			const retryButton = buttons.find((b) =>
-				b.textContent?.toLowerCase().includes("retry")
+				b.textContent?.toLowerCase().includes("retry"),
 			);
 			if (retryButton) {
 				await user.click(retryButton);
@@ -158,4 +154,3 @@ describe("ErrorBannerUI", () => {
 		});
 	});
 });
-

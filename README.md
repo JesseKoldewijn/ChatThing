@@ -1,6 +1,6 @@
 # ChatThing
 
-A sleek AI chat application that runs entirely in your browser using Chrome's built-in Prompt API. No API keys, no cloud costs, no data leaving your device — just local AI conversations powered by Gemini Nano (Chrome) or Phi mini (Edge).
+A sleek, privacy-first AI chat application that runs entirely in your browser. It supports multiple AI providers for maximum flexibility, including **Ollama** (default), **Google AI (Gemini)**, **OpenRouter**, and Chrome's built-in **Prompt API** for 100% local conversations.
 
 ## 📊 Test Coverage
 
@@ -11,65 +11,54 @@ A sleek AI chat application that runs entirely in your browser using Chrome's bu
 | **Integration Tests** | ![Integration Test Coverage](./.badges/integration.svg) |
 | **E2E Tests**         | ![E2E Test Coverage](./.badges/e2e.svg)                 |
 
-> **Note**: Total coverage represents the union of all covered lines across all test types. A line is considered covered if it's executed by any test type (unit, integration, or e2e).
+> **Note**: Total coverage represents the union of all covered lines across all test types. A line is considered covered if it's executed by any test type (unit, integration, or e2e). We maintain a rigorous **~90% coverage** target for all new features.
 
 ## ✨ Features
 
-- **100% Local AI** — Leverages Chrome/Edge's built-in language models (Gemini Nano / Phi mini)
-- **Zero Configuration** — No API keys or external services required
-- **Privacy First** — All conversations stay on your device
-- **Installable PWA** — Install ChatThing as a native-like app on any device
-- **Image Understanding** — Attach images for multimodal conversations
-- **Conversation History** — Persistent chat history with auto-generated titles
-- **Usage Analytics** — Track your message counts, token usage, and tool calls
-- **Dark/Light Themes** — System-aware theming with manual override
-- **Offline Support** — Works offline once installed as a PWA
-- **SSR Pre-rendered** — Fast initial loads with server-side rendering
-- **Modern UI** — Clean interface built with Radix UI primitives
+- **Multi-Provider Support** — Seamlessly switch between **Ollama**, **Google AI (Gemini)**, **OpenRouter**, and Chrome's built-in **Prompt API**.
+- **Privacy First** — Local-first architecture with optional AES-GCM encrypted storage for cloud provider API keys.
+- **Experimental Tools** — Toggle advanced capabilities like AI Tools (Web Search, Weather, etc.) via the dedicated Experiments Panel.
+- **Frictionless Security** — Session-based unlocking that only prompts for your master password right before you need an API key.
+- **Installable PWA** — Install ChatThing as a native-like app on any device with full offline support.
+- **Multimodal Interactions** — High-quality image compression and rendering for vision-capable models.
+- **Deep Analytics** — Comprehensive usage tracking including message volume, token usage, and tool breakdown by provider and model.
+- **Vibrant Theming** — High-contrast themes (Light/Dark/Vibrant) with refined markdown and code block styling.
+- **SSR Pre-rendered** — Optimized loading performance powered by TanStack Start and server-side pre-rendering.
 
 ## 🔧 Tech Stack
 
-| Category               | Technology                             |
-| ---------------------- | -------------------------------------- |
-| **Framework**          | React 19 with TypeScript               |
-| **Build Tool**         | Rolldown-Vite                          |
-| **Compiler**           | React Compiler (automatic memoization) |
-| **Routing**            | TanStack Router                        |
-| **Styling**            | Tailwind CSS v4                        |
-| **UI Components**      | Radix UI primitives                    |
-| **State Management**   | nanostores                             |
-| **AI Integration**     | Vercel AI SDK + @built-in-ai/core      |
-| **Markdown**           | react-markdown + remark-gfm            |
-| **Code Highlighting**  | react-syntax-highlighter               |
-| **Data Visualization** | Recharts + TanStack Table              |
-| **Icons**              | Lucide React                           |
-| **Testing**            | Vitest + Playwright                    |
-| **Deployment**         | Vercel (with SSR pre-rendering)        |
+| Category               | Technology                                   |
+| ---------------------- | -------------------------------------------- |
+| **Framework**          | React 19 with TypeScript                     |
+| **Build Tool**         | Rolldown-Vite (Optimized bundle split)       |
+| **Routing**            | TanStack Router                              |
+| **Styling**            | Tailwind CSS v4                              |
+| **State Management**   | nanostores                                   |
+| **AI Integration**     | Vercel AI SDK + Google + OpenRouter + Ollama |
+| **Data Visualization** | Recharts + TanStack Table                    |
+| **Testing**            | Vitest + Playwright (Unit/Int/E2E)           |
+| **Formatting**         | Prettier + Tailwind & Import Sorting         |
+| **Linting**            | Oxlint (Ultra-fast linting)                  |
+| **Deployment**         | Vercel (with SSR pre-rendering)              |
 
 ## 📋 Browser Requirements
 
-This app requires a browser with the **Prompt API** enabled:
+While ChatThing works in any modern browser using providers like **Ollama**, **Google AI**, or **OpenRouter**, the **100% Local AI** experience using the **Prompt API** specifically requires:
 
 | Browser | Minimum Version | AI Model    |
 | ------- | --------------- | ----------- |
 | Chrome  | 138+            | Gemini Nano |
 | Edge    | 138+            | Phi mini    |
 
-### Hardware Requirements
-
-- **Storage**: 22 GB+ free space (for model download)
-- **RAM**: 16 GB+ recommended
-- **GPU**: 4+ GB VRAM (recommended for performance)
-
-### Enabling the Prompt API
+### Enabling the Prompt API (Optional)
 
 <details>
 <summary><strong>Chrome Setup</strong></summary>
 
-1. Enable the following flags (click to open directly):
-    - [`Prompt API for Gemini Nano`](chrome://flags/#prompt-api-for-gemini-nano)
-    - [`Prompt API for Gemini Nano with Multimodal Input`](chrome://flags/#prompt-api-for-gemini-nano-multimodal-input)
-    - [`Enables optimization guide on device`](chrome://flags/#optimization-guide-on-device-model)
+1. Enable the following flags:
+   - [`Prompt API for Gemini Nano`](chrome://flags/#prompt-api-for-gemini-nano)
+   - [`Prompt API for Gemini Nano with Multimodal Input`](chrome://flags/#prompt-api-for-gemini-nano-multimodal-input)
+   - [`Enables optimization guide on device`](chrome://flags/#optimization-guide-on-device-model)
 2. Restart Chrome
 3. Visit [`chrome://on-device-internals/`](chrome://on-device-internals/) to download the model
 
@@ -78,72 +67,35 @@ This app requires a browser with the **Prompt API** enabled:
 <details>
 <summary><strong>Edge Setup</strong></summary>
 
-1. Enable the following flag (click to open directly):
-    - [`Prompt API for Phi mini`](edge://flags/#prompt-api-for-phi-mini)
+1. Enable the following flag:
+   - [`Prompt API for Phi mini`](edge://flags/#prompt-api-for-phi-mini)
 2. Restart Edge
 3. Visit [`edge://on-device-internals/`](edge://on-device-internals/) to download the model
 
 </details>
-
-## 📱 Installing as a PWA
-
-ChatThing can be installed as a Progressive Web App for a native-like experience:
-
-### Desktop (Chrome/Edge)
-
-1. Visit the ChatThing website
-2. Click the install icon in the address bar (or Menu → Install ChatThing)
-3. Click "Install" in the dialog
-
-### Mobile (Android)
-
-1. Visit the ChatThing website in Chrome
-2. Tap "Add to Home Screen" from the menu
-3. Follow the installation prompts
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 22+
-- Yarn 4+ (required — this project uses Yarn's modern PnP mode)
-- A compatible browser with Prompt API enabled
+- Yarn 4+ (Yarn PnP mode)
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/JesseKoldewijn/ChatThing.git
 cd ChatThing
-
-# Install dependencies
 yarn install
 ```
 
 ### Development
 
 ```bash
-# Start the development server
 yarn dev
 ```
 
 The app will be available at `http://localhost:5173`
-
-### Building for Production
-
-```bash
-# Build the application
-yarn build
-
-# Preview the production build
-yarn preview
-```
-
-The build process:
-
-1. Compiles TypeScript and bundles the client
-2. Builds the SSR server bundle
-3. Pre-renders static HTML for all routes
 
 ## 🛠️ Available Scripts
 
@@ -151,30 +103,27 @@ The build process:
 | ------------------------ | -------------------------------------------------- |
 | `yarn dev`               | Start development server with HMR                  |
 | `yarn build`             | Build for production (client + server + prerender) |
-| `yarn build:client`      | Build client bundle only                           |
-| `yarn build:server`      | Build SSR server bundle only                       |
-| `yarn prerender`         | Generate pre-rendered HTML                         |
-| `yarn preview`           | Preview production build locally                   |
-| `yarn lint`              | Run ESLint                                         |
+| `yarn lint`              | Run Oxlint + Prettier check                        |
+| `yarn lint:fix`          | Auto-fix linting and format code                   |
 | `yarn test`              | Run unit tests in watch mode                       |
-| `yarn test:run`          | Run unit tests once                                |
-| `yarn test:coverage`     | Run unit tests with coverage                       |
-| `yarn test:e2e`          | Run E2E browser tests in watch mode                |
-| `yarn test:e2e:run`      | Run E2E browser tests once                         |
-| `yarn test:e2e:coverage` | Run E2E tests with coverage                        |
-| `yarn test:all`          | Run all tests (unit + E2E)                         |
+| `yarn test:integration`  | Run integration tests                              |
+| `yarn test:e2e`          | Run Playwright E2E tests                           |
+| `yarn test:all:coverage` | Run all test types and generate combined coverage  |
 | `yarn test:badges`       | Generate coverage badge SVGs                       |
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We follow a **Test-Driven Development (TDD)** approach. When contributing:
+
+1. Ensure all new logic has corresponding tests.
+2. Maintain high statement coverage (>90% for UI, 100% for stores/utils).
+3. Run `yarn lint:fix` before committing to ensure consistent formatting.
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 
 - **Live Demo**: [ai.jereko.dev](https://ai.jereko.dev)
-- **Repository**: [github.com/JesseKoldewijn/ChatThing](https://github.com/JesseKoldewijn/ChatThing)
 - **Chrome Prompt API Docs**: [developer.chrome.com](https://developer.chrome.com/docs/ai/built-in)

@@ -1,6 +1,6 @@
-import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
 	plugins: [react()],
@@ -11,7 +11,7 @@ export default defineConfig({
 	},
 	test: {
 		environment: "happy-dom",
-		setupFiles: ["./src/test/setup.ts"],
+		setupFiles: ["./src/test/setup.tsx"],
 		include: ["**/*.integration.test.{ts,tsx}"],
 		exclude: [
 			"**/*.e2e.test.{ts,tsx}",
@@ -33,6 +33,12 @@ export default defineConfig({
 				"src/test/**",
 				"src/main.tsx",
 				"src/entry-*.tsx",
+				"src/routeTree.gen.ts",
+				"src/router.tsx",
+				"src/types/**",
+				"src/routes/**",
+				"src/layout/**",
+				"src/components/providers/**",
 			],
 			all: true,
 			perFile: true,
@@ -40,4 +46,3 @@ export default defineConfig({
 		},
 	},
 });
-

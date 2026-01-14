@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { cn } from "./utils";
 
 describe("cn utility", () => {
@@ -9,9 +9,9 @@ describe("cn utility", () => {
 	it("should handle conditional classes", () => {
 		const includeClass = true;
 		const excludeClass = false;
-		expect(cn("base", includeClass && "included", excludeClass && "excluded")).toBe(
-			"base included"
-		);
+		expect(
+			cn("base", includeClass && "included", excludeClass && "excluded"),
+		).toBe("base included");
 	});
 
 	it("should handle undefined and null values", () => {
@@ -43,14 +43,13 @@ describe("cn utility", () => {
 
 	it("should handle complex tailwind merging", () => {
 		expect(cn("bg-red-500 hover:bg-red-600", "bg-blue-500")).toBe(
-			"hover:bg-red-600 bg-blue-500"
+			"hover:bg-red-600 bg-blue-500",
 		);
 	});
 
 	it("should preserve non-conflicting classes", () => {
 		expect(cn("flex items-center", "justify-between gap-2")).toBe(
-			"flex items-center justify-between gap-2"
+			"flex items-center justify-between gap-2",
 		);
 	});
 });
-

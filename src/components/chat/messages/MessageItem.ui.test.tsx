@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { MessageItemUI, type MessageItemUIProps } from "./MessageItem.ui";
 
 const defaultProps: MessageItemUIProps = {
@@ -21,37 +21,33 @@ describe("MessageItemUI", () => {
 					{...defaultProps}
 					role="assistant"
 					content="Hi there! How can I help?"
-				/>
+				/>,
 			);
-			expect(
-				screen.getByText("Hi there! How can I help?")
-			).toBeInTheDocument();
+			expect(screen.getByText("Hi there! How can I help?")).toBeInTheDocument();
 		});
 
 		it("should render with different styling for user vs assistant", () => {
 			const { container: userContainer } = render(
-				<MessageItemUI {...defaultProps} />
+				<MessageItemUI {...defaultProps} />,
 			);
 			const userDiv = userContainer.firstChild;
 
 			const { container: assistantContainer } = render(
-				<MessageItemUI {...defaultProps} role="assistant" />
+				<MessageItemUI {...defaultProps} role="assistant" />,
 			);
 			const assistantDiv = assistantContainer.firstChild;
 
 			// They should have different layout (flex direction)
 			expect((userDiv as HTMLElement)?.className).toContain("flex-row-reverse");
 			expect((assistantDiv as HTMLElement)?.className).not.toContain(
-				"flex-row-reverse"
+				"flex-row-reverse",
 			);
 		});
 	});
 
 	describe("streaming", () => {
 		it("should render streaming content", () => {
-			render(
-				<MessageItemUI {...defaultProps} role="assistant" isStreaming />
-			);
+			render(<MessageItemUI {...defaultProps} role="assistant" isStreaming />);
 
 			const messageContainer = screen.getByText("Hello, world!").parentElement;
 			expect(messageContainer).toBeInTheDocument();
@@ -66,7 +62,7 @@ describe("MessageItemUI", () => {
 					{...defaultProps}
 					role="assistant"
 					onRegenerate={onRegenerate}
-				/>
+				/>,
 			);
 
 			// Assistant messages should have buttons (copy, regenerate)
@@ -122,12 +118,12 @@ describe("MessageItemUI", () => {
 					{...defaultProps}
 					role="assistant"
 					renderContent={renderContent}
-				/>
+				/>,
 			);
 
 			expect(screen.getByTestId("custom-render")).toBeInTheDocument();
 			expect(screen.getByTestId("custom-render")).toHaveTextContent(
-				"HELLO, WORLD!"
+				"HELLO, WORLD!",
 			);
 		});
 	});
@@ -143,7 +139,7 @@ describe("MessageItemUI", () => {
 		it("should have onCopy handler available", () => {
 			const onCopy = vi.fn();
 			render(
-				<MessageItemUI {...defaultProps} role="assistant" onCopy={onCopy} />
+				<MessageItemUI {...defaultProps} role="assistant" onCopy={onCopy} />,
 			);
 
 			// Component should render with the handler
@@ -151,13 +147,10 @@ describe("MessageItemUI", () => {
 		});
 
 		it("should render with isCopied state", () => {
-			render(
-				<MessageItemUI {...defaultProps} role="assistant" isCopied />
-			);
+			render(<MessageItemUI {...defaultProps} role="assistant" isCopied />);
 
 			// Should still render content
 			expect(screen.getByText("Hello, world!")).toBeInTheDocument();
 		});
 	});
 });
-

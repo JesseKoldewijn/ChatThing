@@ -1,18 +1,18 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
-	usageEventsAtom,
+	clearUsageData,
+	type DailyUsage,
 	dailyUsageAtom,
+	estimateTokens,
+	getRecentDailyUsage,
+	getUsageSummary,
 	recordMessage,
 	recordResponse,
-	recordToolCall,
 	recordTokenUsage,
-	getUsageSummary,
-	clearUsageData,
-	getRecentDailyUsage,
-	estimateTokens,
-	type DailyUsage,
+	recordToolCall,
+	usageEventsAtom,
 } from "./usage";
-import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
 
 describe("usage store extended tests", () => {
 	beforeEach(() => {

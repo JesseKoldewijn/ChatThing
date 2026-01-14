@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock stores
 vi.mock("@nanostores/react", () => ({
@@ -7,6 +7,7 @@ vi.mock("@nanostores/react", () => ({
 		if (atom.name === "messagesAtom") return mockMessages;
 		if (atom.name === "currentStreamAtom") return mockCurrentStream;
 		if (atom.name === "isStreamingAtom") return mockIsStreaming;
+		if (atom.name === "isConversationsHydratedAtom") return true;
 		return null;
 	}),
 }));
@@ -15,6 +16,13 @@ vi.mock("@/lib/stores/chat", () => ({
 	messagesAtom: { name: "messagesAtom", get: () => [] },
 	currentStreamAtom: { name: "currentStreamAtom", get: () => "" },
 	isStreamingAtom: { name: "isStreamingAtom", get: () => false },
+}));
+
+vi.mock("@/lib/stores/conversations", () => ({
+	isConversationsHydratedAtom: {
+		name: "isConversationsHydratedAtom",
+		get: () => true,
+	},
 }));
 
 // Mock MessageItem component
@@ -30,9 +38,7 @@ vi.mock("./MessageItem", () => ({
 			<span data-testid={`message-content-${message.id}`}>
 				{message.content}
 			</span>
-			{isStreaming && (
-				<span data-testid="streaming-indicator">Streaming</span>
-			)}
+			{isStreaming && <span data-testid="streaming-indicator">Streaming</span>}
 		</div>
 	),
 }));
@@ -57,9 +63,9 @@ vi.mock("./MessageList.ui", () => ({
 	),
 }));
 
-import { MessageList } from "./MessageList";
 import { useStore } from "@nanostores/react";
 import type { ReadableAtom } from "nanostores";
+import { MessageList } from "./MessageList";
 
 let mockMessages: Array<{
 	id: string;
@@ -86,6 +92,7 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return [];
 				if (a.name === "currentStreamAtom") return "";
 				if (a.name === "isStreamingAtom") return false;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 
@@ -116,6 +123,7 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return mockMessages;
 				if (a.name === "currentStreamAtom") return "";
 				if (a.name === "isStreamingAtom") return false;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 
@@ -133,6 +141,7 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return [];
 				if (a.name === "currentStreamAtom") return "";
 				if (a.name === "isStreamingAtom") return true;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 
@@ -148,6 +157,7 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return [];
 				if (a.name === "currentStreamAtom") return "";
 				if (a.name === "isStreamingAtom") return true;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 
@@ -166,14 +176,13 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return [];
 				if (a.name === "currentStreamAtom") return "Streaming response...";
 				if (a.name === "isStreamingAtom") return true;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 
 			render(<MessageList />);
 			expect(screen.getByTestId("message-streaming")).toBeInTheDocument();
-			expect(
-				screen.getByTestId("streaming-indicator")
-			).toBeInTheDocument();
+			expect(screen.getByTestId("streaming-indicator")).toBeInTheDocument();
 		});
 
 		it("should show streaming content", () => {
@@ -185,13 +194,14 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return [];
 				if (a.name === "currentStreamAtom") return "This is being streamed";
 				if (a.name === "isStreamingAtom") return true;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 
 			render(<MessageList />);
-			expect(
-				screen.getByTestId("message-content-streaming")
-			).toHaveTextContent("This is being streamed");
+			expect(screen.getByTestId("message-content-streaming")).toHaveTextContent(
+				"This is being streamed",
+			);
 		});
 	});
 
@@ -214,6 +224,7 @@ describe("MessageList", () => {
 				if (a.name === "messagesAtom") return mockMessages;
 				if (a.name === "currentStreamAtom") return "Answer in progress";
 				if (a.name === "isStreamingAtom") return true;
+				if (a.name === "isConversationsHydratedAtom") return true;
 				return null;
 			});
 

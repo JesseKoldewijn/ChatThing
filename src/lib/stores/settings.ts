@@ -1,18 +1,18 @@
-import { atom, computed } from "nanostores";
-import { encrypt, decrypt } from "@/lib/utils/crypto";
-import { 
-	type ProviderType, 
-	PROVIDER_OPEN_ROUTER,
+import { clearAIManagerCache } from "@/lib/ai";
+import {
 	PROVIDER_GOOGLE,
 	PROVIDER_OLLAMA,
+	PROVIDER_OPEN_ROUTER,
 	PROVIDER_PROMPT_API,
+	type ProviderType,
 } from "@/lib/ai/constants";
-import { clearAIManagerCache } from "@/lib/ai";
+import { decrypt, encrypt } from "@/lib/utils/crypto";
+import { atom, computed } from "nanostores";
 
 export {
-	PROVIDER_OPEN_ROUTER,
 	PROVIDER_GOOGLE,
 	PROVIDER_OLLAMA,
+	PROVIDER_OPEN_ROUTER,
 	PROVIDER_PROMPT_API,
 };
 
@@ -44,9 +44,7 @@ const detectBrowserLanguage = (): PromptApiLanguage => {
 
 		// Check if it matches a supported language
 		if (
-			PROMPT_API_SUPPORTED_LANGUAGES.includes(
-				primaryCode as PromptApiLanguage
-			)
+			PROMPT_API_SUPPORTED_LANGUAGES.includes(primaryCode as PromptApiLanguage)
 		) {
 			return primaryCode as PromptApiLanguage;
 		}
@@ -55,9 +53,6 @@ const detectBrowserLanguage = (): PromptApiLanguage => {
 	// Default to English if no supported language found
 	return "en";
 };
-
-// Check if we're in browser environment
-const isBrowser = typeof window !== "undefined";
 
 // Appearance state (light/dark/system)
 export const appearanceAtom = atom<Appearance>("system");
@@ -110,8 +105,12 @@ export const encryptedOllamaApiKeyAtom = atom<string | null>(null);
 
 // Convenience atom to check if any keys are set
 export const hasKeysAtom = computed(
-	[encryptedOpenRouterApiKeyAtom, encryptedGoogleApiKeyAtom, encryptedOllamaApiKeyAtom],
-	(orKey, gKey, olKey) => !!(orKey || gKey || olKey)
+	[
+		encryptedOpenRouterApiKeyAtom,
+		encryptedGoogleApiKeyAtom,
+		encryptedOllamaApiKeyAtom,
+	],
+	(orKey, gKey, olKey) => !!(orKey || gKey || olKey),
 );
 
 // Global locked status
@@ -120,7 +119,26 @@ export const isLockedAtom = computed(
 	(password, hasKeys) => {
 		// Only "locked" if we have keys to unlock but no password
 		return hasKeys && !password;
-	}
+	},
+);
+
+// Provider-specific locked status
+export const isProviderLockedAtom = computed(
+	[
+		providerTypeAtom,
+		masterPasswordAtom,
+		encryptedOpenRouterApiKeyAtom,
+		encryptedGoogleApiKeyAtom,
+		encryptedOllamaApiKeyAtom,
+	],
+	(type, password, orKey, gKey, olKey) => {
+		if (password) return false;
+
+		if (type === PROVIDER_OPEN_ROUTER) return !!orKey;
+		if (type === PROVIDER_GOOGLE) return !!gKey;
+		if (type === PROVIDER_OLLAMA) return !!olKey;
+		return false; // Prompt API or other non-key providers
+	},
 );
 
 export const openRouterModelAtom = atom<string>("mistralai/devstral-2512:free");
@@ -136,9 +154,27 @@ export interface AiSettings {
 
 export const aiSettingsAtom = atom<AiSettings>({});
 
+// Experimental features
+export type ExperimentId = "tools" | string;
+export const experimentsAtom = atom<Record<ExperimentId, boolean>>({});
+
+// UI state
+export const isUnlockDialogOpenAtom = atom<boolean>(false);
+export const setIsUnlockDialogOpen = (open: boolean) =>
+	isUnlockDialogOpenAtom.set(open);
+
 // Actions
 export const updateAiSettings = (settings: Record<string, unknown>) => {
 	aiSettingsAtom.set({ ...aiSettingsAtom.get(), ...settings });
+};
+
+export const toggleExperiment = (id: ExperimentId) => {
+	const current = experimentsAtom.get();
+	const next = { ...current, [id]: !current[id] };
+	experimentsAtom.set(next);
+	if (typeof window !== "undefined") {
+		localStorage.setItem(EXPERIMENTS_KEY, JSON.stringify(next));
+	}
 };
 
 // Archive threshold units
@@ -197,6 +233,9 @@ const TIMEZONE_KEY = "timezone";
 // Storage key for output language
 const OUTPUT_LANGUAGE_KEY = "output-language";
 
+// Storage key for experiments
+const EXPERIMENTS_KEY = "experiments";
+
 // Storage keys for AI providers
 const PROVIDER_TYPE_KEY = "ai-provider-type";
 const ENCRYPTED_OPENROUTER_API_KEY_KEY = "encrypted-openrouter-api-key";
@@ -211,12 +250,17 @@ const OLLAMA_BASE_URL_KEY = "ollama-base-url";
  * Load appearance and theme from localStorage
  */
 const loadThemeFromStorage = () => {
-	if (!isBrowser) return;
-	const storedAppearance = localStorage.getItem("appearance") as Appearance | null;
-	if (storedAppearance && ["light", "dark", "system"].includes(storedAppearance)) {
+	if (typeof window === "undefined") return;
+	const storedAppearance = localStorage.getItem(
+		"appearance",
+	) as Appearance | null;
+	if (
+		storedAppearance &&
+		["light", "dark", "system"].includes(storedAppearance)
+	) {
 		appearanceAtom.set(storedAppearance);
 	}
-	
+
 	const storedTheme = localStorage.getItem("theme") as Theme | null;
 	if (storedTheme && ["default", "vibrant"].includes(storedTheme)) {
 		themeAtom.set(storedTheme);
@@ -233,8 +277,10 @@ const loadThemeFromStorage = () => {
  * Load temperature unit from localStorage
  */
 const loadTemperatureUnitFromStorage = () => {
-	if (!isBrowser) return;
-	const stored = localStorage.getItem(TEMPERATURE_UNIT_KEY) as TemperatureUnit | null;
+	if (typeof window === "undefined") return;
+	const stored = localStorage.getItem(
+		TEMPERATURE_UNIT_KEY,
+	) as TemperatureUnit | null;
 	if (stored && ["auto", "fahrenheit", "celsius"].includes(stored)) {
 		temperatureUnitAtom.set(stored);
 	}
@@ -244,7 +290,7 @@ const loadTemperatureUnitFromStorage = () => {
  * Load timezone from localStorage
  */
 const loadTimezoneFromStorage = () => {
-	if (!isBrowser) return;
+	if (typeof window === "undefined") return;
 	const stored = localStorage.getItem(TIMEZONE_KEY);
 	if (stored) {
 		timezoneAtom.set(stored);
@@ -255,12 +301,13 @@ const loadTimezoneFromStorage = () => {
  * Load archive threshold from localStorage
  */
 const loadArchiveThresholdFromStorage = () => {
-	if (!isBrowser) return;
+	if (typeof window === "undefined") return;
 	const stored = localStorage.getItem(ARCHIVE_THRESHOLD_KEY);
 	if (stored) {
 		try {
-			const parsed = JSON.parse(stored) as ArchiveThreshold;
+			const parsed = JSON.parse(stored);
 			if (
+				parsed &&
 				typeof parsed.value === "number" &&
 				parsed.value >= 0 &&
 				parsed.unit
@@ -268,9 +315,13 @@ const loadArchiveThresholdFromStorage = () => {
 				archiveThresholdAtom.set(parsed);
 				const hours = thresholdToHours(parsed);
 				archiveThresholdDaysAtom.set(Math.ceil(hours / 24));
+			} else if (typeof parsed === "number" && parsed >= 0) {
+				// Legacy format: just a number (days)
+				archiveThresholdAtom.set({ value: parsed, unit: "days" });
+				archiveThresholdDaysAtom.set(parsed);
 			}
 		} catch {
-			// Legacy format: just a number (days)
+			// Legacy format: could be a plain string that's not valid JSON
 			const parsed = parseInt(stored, 10);
 			if (!isNaN(parsed) && parsed >= 0) {
 				archiveThresholdAtom.set({ value: parsed, unit: "days" });
@@ -284,8 +335,10 @@ const loadArchiveThresholdFromStorage = () => {
  * Load output language from localStorage
  */
 const loadOutputLanguageFromStorage = () => {
-	if (!isBrowser) return;
-	const stored = localStorage.getItem(OUTPUT_LANGUAGE_KEY) as PromptApiLanguage | null;
+	if (typeof window === "undefined") return;
+	const stored = localStorage.getItem(
+		OUTPUT_LANGUAGE_KEY,
+	) as PromptApiLanguage | null;
 	if (stored && PROMPT_API_SUPPORTED_LANGUAGES.includes(stored)) {
 		outputLanguageAtom.set(stored);
 	} else {
@@ -299,14 +352,24 @@ const loadOutputLanguageFromStorage = () => {
  * Load AI provider settings from localStorage
  */
 const loadAiProviderSettingsFromStorage = () => {
-	if (!isBrowser) return;
-	
+	if (typeof window === "undefined") return;
+
 	const type = localStorage.getItem(PROVIDER_TYPE_KEY) as ProviderType | null;
-	if (type && [PROVIDER_OPEN_ROUTER, PROVIDER_GOOGLE, PROVIDER_OLLAMA, PROVIDER_PROMPT_API].includes(type)) {
+	if (
+		type &&
+		[
+			PROVIDER_OPEN_ROUTER,
+			PROVIDER_GOOGLE,
+			PROVIDER_OLLAMA,
+			PROVIDER_PROMPT_API,
+		].includes(type)
+	) {
 		providerTypeAtom.set(type);
 	}
-	
-	const encryptedOpenRouterKey = localStorage.getItem(ENCRYPTED_OPENROUTER_API_KEY_KEY);
+
+	const encryptedOpenRouterKey = localStorage.getItem(
+		ENCRYPTED_OPENROUTER_API_KEY_KEY,
+	);
 	if (encryptedOpenRouterKey) {
 		encryptedOpenRouterApiKeyAtom.set(encryptedOpenRouterKey);
 	}
@@ -320,7 +383,7 @@ const loadAiProviderSettingsFromStorage = () => {
 	if (encryptedOllamaKey) {
 		encryptedOllamaApiKeyAtom.set(encryptedOllamaKey);
 	}
-	
+
 	const openRouterModel = localStorage.getItem(OPENROUTER_MODEL_KEY);
 	if (openRouterModel) {
 		openRouterModelAtom.set(openRouterModel);
@@ -342,27 +405,36 @@ const loadAiProviderSettingsFromStorage = () => {
 	}
 };
 
+/**
+ * Load experimental features from localStorage
+ */
+const loadExperimentsFromStorage = () => {
+	if (typeof window === "undefined") return;
+	const stored = localStorage.getItem(EXPERIMENTS_KEY);
+	if (stored) {
+		try {
+			const parsed = JSON.parse(stored);
+			if (typeof parsed === "object" && parsed !== null) {
+				experimentsAtom.set(parsed);
+			}
+		} catch {
+			// Ignore invalid JSON
+		}
+	}
+};
+
 // Actions
 export const setAppearance = (appearance: Appearance) => {
 	appearanceAtom.set(appearance);
-	if (isBrowser) {
-		localStorage.setItem("appearance", appearance);
-	}
 };
 
 export const setTheme = (theme: Theme) => {
 	themeAtom.set(theme);
-	if (isBrowser) {
-		localStorage.setItem("theme", theme);
-	}
 };
 
 export const setProviderType = (type: ProviderType) => {
 	providerTypeAtom.set(type);
 	clearAIManagerCache();
-	if (isBrowser) {
-		localStorage.setItem(PROVIDER_TYPE_KEY, type);
-	}
 };
 
 export const setMasterPassword = (password: string | null) => {
@@ -372,52 +444,52 @@ export const setMasterPassword = (password: string | null) => {
 
 export const setOpenRouterApiKey = async (key: string, password?: string) => {
 	const currentPassword = password || masterPasswordAtom.get();
-	if (!currentPassword) throw new Error("Master password required to set API key");
-	
+	if (!currentPassword)
+		throw new Error("Master password required to set API key");
+
 	const encrypted = await encrypt(key, currentPassword);
 	encryptedOpenRouterApiKeyAtom.set(encrypted);
-	if (isBrowser) {
-		localStorage.setItem(ENCRYPTED_OPENROUTER_API_KEY_KEY, encrypted);
-	}
 };
 
 export const setGoogleApiKey = async (key: string, password?: string) => {
 	const currentPassword = password || masterPasswordAtom.get();
-	if (!currentPassword) throw new Error("Master password required to set API key");
-	
+	if (!currentPassword)
+		throw new Error("Master password required to set API key");
+
 	const encrypted = await encrypt(key, currentPassword);
 	encryptedGoogleApiKeyAtom.set(encrypted);
-	if (isBrowser) {
-		localStorage.setItem(ENCRYPTED_GOOGLE_API_KEY_KEY, encrypted);
-	}
 };
 
 export const setOllamaApiKey = async (key: string, password?: string) => {
 	const currentPassword = password || masterPasswordAtom.get();
-	if (!currentPassword) throw new Error("Master password required to set API key");
-	
+	if (!currentPassword)
+		throw new Error("Master password required to set API key");
+
 	const encrypted = await encrypt(key, currentPassword);
 	encryptedOllamaApiKeyAtom.set(encrypted);
-	if (isBrowser) {
-		localStorage.setItem(ENCRYPTED_OLLAMA_API_KEY_KEY, encrypted);
-	}
 };
 
-export const getDecryptedOpenRouterApiKey = async (password?: string): Promise<string | null> => {
+export const getDecryptedOpenRouterApiKey = async (
+	password?: string,
+): Promise<string | null> => {
 	const currentPassword = password || masterPasswordAtom.get();
 	const encrypted = encryptedOpenRouterApiKeyAtom.get();
 	if (!encrypted || !currentPassword) return null;
 	return decrypt(encrypted, currentPassword);
 };
 
-export const getDecryptedGoogleApiKey = async (password?: string): Promise<string | null> => {
+export const getDecryptedGoogleApiKey = async (
+	password?: string,
+): Promise<string | null> => {
 	const currentPassword = password || masterPasswordAtom.get();
 	const encrypted = encryptedGoogleApiKeyAtom.get();
 	if (!encrypted || !currentPassword) return null;
 	return decrypt(encrypted, currentPassword);
 };
 
-export const getDecryptedOllamaApiKey = async (password?: string): Promise<string | null> => {
+export const getDecryptedOllamaApiKey = async (
+	password?: string,
+): Promise<string | null> => {
 	const currentPassword = password || masterPasswordAtom.get();
 	const encrypted = encryptedOllamaApiKeyAtom.get();
 	if (!encrypted || !currentPassword) return null;
@@ -427,56 +499,35 @@ export const getDecryptedOllamaApiKey = async (password?: string): Promise<strin
 export const setOpenRouterModel = (model: string) => {
 	openRouterModelAtom.set(model);
 	clearAIManagerCache();
-	if (isBrowser) {
-		localStorage.setItem(OPENROUTER_MODEL_KEY, model);
-	}
 };
 
 export const setGoogleModel = (model: string) => {
 	googleModelAtom.set(model);
 	clearAIManagerCache();
-	if (isBrowser) {
-		localStorage.setItem(GOOGLE_MODEL_KEY, model);
-	}
 };
 
 export const setOllamaModel = (model: string) => {
 	ollamaModelAtom.set(model);
 	clearAIManagerCache();
-	if (isBrowser) {
-		localStorage.setItem(OLLAMA_MODEL_KEY, model);
-	}
 };
 
 export const setOllamaBaseUrl = (url: string) => {
 	ollamaBaseUrlAtom.set(url);
 	clearAIManagerCache();
-	if (isBrowser) {
-		localStorage.setItem(OLLAMA_BASE_URL_KEY, url);
-	}
 };
 
 export const setTemperatureUnit = (unit: TemperatureUnit) => {
 	temperatureUnitAtom.set(unit);
-	if (isBrowser) {
-		localStorage.setItem(TEMPERATURE_UNIT_KEY, unit);
-	}
 };
 
 export const setTimezone = (timezone: TimezonePreference) => {
 	timezoneAtom.set(timezone);
-	if (isBrowser) {
-		localStorage.setItem(TIMEZONE_KEY, timezone);
-	}
 };
 
 export const setArchiveThreshold = (threshold: ArchiveThreshold) => {
 	const validValue = Math.max(0, Math.floor(threshold.value));
 	const validThreshold = { value: validValue, unit: threshold.unit };
 	archiveThresholdAtom.set(validThreshold);
-	if (isBrowser) {
-		localStorage.setItem(ARCHIVE_THRESHOLD_KEY, JSON.stringify(validThreshold));
-	}
 
 	// Also update legacy atom for compatibility
 	const hours = thresholdToHours(validThreshold);
@@ -488,9 +539,6 @@ export const setOutputLanguage = (language: PromptApiLanguage) => {
 		return;
 	}
 	outputLanguageAtom.set(language);
-	if (isBrowser) {
-		localStorage.setItem(OUTPUT_LANGUAGE_KEY, language);
-	}
 };
 
 /**
@@ -501,12 +549,6 @@ export const resetSecuritySettings = () => {
 	encryptedOpenRouterApiKeyAtom.set(null);
 	encryptedGoogleApiKeyAtom.set(null);
 	encryptedOllamaApiKeyAtom.set(null);
-	
-	if (isBrowser) {
-		localStorage.removeItem(ENCRYPTED_OPENROUTER_API_KEY_KEY);
-		localStorage.removeItem(ENCRYPTED_GOOGLE_API_KEY_KEY);
-		localStorage.removeItem(ENCRYPTED_OLLAMA_API_KEY_KEY);
-	}
 };
 
 // Legacy function for compatibility
@@ -519,12 +561,61 @@ export const setArchiveThresholdDays = (days: number) => {
  * This should be called only on the client inside a useEffect.
  */
 export const hydrateSettings = () => {
-	if (!isBrowser) return;
-	
 	loadThemeFromStorage();
 	loadOutputLanguageFromStorage();
 	loadTemperatureUnitFromStorage();
 	loadTimezoneFromStorage();
 	loadArchiveThresholdFromStorage();
 	loadAiProviderSettingsFromStorage();
+	loadExperimentsFromStorage();
+};
+
+/**
+ * Set up listeners to persist settings to localStorage.
+ * This should be called inside a useEffect.
+ */
+export const setupSettingsPersistence = () => {
+	const unsubs = [
+		appearanceAtom.listen((v) => localStorage.setItem("appearance", v)),
+		themeAtom.listen((v) => localStorage.setItem("theme", v)),
+		providerTypeAtom.listen((v) => localStorage.setItem(PROVIDER_TYPE_KEY, v)),
+		openRouterModelAtom.listen((v) =>
+			localStorage.setItem(OPENROUTER_MODEL_KEY, v),
+		),
+		googleModelAtom.listen((v) => localStorage.setItem(GOOGLE_MODEL_KEY, v)),
+		ollamaModelAtom.listen((v) => localStorage.setItem(OLLAMA_MODEL_KEY, v)),
+		ollamaBaseUrlAtom.listen((v) =>
+			localStorage.setItem(OLLAMA_BASE_URL_KEY, v),
+		),
+		temperatureUnitAtom.listen((v) =>
+			localStorage.setItem(TEMPERATURE_UNIT_KEY, v),
+		),
+		timezoneAtom.listen((v) => localStorage.setItem(TIMEZONE_KEY, v)),
+		outputLanguageAtom.listen((v) =>
+			localStorage.setItem(OUTPUT_LANGUAGE_KEY, v),
+		),
+		archiveThresholdAtom.listen((v) =>
+			localStorage.setItem(ARCHIVE_THRESHOLD_KEY, JSON.stringify(v)),
+		),
+		experimentsAtom.listen((v) =>
+			localStorage.setItem(EXPERIMENTS_KEY, JSON.stringify(v)),
+		),
+		encryptedOpenRouterApiKeyAtom.listen((v) =>
+			v
+				? localStorage.setItem(ENCRYPTED_OPENROUTER_API_KEY_KEY, v)
+				: localStorage.removeItem(ENCRYPTED_OPENROUTER_API_KEY_KEY),
+		),
+		encryptedGoogleApiKeyAtom.listen((v) =>
+			v
+				? localStorage.setItem(ENCRYPTED_GOOGLE_API_KEY_KEY, v)
+				: localStorage.removeItem(ENCRYPTED_GOOGLE_API_KEY_KEY),
+		),
+		encryptedOllamaApiKeyAtom.listen((v) =>
+			v
+				? localStorage.setItem(ENCRYPTED_OLLAMA_API_KEY_KEY, v)
+				: localStorage.removeItem(ENCRYPTED_OLLAMA_API_KEY_KEY),
+		),
+	];
+
+	return () => unsubs.forEach((unsub) => unsub());
 };

@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
-	initImageStorage,
-	saveImage,
+	clearAllImages,
+	deleteConversationImages,
+	deleteImage,
 	getImage,
 	getImages,
-	deleteImage,
-	deleteConversationImages,
-	clearAllImages,
 	getStorageEstimate,
+	initImageStorage,
+	saveImage,
 } from "./imageStorage";
 
 // fake-indexeddb is auto-loaded via setup.ts
@@ -50,7 +50,7 @@ describe("imageStorage - IndexedDB operations", () => {
 				"conv-1",
 				"data:image/png;base64,testdata",
 				"image/png",
-				"test.png"
+				"test.png",
 			);
 
 			const result = await getImage("img-1");
@@ -67,7 +67,7 @@ describe("imageStorage - IndexedDB operations", () => {
 				"img-2",
 				"conv-1",
 				"data:image/jpeg;base64,data",
-				"image/jpeg"
+				"image/jpeg",
 			);
 
 			const result = await getImage("img-2");
@@ -80,13 +80,13 @@ describe("imageStorage - IndexedDB operations", () => {
 				"img-1",
 				"conv-1",
 				"data:image/png;base64,original",
-				"image/png"
+				"image/png",
 			);
 			await saveImage(
 				"img-1",
 				"conv-1",
 				"data:image/png;base64,updated",
-				"image/png"
+				"image/png",
 			);
 
 			const result = await getImage("img-1");
@@ -99,7 +99,7 @@ describe("imageStorage - IndexedDB operations", () => {
 				"img-1",
 				"conv-1",
 				"data:image/png;base64,data",
-				"image/png"
+				"image/png",
 			);
 			const after = Date.now();
 
@@ -247,4 +247,3 @@ describe("imageStorage - IndexedDB operations", () => {
 		});
 	});
 });
-

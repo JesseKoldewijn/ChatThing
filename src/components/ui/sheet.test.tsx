@@ -1,18 +1,18 @@
-import { describe, it, expect } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
+import { Button } from "./button";
 import {
 	Sheet,
-	SheetTrigger,
-	SheetContent,
-	SheetHeader,
-	SheetFooter,
-	SheetTitle,
-	SheetDescription,
 	SheetClose,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
 } from "./sheet";
-import { Button } from "./button";
 
 describe("Sheet component", () => {
 	describe("rendering", () => {
@@ -28,10 +28,12 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
-			expect(screen.getByRole("button", { name: /open sheet/i })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /open sheet/i }),
+			).toBeInTheDocument();
 		});
 
 		it("should not show content by default", () => {
@@ -46,7 +48,7 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			expect(screen.queryByText("Sheet Title")).not.toBeInTheDocument();
@@ -60,10 +62,13 @@ describe("Sheet component", () => {
 						<SheetTitle>Title</SheetTitle>
 						<SheetDescription>Description</SheetDescription>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
-			expect(screen.getByTestId("trigger")).toHaveAttribute("data-slot", "sheet-trigger");
+			expect(screen.getByTestId("trigger")).toHaveAttribute(
+				"data-slot",
+				"sheet-trigger",
+			);
 		});
 	});
 
@@ -80,7 +85,7 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			expect(screen.getByText("Sheet Title")).toBeInTheDocument();
@@ -98,7 +103,7 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -120,7 +125,7 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			await user.click(screen.getByRole("button", { name: /open sheet/i }));
@@ -140,7 +145,7 @@ describe("Sheet component", () => {
 						<SheetTitle>Title</SheetTitle>
 						<SheetDescription>Description</SheetDescription>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			const content = screen.getByTestId("sheet-content");
@@ -155,7 +160,7 @@ describe("Sheet component", () => {
 						<SheetTitle>Title</SheetTitle>
 						<SheetDescription>Description</SheetDescription>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			const content = screen.getByTestId("sheet-content");
@@ -170,7 +175,7 @@ describe("Sheet component", () => {
 						<SheetTitle>Title</SheetTitle>
 						<SheetDescription>Description</SheetDescription>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			const content = screen.getByTestId("sheet-content");
@@ -185,7 +190,7 @@ describe("Sheet component", () => {
 						<SheetTitle>Title</SheetTitle>
 						<SheetDescription>Description</SheetDescription>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			const content = screen.getByTestId("sheet-content");
@@ -214,13 +219,17 @@ describe("Sheet component", () => {
 							</SheetClose>
 						</SheetFooter>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			expect(screen.getByText("Edit Profile")).toBeInTheDocument();
-			expect(screen.getByText("Make changes to your profile here.")).toBeInTheDocument();
+			expect(
+				screen.getByText("Make changes to your profile here."),
+			).toBeInTheDocument();
 			expect(screen.getByText("Form content")).toBeInTheDocument();
-			expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /save changes/i }),
+			).toBeInTheDocument();
 		});
 	});
 
@@ -237,7 +246,7 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			const results = await axe(container);
@@ -256,7 +265,7 @@ describe("Sheet component", () => {
 							<SheetDescription>Sheet description</SheetDescription>
 						</SheetHeader>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			expect(screen.getByText("Sheet Title")).toBeInTheDocument();
@@ -291,7 +300,7 @@ describe("Sheet component", () => {
 							<Button type="submit">Save</Button>
 						</SheetFooter>
 					</SheetContent>
-				</Sheet>
+				</Sheet>,
 			);
 
 			// Test the whole document since sheet content is portaled

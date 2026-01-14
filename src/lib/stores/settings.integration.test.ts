@@ -1,24 +1,27 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	appearanceAtom,
-	themeAtom,
-	temperatureUnitAtom,
-	timezoneAtom,
-	outputLanguageAtom,
 	archiveThresholdAtom,
-	setAppearance,
-	setTheme,
-	setTemperatureUnit,
-	setTimezone,
-	setOutputLanguage,
-	setArchiveThreshold,
-	getSystemTimezone,
-	getResolvedTimezone,
-	thresholdToHours,
 	formatThreshold,
+	getResolvedTimezone,
+	getSystemTimezone,
+	outputLanguageAtom,
+	setAppearance,
+	setArchiveThreshold,
+	setOutputLanguage,
+	setTemperatureUnit,
+	setTheme,
+	setTimezone,
+	setupSettingsPersistence,
+	temperatureUnitAtom,
+	themeAtom,
+	thresholdToHours,
+	timezoneAtom,
 } from "./settings";
 
 describe("Settings Store Integration", () => {
+	let cleanup: () => void;
+
 	beforeEach(() => {
 		appearanceAtom.set("system");
 		themeAtom.set("default");
@@ -27,6 +30,11 @@ describe("Settings Store Integration", () => {
 		outputLanguageAtom.set("en");
 		archiveThresholdAtom.set({ value: 2, unit: "days" });
 		localStorage.clear();
+		cleanup = setupSettingsPersistence();
+	});
+
+	afterEach(() => {
+		if (cleanup) cleanup();
 	});
 
 	describe("appearance and theme persistence", () => {

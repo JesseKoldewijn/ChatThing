@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock navigation hook
 const mockGoBack = vi.fn();
@@ -14,27 +14,20 @@ vi.mock("@/lib/hooks/useNavigation", () => ({
 	}),
 }));
 
-// Mock ResizeObserver for Recharts
-class MockResizeObserver {
-	observe() {}
-	unobserve() {}
-	disconnect() {}
-}
-vi.stubGlobal("ResizeObserver", MockResizeObserver);
-
-// Import after mocks
-import { UsagePage } from "./UsagePage";
+import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
+import { experimentsAtom } from "@/lib/stores/settings";
 import {
-	usageEventsAtom,
+	clearUsageData,
 	dailyUsageAtom,
+	getUsageSummary,
 	recordMessage,
 	recordResponse,
-	recordToolCall,
 	recordTokenUsage,
-	clearUsageData,
-	getUsageSummary,
+	recordToolCall,
+	usageEventsAtom,
 } from "@/lib/stores/usage";
-import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
+// Import after mocks
+import { UsagePage } from "./UsagePage";
 
 // Mock confirmation store
 vi.mock("@/lib/stores/confirmation", () => ({
@@ -46,7 +39,10 @@ describe("UsagePage E2E", () => {
 		// Clear all usage data
 		usageEventsAtom.set([]);
 		dailyUsageAtom.set([]);
-		localStorage.clear();
+		experimentsAtom.set({}); // Reset experiments
+		if (typeof localStorage !== "undefined") {
+			localStorage.clear();
+		}
 		vi.clearAllMocks();
 	});
 
@@ -56,7 +52,9 @@ describe("UsagePage E2E", () => {
 
 	describe("page navigation and rendering", () => {
 		it("should render the usage analytics page", async () => {
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("usage-page")).toBeInTheDocument();
@@ -65,7 +63,9 @@ describe("UsagePage E2E", () => {
 		});
 
 		it("should have a back button", async () => {
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("usage-back-button")).toBeInTheDocument();
@@ -74,7 +74,9 @@ describe("UsagePage E2E", () => {
 
 		it("should navigate back when clicking back button", async () => {
 			const user = userEvent.setup();
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			const backButton = await screen.findByTestId("usage-back-button");
 			await user.click(backButton);
@@ -83,7 +85,9 @@ describe("UsagePage E2E", () => {
 		});
 
 		it("should show subtitle", async () => {
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("usage-subtitle")).toBeInTheDocument();
@@ -93,7 +97,9 @@ describe("UsagePage E2E", () => {
 
 	describe("empty state", () => {
 		it("should show empty state initially", async () => {
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("chart-empty-state")).toBeInTheDocument();
@@ -102,19 +108,27 @@ describe("UsagePage E2E", () => {
 		});
 
 		it("should show helpful message in empty state", async () => {
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
-				expect(screen.getByText("No events found in this range")).toBeInTheDocument();
+				expect(
+					screen.getByText("No events found in this range"),
+				).toBeInTheDocument();
 			});
 		});
 
 		it("should not show clear data button in empty state", async () => {
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				// Clear data button should not appear when there's no data
-				expect(screen.queryByTestId("clear-data-button")).not.toBeInTheDocument();
+				expect(
+					screen.queryByTestId("clear-data-button"),
+				).not.toBeInTheDocument();
 			});
 		});
 	});
@@ -123,7 +137,9 @@ describe("UsagePage E2E", () => {
 		it("should display overview section header", async () => {
 			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("usage-overview-title")).toBeInTheDocument();
@@ -133,10 +149,14 @@ describe("UsagePage E2E", () => {
 		it("should show estimated tokens note", async () => {
 			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
-				expect(screen.getByTestId("usage-estimated-tokens-note")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("usage-estimated-tokens-note"),
+				).toBeInTheDocument();
 			});
 		});
 	});
@@ -147,49 +167,117 @@ describe("UsagePage E2E", () => {
 			recordResponse("conv-1", 150, PROVIDER_OLLAMA, "m1");
 			recordTokenUsage(13, 38);
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
-				expect(screen.getByTestId("hero-stat-total-tokens")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("hero-stat-total-tokens"),
+				).toBeInTheDocument();
 			});
 		});
 
 		it("should display Conversations hero stat", async () => {
 			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
-				expect(screen.getByTestId("hero-stat-conversations")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("hero-stat-conversations"),
+				).toBeInTheDocument();
 			});
 		});
 
-		it("should display Tool Calls hero stat", async () => {
+		it("should display Tool Calls hero stat when tools experiment is enabled", async () => {
+			experimentsAtom.set({ tools: true });
 			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
 			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("hero-stat-tool-calls")).toBeInTheDocument();
+			});
+		});
+
+		it("should NOT display Tool Calls hero stat when tools experiment is disabled", async () => {
+			experimentsAtom.set({ tools: false });
+			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
+			recordToolCall("conv-1", "weather", PROVIDER_OLLAMA, "m1");
+
+			await act(async () => {
+				render(<UsagePage />);
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("hero-stat-tool-calls"),
+				).not.toBeInTheDocument();
 			});
 		});
 	});
 
 	describe("data display", () => {
 		it("should display usage data after recording events", async () => {
+			experimentsAtom.set({ tools: true });
 			recordMessage("conv-1", 50, PROVIDER_OLLAMA, "m1");
 			recordResponse("conv-1", 150, PROVIDER_OLLAMA, "m1");
 			recordToolCall("conv-1", "datetime", PROVIDER_OLLAMA, "m1");
 			recordTokenUsage(13, 38);
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
-				expect(screen.getByTestId("hero-stat-total-tokens")).toBeInTheDocument();
-				expect(screen.getByTestId("hero-stat-conversations")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("hero-stat-total-tokens"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("hero-stat-conversations"),
+				).toBeInTheDocument();
 				expect(screen.getByTestId("hero-stat-tool-calls")).toBeInTheDocument();
 			});
+		});
+
+		it("should show 'By Tool' option in chart view select when tools experiment is enabled", async () => {
+			const user = userEvent.setup();
+			experimentsAtom.set({ tools: true });
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+
+			await act(async () => {
+				render(<UsagePage />);
+			});
+
+			const selectTrigger = await screen.findByRole("combobox", {
+				name: /select view/i,
+			});
+			await user.click(selectTrigger);
+
+			expect(await screen.findByText("By Tool")).toBeInTheDocument();
+		});
+
+		it("should NOT show 'By Tool' option in chart view select when tools experiment is disabled", async () => {
+			const user = userEvent.setup();
+			experimentsAtom.set({ tools: false });
+			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
+
+			await act(async () => {
+				render(<UsagePage />);
+			});
+
+			const selectTrigger = await screen.findByRole("combobox", {
+				name: /select view/i,
+			});
+			await user.click(selectTrigger);
+
+			expect(screen.queryByText("By Tool")).not.toBeInTheDocument();
 		});
 
 		it("should track unique conversations", () => {
@@ -228,7 +316,9 @@ describe("UsagePage E2E", () => {
 		it("should display Activity Visualization chart section when data exists", async () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("chart-title")).toBeInTheDocument();
@@ -238,7 +328,9 @@ describe("UsagePage E2E", () => {
 		it("should show chart subtitle when data exists", async () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("chart-subtitle")).toBeInTheDocument();
@@ -250,7 +342,9 @@ describe("UsagePage E2E", () => {
 		it("should display Interaction History section", async () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("table-title")).toBeInTheDocument();
@@ -260,7 +354,9 @@ describe("UsagePage E2E", () => {
 		it("should show table description", async () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("table-subtitle")).toBeInTheDocument();
@@ -271,7 +367,9 @@ describe("UsagePage E2E", () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			recordResponse("conv-1", 200, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("usage-table")).toBeInTheDocument();
@@ -284,31 +382,52 @@ describe("UsagePage E2E", () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			recordResponse("conv-1", 200, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			const clearButton = await screen.findByTestId("clear-data-button");
 			expect(clearButton).toBeInTheDocument();
 		});
 
-		it("should clear data when confirmed", async () => {
+		it("should clear data and immediately update UI to empty state when confirmed", async () => {
 			const user = userEvent.setup();
 
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 			recordResponse("conv-1", 200, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
+
+			// Verify data is present initially
+			expect(screen.queryByTestId("chart-empty-state")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("table-empty-state")).not.toBeInTheDocument();
 
 			const clearButton = await screen.findByTestId("clear-data-button");
 			await user.click(clearButton);
 
-			// Check that data is cleared
+			// Check that data is cleared in atoms
 			expect(usageEventsAtom.get()).toHaveLength(0);
+			expect(dailyUsageAtom.get()).toHaveLength(0);
+
+			// Verify UI updates to empty state immediately without page refresh
+			await waitFor(() => {
+				expect(screen.getByTestId("chart-empty-state")).toBeInTheDocument();
+				expect(screen.getByTestId("table-empty-state")).toBeInTheDocument();
+				// Clear button should also be gone
+				expect(
+					screen.queryByTestId("clear-data-button"),
+				).not.toBeInTheDocument();
+			});
 		});
 
 		it("should display danger zone section", async () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
 				expect(screen.getByTestId("clear-data-title")).toBeInTheDocument();
@@ -318,10 +437,14 @@ describe("UsagePage E2E", () => {
 		it("should show warning about permanent deletion", async () => {
 			recordMessage("conv-1", 100, PROVIDER_OLLAMA, "m1");
 
-			render(<UsagePage />);
+			await act(async () => {
+				render(<UsagePage />);
+			});
 
 			await waitFor(() => {
-				expect(screen.getByTestId("clear-data-description")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("clear-data-description"),
+				).toBeInTheDocument();
 			});
 		});
 	});

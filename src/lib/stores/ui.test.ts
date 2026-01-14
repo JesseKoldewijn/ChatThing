@@ -1,7 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { notificationsAtom, showSuccess, showError, showInfo, removeNotification } from "./notifications";
-import { confirmationAtom, confirmAction, clearConfirmation } from "./confirmation";
-import { promptAtom, promptAction, clearPrompt } from "./prompt";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	clearConfirmation,
+	confirmAction,
+	confirmationAtom,
+} from "./confirmation";
+import {
+	notificationsAtom,
+	removeNotification,
+	showError,
+	showInfo,
+	showSuccess,
+} from "./notifications";
+import { clearPrompt, promptAction, promptAtom } from "./prompt";
 
 describe("UI stores", () => {
 	beforeEach(() => {

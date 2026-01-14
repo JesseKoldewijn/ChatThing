@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Settings, BarChart3 } from "lucide-react";
+import { BarChart3, Settings } from "lucide-react";
 
 export interface SettingsPanelUIProps {
 	onOpenSettings: () => void;

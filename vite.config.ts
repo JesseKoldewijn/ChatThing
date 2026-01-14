@@ -1,19 +1,48 @@
-import { defineConfig } from "vite";
-import tsConfigPaths from "vite-tsconfig-paths";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import { nitro } from "nitro/vite";
-import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { VitePWA } from "vite-plugin-pwa";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
 import path from "path";
+import { fileURLToPath } from "url";
+import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
+import tsConfigPaths from "vite-tsconfig-paths";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const isProd = process.env.NODE_ENV === "production";
+
+const routeFileIgnorePrefixPatterns = [
+	"**/*.test.tsx",
+	"**/*.test.ts",
+	"**/*.ui.tsx",
+	"**/*.integration.tsx",
+	"**/__tests__/**",
+	"**/__mocks__/**",
+];
+
+/**
+ * Builds a regex pattern from a list of prefixes
+ * @param prefixes - The list of prefixes to build the regex pattern from
+ * @returns The regex pattern
+ */
+const buildIgnorePrefix = (prefixes: string[]) => {
+	return prefixes.map((prefix) => `^${prefix}$`).join("|");
+};
+
+const routeFileIgnorePrefix = buildIgnorePrefix(routeFileIgnorePrefixPatterns);
 
 export default defineConfig({
 	plugins: [
 		tsConfigPaths(),
 		tailwindcss(),
-		tanstackStart(),
+		tanstackStart({
+			router: {
+				quoteStyle: "double",
+				routeFileIgnorePrefix,
+			},
+		}),
 		nitro(),
 		viteReact({
 			babel: {
@@ -98,6 +127,48 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "./src"),
+		},
+	},
+	build: {
+		rollupOptions: {
+			output: {
+				manualChunks: (id) => {
+					if (id.includes("node_modules")) {
+						if (id.includes("react-syntax-highlighter")) {
+							return "vendor-syntax-highlighter";
+						}
+						if (id.includes("react-dom") || id.includes("react/")) {
+							return "vendor-react";
+						}
+						if (id.includes("@tanstack")) {
+							return "vendor-tanstack";
+						}
+						if (id.includes("@radix-ui") || id.includes("lucide-react")) {
+							return "vendor-ui";
+						}
+						if (id.includes("@ai-sdk")) {
+							return "vendor-ai-sdk";
+						}
+						if (id.includes("@openrouter")) {
+							return "vendor-openrouter";
+						}
+						if (
+							id.includes("react-markdown") ||
+							id.includes("remark") ||
+							id.includes("unified")
+						) {
+							return "vendor-utils";
+						}
+						if (id.includes("micromark")) {
+							return "vendor-micromark";
+						}
+						if (id.includes("mdast")) {
+							return "vendor-mdast";
+						}
+						return "vendor";
+					}
+				},
+			},
 		},
 	},
 	ssr: {

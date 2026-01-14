@@ -1,9 +1,9 @@
-import { useRef } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Square, ImagePlus, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import type { ImageAttachment } from "@/lib/stores/chat";
 import { cn } from "@/lib/utils";
-import { type ImageAttachment } from "@/lib/stores/chat";
+import { ImagePlus, Loader2, Send, Square, X } from "lucide-react";
+import { useRef } from "react";
 
 export interface ChatInputUIProps {
 	value: string;
@@ -12,6 +12,7 @@ export interface ChatInputUIProps {
 	onStop?: () => void;
 	onImageSelect?: (files: FileList) => void;
 	onRemoveImage?: (id: string) => void;
+	onPaste?: (e: React.ClipboardEvent) => void;
 	pendingImages?: ImageAttachment[];
 	isLoading?: boolean;
 	isDisabled?: boolean;
@@ -25,6 +26,7 @@ export const ChatInputUI = ({
 	onStop,
 	onImageSelect,
 	onRemoveImage,
+	onPaste,
 	pendingImages = [],
 	isLoading = false,
 	isDisabled = false,
@@ -60,30 +62,36 @@ export const ChatInputUI = ({
 	const canSubmit = value.trim() || pendingImages.length > 0;
 
 	return (
-		<div data-testid="chat-input" className="shrink-0 border-t bg-background p-4">
+		<div
+			data-testid="chat-input"
+			className="bg-background shrink-0 border-t p-4"
+		>
 			<div className="mx-auto max-w-3xl">
 				{/* Pending images preview */}
 				{pendingImages.length > 0 && (
-					<div data-testid="pending-images" className="mb-3 flex flex-wrap gap-2">
+					<div
+						data-testid="pending-images"
+						className="mb-3 flex flex-wrap gap-2"
+					>
 						{pendingImages.map((image) => (
 							<div
 								key={image.id}
 								data-testid={`pending-image-${image.id}`}
-								className="group relative h-20 w-20 overflow-hidden rounded-lg border-2 border-border bg-muted"
+								className="group border-border bg-muted relative h-20 w-20 overflow-hidden rounded-lg border-2"
 							>
 								<img
 									src={image.data}
 									alt={image.name || "Attached image"}
-									className="h-full w-full object-cover"
+									className="h-full w-full object-cover [image-rendering:high-quality]"
 								/>
 								<button
 									type="button"
 									data-testid={`remove-image-${image.id}`}
 									onClick={() => onRemoveImage?.(image.id)}
-									className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md"
+									className="hover:bg-destructive absolute top-1 right-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm transition-all hover:scale-110"
 									aria-label="Remove image"
 								>
-									<X className="h-4 w-4" />
+									<X className="h-3.5 w-3.5" />
 								</button>
 								{image.name && (
 									<div className="absolute inset-x-0 bottom-0 truncate bg-black/50 px-1 py-0.5 text-[10px] text-white">
@@ -129,17 +137,16 @@ export const ChatInputUI = ({
 							value={value}
 							onChange={(e) => onChange(e.target.value)}
 							onKeyDown={handleKeyDown}
+							onPaste={onPaste}
 							placeholder={
-								pendingImages.length > 0
-									? "Add a message about the image(s)..."
-									: placeholder
+								pendingImages.length > 0 ? "Add a description..." : placeholder
 							}
 							disabled={isDisabled}
 							className={cn(
-								"min-h-[52px] max-h-[200px] resize-none py-3.5 px-4",
-								"rounded-xl border-2 border-input bg-background dark:bg-input/30",
-								"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-								"transition-none"
+								"max-h-[200px] min-h-[52px] resize-none px-4 py-3.5",
+								"border-input bg-background dark:bg-input/30 rounded-xl border-2",
+								"focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0",
+								"transition-none",
 							)}
 							rows={1}
 						/>
@@ -177,14 +184,14 @@ export const ChatInputUI = ({
 					)}
 				</div>
 
-				<p data-testid="chat-input-hint" className="mt-2 text-center text-xs text-muted-foreground">
-					Press{" "}
-					<kbd className="rounded bg-muted px-1 py-0.5">Enter</kbd> to
+				<p
+					data-testid="chat-input-hint"
+					className="text-muted-foreground mt-2 text-center text-xs"
+				>
+					Press <kbd className="bg-muted rounded px-1 py-0.5">Enter</kbd> to
 					send,{" "}
-					<kbd className="rounded bg-muted px-1 py-0.5">
-						Shift + Enter
-					</kbd>{" "}
-					for new line
+					<kbd className="bg-muted rounded px-1 py-0.5">Shift + Enter</kbd> for
+					new line
 				</p>
 			</div>
 		</div>

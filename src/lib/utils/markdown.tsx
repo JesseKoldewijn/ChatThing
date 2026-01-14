@@ -1,9 +1,9 @@
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
-import { useState, useCallback, useEffect, type ComponentType } from "react";
+import { Check, Copy } from "lucide-react";
+import { type ComponentType, useCallback, useEffect, useState } from "react";
+import Markdown from "react-markdown";
 import type { SyntaxHighlighterProps } from "react-syntax-highlighter";
+import remarkGfm from "remark-gfm";
 
 interface CodeBlockProps {
 	language: string;
@@ -52,21 +52,15 @@ const loadSyntaxHighlighter = async () => {
 			{ default: cpp },
 			{ default: csharp },
 		] = await Promise.all([
-			import(
-				"react-syntax-highlighter/dist/esm/languages/prism/typescript"
-			),
-			import(
-				"react-syntax-highlighter/dist/esm/languages/prism/javascript"
-			),
+			import("react-syntax-highlighter/dist/esm/languages/prism/typescript"),
+			import("react-syntax-highlighter/dist/esm/languages/prism/javascript"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/jsx"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/tsx"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/css"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/json"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/bash"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/python"),
-			import(
-				"react-syntax-highlighter/dist/esm/languages/prism/markdown"
-			),
+			import("react-syntax-highlighter/dist/esm/languages/prism/markdown"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/sql"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/yaml"),
 			import("react-syntax-highlighter/dist/esm/languages/prism/rust"),
@@ -119,17 +113,23 @@ const CodeBlockFallback = ({ code }: { code: string }) => (
 	<div className="overflow-x-auto">
 		<pre
 			className="p-4 font-mono text-sm"
-			style={{ minWidth: "100%", width: "fit-content" }}
+			style={{
+				minWidth: "100%",
+				width: "fit-content",
+				background: "var(--code-bg, transparent)",
+				color: "var(--code-fg, inherit)",
+			}}
 		>
 			<code>{code}</code>
 		</pre>
 	</div>
 );
 
-const CodeBlock = ({ language, code }: CodeBlockProps) => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const CodeBlock = ({ language, code }: CodeBlockProps) => {
 	const [copied, setCopied] = useState(false);
 	const [highlighterLoaded, setHighlighterLoaded] = useState(
-		!!syntaxHighlighterCache.SyntaxHighlighter
+		!!syntaxHighlighterCache.SyntaxHighlighter,
 	);
 	// Initialize as null to avoid hydration mismatch - render fallback first
 	const [isDark, setIsDark] = useState<boolean | null>(null);
@@ -175,10 +175,10 @@ const CodeBlock = ({ language, code }: CodeBlockProps) => {
 	const { SyntaxHighlighter, oneDark, oneLight } = syntaxHighlighterCache;
 
 	return (
-		<div className="group relative my-4 overflow-hidden rounded-lg border bg-muted">
+		<div className="group bg-muted relative my-4 overflow-hidden rounded-lg border">
 			{/* Header with language and copy button */}
-			<div className="flex items-center justify-between border-b bg-muted/50 px-4 py-2">
-				<span className="text-xs font-medium uppercase text-muted-foreground">
+			<div className="bg-muted/50 flex items-center justify-between border-b px-4 py-2">
+				<span className="text-muted-foreground text-xs font-medium uppercase">
 					{language || "code"}
 				</span>
 				<Button
@@ -208,7 +208,8 @@ const CodeBlock = ({ language, code }: CodeBlockProps) => {
 						customStyle={{
 							margin: 0,
 							padding: "1rem",
-							background: "transparent",
+							background: "var(--code-bg, transparent)",
+							color: "var(--code-fg, inherit)",
 							fontSize: "0.875rem",
 							minWidth: "100%",
 							width: "fit-content",
@@ -247,7 +248,7 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					if (isInline) {
 						return (
 							<code
-								className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm"
+								className="bg-muted rounded px-1.5 py-0.5 font-mono text-sm"
 								{...props}
 							>
 								{children}
@@ -258,12 +259,7 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					const language = match[1];
 					const code = String(children).replace(/\n$/, "");
 
-					return (
-						<CodeBlock
-							language={language}
-							code={code}
-						/>
-					);
+					return <CodeBlock language={language} code={code} />;
 				},
 				pre({ children }) {
 					// The code component handles everything, just pass through
@@ -273,42 +269,28 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					return <p className="mb-4 last:mb-0">{children}</p>;
 				},
 				ul({ children }) {
-					return (
-						<ul className="mb-4 list-disc pl-6 last:mb-0">
-							{children}
-						</ul>
-					);
+					return <ul className="mb-4 list-disc pl-6 last:mb-0">{children}</ul>;
 				},
 				ol({ children }) {
 					return (
-						<ol className="mb-4 list-decimal pl-6 last:mb-0">
-							{children}
-						</ol>
+						<ol className="mb-4 list-decimal pl-6 last:mb-0">{children}</ol>
 					);
 				},
 				li({ children }) {
 					return <li className="mb-1">{children}</li>;
 				},
 				h1({ children }) {
-					return (
-						<h1 className="mb-4 text-2xl font-bold">{children}</h1>
-					);
+					return <h1 className="mb-4 text-2xl font-bold">{children}</h1>;
 				},
 				h2({ children }) {
-					return (
-						<h2 className="mb-3 text-xl font-bold">{children}</h2>
-					);
+					return <h2 className="mb-3 text-xl font-bold">{children}</h2>;
 				},
 				h3({ children }) {
-					return (
-						<h3 className="mb-2 text-lg font-semibold">
-							{children}
-						</h3>
-					);
+					return <h3 className="mb-2 text-lg font-semibold">{children}</h3>;
 				},
 				blockquote({ children }) {
 					return (
-						<blockquote className="mb-4 border-l-4 border-muted-foreground/30 pl-4 italic">
+						<blockquote className="border-muted-foreground/30 mb-4 border-l-4 pl-4 italic">
 							{children}
 						</blockquote>
 					);
@@ -326,12 +308,12 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					);
 				},
 				hr() {
-					return <hr className="my-4 border-border" />;
+					return <hr className="border-border my-4" />;
 				},
 				// Table components for GFM tables
 				table({ children }) {
 					return (
-						<div className="my-4 overflow-x-auto rounded-lg border border-border">
+						<div className="border-border my-4 overflow-x-auto rounded-lg border">
 							<table className="w-full border-collapse text-sm">
 								{children}
 							</table>
@@ -342,17 +324,11 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 					return <thead className="bg-muted/50">{children}</thead>;
 				},
 				tbody({ children }) {
-					return (
-						<tbody className="divide-y divide-border">
-							{children}
-						</tbody>
-					);
+					return <tbody className="divide-border divide-y">{children}</tbody>;
 				},
 				tr({ children }) {
 					return (
-						<tr className="hover:bg-muted/30 transition-colors">
-							{children}
-						</tr>
+						<tr className="hover:bg-muted/30 transition-colors">{children}</tr>
 					);
 				},
 				th({ children, style }) {
@@ -366,12 +342,12 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 						align === "center"
 							? "text-center"
 							: align === "right"
-							? "text-right"
-							: "text-left";
+								? "text-right"
+								: "text-left";
 
 					return (
 						<th
-							className={`px-4 py-2.5 font-semibold text-foreground ${alignClass}`}
+							className={`text-foreground px-4 py-2.5 font-semibold ${alignClass}`}
 						>
 							{children}
 						</th>
@@ -388,13 +364,11 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 						align === "center"
 							? "text-center"
 							: align === "right"
-							? "text-right"
-							: "text-left";
+								? "text-right"
+								: "text-left";
 
 					return (
-						<td
-							className={`px-4 py-2.5 text-muted-foreground ${alignClass}`}
-						>
+						<td className={`text-muted-foreground px-4 py-2.5 ${alignClass}`}>
 							{children}
 						</td>
 					);
@@ -402,9 +376,7 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 				// Strikethrough support from GFM
 				del({ children }) {
 					return (
-						<del className="text-muted-foreground line-through">
-							{children}
-						</del>
+						<del className="text-muted-foreground line-through">{children}</del>
 					);
 				},
 				// Task list support from GFM
@@ -414,7 +386,7 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 							type="checkbox"
 							checked={checked}
 							disabled={disabled}
-							className="mr-2 h-4 w-4 rounded border-border"
+							className="border-border mr-2 h-4 w-4 rounded"
 							{...props}
 						/>
 					);
@@ -429,5 +401,7 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
 // Helper to create a render function for MessageItem
 // eslint-disable-next-line react-refresh/only-export-components
 export const createMarkdownRenderer = () => {
-	return (content: string, isStreaming = false) => <MarkdownRenderer content={content} isStreaming={isStreaming} />;
+	return (content: string, isStreaming = false) => (
+		<MarkdownRenderer content={content} isStreaming={isStreaming} />
+	);
 };

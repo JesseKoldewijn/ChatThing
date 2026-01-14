@@ -1,165 +1,193 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
+import { Button } from "./button";
 import {
 	DropdownMenu,
-	DropdownMenuTrigger,
-	DropdownMenuContent,
-	DropdownMenuItem,
 	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
-	DropdownMenuGroup,
-	DropdownMenuSub,
-	DropdownMenuSubTrigger,
-	DropdownMenuSubContent,
 	DropdownMenuShortcut,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
 } from "./dropdown-menu";
-import { Button } from "./button";
 
 describe("DropdownMenu component", () => {
 	describe("rendering", () => {
-		it("should render trigger element", () => {
-			render(
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item 1</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render trigger element", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item 1</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
-			expect(screen.getByRole("button", { name: /open menu/i })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /open menu/i }),
+			).toBeInTheDocument();
 		});
 
-		it("should not show content by default", () => {
-			render(
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item 1</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should not show content by default", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item 1</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
 		});
 
-		it("should render with data-slot attribute", () => {
-			render(
-				<DropdownMenu>
-					<DropdownMenuTrigger data-testid="trigger">Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render with data-slot attribute", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu>
+						<DropdownMenuTrigger data-testid="trigger">
+							Open
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
-			expect(screen.getByTestId("trigger")).toHaveAttribute("data-slot", "dropdown-menu-trigger");
+			expect(screen.getByTestId("trigger")).toHaveAttribute(
+				"data-slot",
+				"dropdown-menu-trigger",
+			);
 		});
 	});
 
 	describe("controlled state", () => {
-		it("should show content when open is true", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item 1</DropdownMenuItem>
-						<DropdownMenuItem>Item 2</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should show content when open is true", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item 1</DropdownMenuItem>
+							<DropdownMenuItem>Item 2</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByText("Item 1")).toBeInTheDocument();
 			expect(screen.getByText("Item 2")).toBeInTheDocument();
 		});
 
-		it("should have menu role when open", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item 1</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should have menu role when open", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item 1</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByRole("menu")).toBeInTheDocument();
 		});
 	});
 
 	describe("menu items", () => {
-		it("should render menu items with menuitem role", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Edit</DropdownMenuItem>
-						<DropdownMenuItem>Copy</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render menu items with menuitem role", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Edit</DropdownMenuItem>
+							<DropdownMenuItem>Copy</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getAllByRole("menuitem")).toHaveLength(2);
 		});
 
-		it("should support destructive variant", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem variant="destructive" data-testid="delete">
-							Delete
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should support destructive variant", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem variant="destructive" data-testid="delete">
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
-			expect(screen.getByTestId("delete")).toHaveAttribute("data-variant", "destructive");
+			expect(screen.getByTestId("delete")).toHaveAttribute(
+				"data-variant",
+				"destructive",
+			);
 		});
 
-		it("should support inset items", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem inset data-testid="inset">
-							Inset Item
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should support inset items", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem inset data-testid="inset">
+								Inset Item
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByTestId("inset")).toHaveAttribute("data-inset", "true");
 		});
 	});
 
 	describe("checkbox items", () => {
-		it("should render checkbox items", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuCheckboxItem checked>
-							Show Toolbar
-						</DropdownMenuCheckboxItem>
-						<DropdownMenuCheckboxItem>
-							Show Status Bar
-						</DropdownMenuCheckboxItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render checkbox items", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuCheckboxItem checked>
+								Show Toolbar
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem>
+								Show Status Bar
+							</DropdownMenuCheckboxItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			const checkboxItems = screen.getAllByRole("menuitemcheckbox");
 			expect(checkboxItems).toHaveLength(2);
@@ -169,18 +197,22 @@ describe("DropdownMenu component", () => {
 	});
 
 	describe("radio items", () => {
-		it("should render radio items", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuRadioGroup value="top">
-							<DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render radio items", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuRadioGroup value="top">
+								<DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="bottom">
+									Bottom
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			const radioItems = screen.getAllByRole("menuitemradio");
 			expect(radioItems).toHaveLength(2);
@@ -190,21 +222,23 @@ describe("DropdownMenu component", () => {
 	});
 
 	describe("groups and labels", () => {
-		it("should render groups with labels", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuLabel>Actions</DropdownMenuLabel>
-						<DropdownMenuGroup>
-							<DropdownMenuItem>Edit</DropdownMenuItem>
-							<DropdownMenuItem>Copy</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem>Delete</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render groups with labels", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuLabel>Actions</DropdownMenuLabel>
+							<DropdownMenuGroup>
+								<DropdownMenuItem>Edit</DropdownMenuItem>
+								<DropdownMenuItem>Copy</DropdownMenuItem>
+							</DropdownMenuGroup>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem>Delete</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByText("Actions")).toBeInTheDocument();
 			expect(screen.getByText("Edit")).toBeInTheDocument();
@@ -212,55 +246,61 @@ describe("DropdownMenu component", () => {
 			expect(screen.getByText("Delete")).toBeInTheDocument();
 		});
 
-		it("should support inset labels", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuLabel inset data-testid="label">
-							Actions
-						</DropdownMenuLabel>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should support inset labels", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuLabel inset data-testid="label">
+								Actions
+							</DropdownMenuLabel>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByTestId("label")).toHaveAttribute("data-inset", "true");
 		});
 	});
 
 	describe("shortcuts", () => {
-		it("should render keyboard shortcuts", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>
-							Copy
-							<DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render keyboard shortcuts", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>
+								Copy
+								<DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByText("⌘C")).toBeInTheDocument();
 		});
 	});
 
 	describe("submenus", () => {
-		it("should render submenu trigger", () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger>Open</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>More Options</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
-								<DropdownMenuItem>Sub Item</DropdownMenuItem>
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		it("should render submenu trigger", async () => {
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger>Open</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger>More Options</DropdownMenuSubTrigger>
+								<DropdownMenuSubContent>
+									<DropdownMenuItem>Sub Item</DropdownMenuItem>
+								</DropdownMenuSubContent>
+							</DropdownMenuSub>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByText("More Options")).toBeInTheDocument();
 		});
@@ -268,34 +308,40 @@ describe("DropdownMenu component", () => {
 
 	describe("accessibility", () => {
 		it("should have no axe violations when closed", async () => {
-			const { container } = render(
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item 1</DropdownMenuItem>
-						<DropdownMenuItem>Item 2</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+			let container: HTMLElement;
+			await act(async () => {
+				const result = render(
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item 1</DropdownMenuItem>
+							<DropdownMenuItem>Item 2</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+				container = result.container;
+			});
 
-			const results = await axe(container);
+			const results = await axe(container!);
 			expect(results).toHaveNoViolations();
 		});
 
 		it("should have no axe violations when open (controlled)", async () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem>Item 1</DropdownMenuItem>
-						<DropdownMenuItem>Item 2</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Item 1</DropdownMenuItem>
+							<DropdownMenuItem>Item 2</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			expect(screen.getByText("Item 1")).toBeInTheDocument();
 
@@ -311,23 +357,25 @@ describe("DropdownMenu component", () => {
 		});
 
 		it("should have no axe violations with groups and labels", async () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuLabel>My Account</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem>Profile</DropdownMenuItem>
-							<DropdownMenuItem>Settings</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem>Log out</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuLabel>My Account</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuGroup>
+								<DropdownMenuItem>Profile</DropdownMenuItem>
+								<DropdownMenuItem>Settings</DropdownMenuItem>
+							</DropdownMenuGroup>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem>Log out</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			// Test the whole document since dropdown content is portaled
 			// Disable rules that conflict with Radix UI's implementation
@@ -341,21 +389,23 @@ describe("DropdownMenu component", () => {
 		});
 
 		it("should have no axe violations with checkbox items", async () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuCheckboxItem checked>
-							Show Toolbar
-						</DropdownMenuCheckboxItem>
-						<DropdownMenuCheckboxItem>
-							Show Status Bar
-						</DropdownMenuCheckboxItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuCheckboxItem checked>
+								Show Toolbar
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem>
+								Show Status Bar
+							</DropdownMenuCheckboxItem>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			// Test the whole document since dropdown content is portaled
 			// Disable rules that conflict with Radix UI's implementation
@@ -369,21 +419,27 @@ describe("DropdownMenu component", () => {
 		});
 
 		it("should have no axe violations with radio items", async () => {
-			render(
-				<DropdownMenu open>
-					<DropdownMenuTrigger asChild>
-						<Button>Open Menu</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuLabel>Panel Position</DropdownMenuLabel>
-						<DropdownMenuRadioGroup value="top">
-							<DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="right">Right</DropdownMenuRadioItem>
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+			await act(async () => {
+				render(
+					<DropdownMenu open>
+						<DropdownMenuTrigger asChild>
+							<Button>Open Menu</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuLabel>Panel Position</DropdownMenuLabel>
+							<DropdownMenuRadioGroup value="top">
+								<DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="bottom">
+									Bottom
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="right">
+									Right
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>,
+				);
+			});
 
 			// Test the whole document since dropdown content is portaled
 			// Disable rules that conflict with Radix UI's implementation

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock nanostores
 vi.mock("@nanostores/react", () => ({
@@ -15,14 +16,19 @@ vi.mock("@/lib/stores/conversations", () => ({
 	activeConversationIdAtom: { get: () => null },
 }));
 
-import { ChatHeader } from "./ChatHeader";
-import { conversationsAtom, activeConversationIdAtom } from "@/lib/stores/conversations";
+import {
+	activeConversationIdAtom,
+	conversationsAtom,
+} from "@/lib/stores/conversations";
 import { useStore } from "@nanostores/react";
+import { ChatHeader } from "./ChatHeader";
 
 let mockConversations: Array<{ id: string; title: string }> = [];
 let mockActiveId: string | null = null;
 
 describe("ChatHeader", () => {
+	const user = userEvent.setup();
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockConversations = [];
@@ -69,12 +75,12 @@ describe("ChatHeader", () => {
 	});
 
 	describe("interactions", () => {
-		it("should call onMenuClick when menu button is clicked", () => {
+		it("should call onMenuClick when menu button is clicked", async () => {
 			const onMenuClick = vi.fn();
 			render(<ChatHeader onMenuClick={onMenuClick} />);
 
 			const menuButton = screen.getAllByRole("button")[0];
-			fireEvent.click(menuButton);
+			await user.click(menuButton);
 
 			expect(onMenuClick).toHaveBeenCalledTimes(1);
 		});
@@ -105,4 +111,3 @@ describe("ChatHeader", () => {
 		});
 	});
 });
-

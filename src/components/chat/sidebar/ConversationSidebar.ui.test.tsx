@@ -1,10 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ConversationSidebarUI, type ConversationItem } from "./ConversationSidebar.ui";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	type ConversationItem,
+	ConversationSidebarUI,
+} from "./ConversationSidebar.ui";
 
 const createMockConversation = (
-	overrides: Partial<ConversationItem> = {}
+	overrides: Partial<ConversationItem> = {},
 ): ConversationItem => ({
 	id: `conv-${Math.random().toString(36).slice(2)}`,
 	title: "Test Conversation",
@@ -21,10 +24,10 @@ describe("ConversationSidebarUI", () => {
 		conversations: [] as ConversationItem[],
 		onNewChat: vi.fn(),
 		onSelectConversation: vi.fn(),
-	onDeleteConversation: vi.fn(),
-	onRenameConversation: vi.fn(),
-	onRegenerateTitle: vi.fn(),
-	onArchiveConversation: vi.fn(),
+		onDeleteConversation: vi.fn(),
+		onRenameConversation: vi.fn(),
+		onRegenerateTitle: vi.fn(),
+		onArchiveConversation: vi.fn(),
 		onUnarchiveConversation: vi.fn(),
 		onRestoreConversation: vi.fn(),
 		onClose: vi.fn(),
@@ -81,11 +84,18 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
-			expect(screen.getByTestId("conversation-item-conv-1")).toBeInTheDocument();
-			expect(screen.getByTestId("conversation-item-conv-2")).toBeInTheDocument();
+			expect(
+				screen.getByTestId("conversation-item-conv-1"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("conversation-item-conv-2"),
+			).toBeInTheDocument();
 		});
 
 		it("should call onSelectConversation when conversation is clicked", async () => {
@@ -94,7 +104,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			await user.click(screen.getByTestId("conversation-item-conv-1"));
@@ -108,7 +121,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			const item = screen.getByTestId("conversation-item-conv-1");
@@ -121,7 +137,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			expect(screen.getByText(/generating title/i)).toBeInTheDocument();
@@ -135,7 +154,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			// Open dropdown
@@ -143,7 +165,9 @@ describe("ConversationSidebarUI", () => {
 
 			// Wait for dropdown to open
 			await waitFor(() => {
-				expect(screen.getByTestId("conversation-rename-conv-1")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("conversation-rename-conv-1"),
+				).toBeInTheDocument();
 			});
 
 			await user.click(screen.getByTestId("conversation-rename-conv-1"));
@@ -157,13 +181,18 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			await user.click(screen.getByTestId("conversation-menu-conv-1"));
 
 			await waitFor(() => {
-				expect(screen.getByTestId("conversation-archive-conv-1")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("conversation-archive-conv-1"),
+				).toBeInTheDocument();
 			});
 
 			await user.click(screen.getByTestId("conversation-archive-conv-1"));
@@ -177,13 +206,18 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			await user.click(screen.getByTestId("conversation-menu-conv-1"));
 
 			await waitFor(() => {
-				expect(screen.getByTestId("conversation-delete-conv-1")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("conversation-delete-conv-1"),
+				).toBeInTheDocument();
 			});
 
 			await user.click(screen.getByTestId("conversation-delete-conv-1"));
@@ -194,25 +228,21 @@ describe("ConversationSidebarUI", () => {
 
 	describe("archived conversations", () => {
 		it("should show archived section when archivedCount > 0", () => {
-			render(
-				<ConversationSidebarUI {...defaultProps} archivedCount={3} />
-			);
+			render(<ConversationSidebarUI {...defaultProps} archivedCount={3} />);
 
 			expect(screen.getByTestId("section-toggle-archived")).toBeInTheDocument();
 		});
 
 		it("should not show archived section when archivedCount is 0", () => {
-			render(
-				<ConversationSidebarUI {...defaultProps} archivedCount={0} />
-			);
+			render(<ConversationSidebarUI {...defaultProps} archivedCount={0} />);
 
-			expect(screen.queryByTestId("section-toggle-archived")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("section-toggle-archived"),
+			).not.toBeInTheDocument();
 		});
 
 		it("should toggle archived section when clicked", async () => {
-			render(
-				<ConversationSidebarUI {...defaultProps} archivedCount={2} />
-			);
+			render(<ConversationSidebarUI {...defaultProps} archivedCount={2} />);
 
 			await user.click(screen.getByTestId("section-toggle-archived"));
 
@@ -230,10 +260,12 @@ describe("ConversationSidebarUI", () => {
 					conversations={conversations}
 					archivedCount={1}
 					showArchived={true}
-				/>
+				/>,
 			);
 
-			expect(screen.getByTestId("conversation-item-archived-1")).toBeInTheDocument();
+			expect(
+				screen.getByTestId("conversation-item-archived-1"),
+			).toBeInTheDocument();
 		});
 
 		it("should call onUnarchiveConversation for archived items", async () => {
@@ -247,34 +279,34 @@ describe("ConversationSidebarUI", () => {
 					conversations={conversations}
 					archivedCount={1}
 					showArchived={true}
-				/>
+				/>,
 			);
 
 			await user.click(screen.getByTestId("conversation-menu-archived-1"));
 
 			await waitFor(() => {
-				expect(screen.getByTestId("conversation-unarchive-archived-1")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("conversation-unarchive-archived-1"),
+				).toBeInTheDocument();
 			});
 
 			await user.click(screen.getByTestId("conversation-unarchive-archived-1"));
 
-			expect(defaultProps.onUnarchiveConversation).toHaveBeenCalledWith("archived-1");
+			expect(defaultProps.onUnarchiveConversation).toHaveBeenCalledWith(
+				"archived-1",
+			);
 		});
 	});
 
 	describe("deleted conversations", () => {
 		it("should show deleted section when deletedCount > 0", () => {
-			render(
-				<ConversationSidebarUI {...defaultProps} deletedCount={2} />
-			);
+			render(<ConversationSidebarUI {...defaultProps} deletedCount={2} />);
 
 			expect(screen.getByTestId("section-toggle-deleted")).toBeInTheDocument();
 		});
 
 		it("should toggle deleted section when clicked", async () => {
-			render(
-				<ConversationSidebarUI {...defaultProps} deletedCount={1} />
-			);
+			render(<ConversationSidebarUI {...defaultProps} deletedCount={1} />);
 
 			await user.click(screen.getByTestId("section-toggle-deleted"));
 
@@ -292,10 +324,12 @@ describe("ConversationSidebarUI", () => {
 					conversations={conversations}
 					deletedCount={1}
 					showDeleted={true}
-				/>
+				/>,
 			);
 
-			expect(screen.getByTestId("conversation-item-deleted-1")).toBeInTheDocument();
+			expect(
+				screen.getByTestId("conversation-item-deleted-1"),
+			).toBeInTheDocument();
 		});
 
 		it("should call onRestoreConversation for deleted items", async () => {
@@ -309,18 +343,22 @@ describe("ConversationSidebarUI", () => {
 					conversations={conversations}
 					deletedCount={1}
 					showDeleted={true}
-				/>
+				/>,
 			);
 
 			await user.click(screen.getByTestId("conversation-menu-deleted-1"));
 
 			await waitFor(() => {
-				expect(screen.getByTestId("conversation-restore-deleted-1")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("conversation-restore-deleted-1"),
+				).toBeInTheDocument();
 			});
 
 			await user.click(screen.getByTestId("conversation-restore-deleted-1"));
 
-			expect(defaultProps.onRestoreConversation).toHaveBeenCalledWith("deleted-1");
+			expect(defaultProps.onRestoreConversation).toHaveBeenCalledWith(
+				"deleted-1",
+			);
 		});
 	});
 
@@ -331,7 +369,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			expect(screen.getByText("Today")).toBeInTheDocument();
@@ -344,7 +385,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			expect(screen.getByText("Yesterday")).toBeInTheDocument();
@@ -357,7 +401,10 @@ describe("ConversationSidebarUI", () => {
 			];
 
 			render(
-				<ConversationSidebarUI {...defaultProps} conversations={conversations} />
+				<ConversationSidebarUI
+					{...defaultProps}
+					conversations={conversations}
+				/>,
 			);
 
 			expect(screen.getByText("3 days ago")).toBeInTheDocument();
@@ -370,7 +417,7 @@ describe("ConversationSidebarUI", () => {
 				<ConversationSidebarUI
 					{...defaultProps}
 					settingsButton={<button data-testid="settings-btn">Settings</button>}
-				/>
+				/>,
 			);
 
 			expect(screen.getByTestId("settings-btn")).toBeInTheDocument();

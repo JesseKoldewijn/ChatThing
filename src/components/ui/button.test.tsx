@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 import { Button } from "./button";
 
@@ -121,7 +121,7 @@ describe("Button component", () => {
 			render(
 				<Button onClick={handleClick} disabled>
 					Disabled
-				</Button>
+				</Button>,
 			);
 
 			await user.click(screen.getByRole("button"));
@@ -141,7 +141,7 @@ describe("Button component", () => {
 			render(
 				<Button asChild>
 					<a href="/test">Link Button</a>
-				</Button>
+				</Button>,
 			);
 
 			const link = screen.getByRole("link", { name: /link button/i });
@@ -161,7 +161,7 @@ describe("Button component", () => {
 			render(<Button aria-label="Close dialog">X</Button>);
 
 			expect(
-				screen.getByRole("button", { name: /close dialog/i })
+				screen.getByRole("button", { name: /close dialog/i }),
 			).toBeInTheDocument();
 		});
 
@@ -186,7 +186,7 @@ describe("Button component", () => {
 					<Button variant="secondary">Secondary</Button>
 					<Button variant="ghost">Ghost</Button>
 					<Button variant="link">Link</Button>
-				</div>
+				</div>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
@@ -199,4 +199,3 @@ describe("Button component", () => {
 		});
 	});
 });
-

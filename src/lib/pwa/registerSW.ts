@@ -1,6 +1,6 @@
 /**
  * PWA Service Worker Registration and Update Handler
- * 
+ *
  * This module handles:
  * 1. Registering the service worker
  * 2. Periodically checking for updates
@@ -52,7 +52,10 @@ export async function registerServiceWorker(): Promise<void> {
 			console.log("[PWA] New service worker installing...");
 
 			newWorker.addEventListener("statechange", () => {
-				if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+				if (
+					newWorker.state === "installed" &&
+					navigator.serviceWorker.controller
+				) {
 					// New SW installed but waiting - trigger reload
 					handleWaitingServiceWorker(newWorker);
 				}
@@ -66,7 +69,6 @@ export async function registerServiceWorker(): Promise<void> {
 			refreshing = true;
 			window.location.reload();
 		});
-
 	} catch (error) {
 		if (import.meta.env.DEV) {
 			console.error("[PWA] Service worker registration failed:", error);
@@ -92,4 +94,3 @@ export async function unregisterServiceWorkers(): Promise<void> {
 	await Promise.all(registrations.map((r) => r.unregister()));
 	console.log("[PWA] All service workers unregistered");
 }
-

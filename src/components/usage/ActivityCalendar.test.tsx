@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActivityCalendar } from "./ActivityCalendar";
 
 describe("ActivityCalendar", () => {
@@ -24,7 +24,7 @@ describe("ActivityCalendar", () => {
 				onRangeChange={mockOnRangeChange}
 				timezone={timezone}
 				firstActivityTimestamp={now}
-			/>
+			/>,
 		);
 
 		expect(screen.getByTestId("activity-calendar")).toBeInTheDocument();
@@ -41,20 +41,20 @@ describe("ActivityCalendar", () => {
 				onRangeChange={mockOnRangeChange}
 				timezone={timezone}
 				firstActivityTimestamp={null}
-			/>
+			/>,
 		);
 
 		const initialMonth = screen.getByTestId("calendar-view-date").textContent;
-		
+
 		const nextBtn = screen.getByTestId("next-month-btn");
 		await user.click(nextBtn);
-		
+
 		const nextMonth = screen.getByTestId("calendar-view-date").textContent;
 		expect(nextMonth).not.toBe(initialMonth);
-		
+
 		const prevBtn = screen.getByTestId("prev-month-btn");
 		await user.click(prevBtn);
-		
+
 		const backToInitial = screen.getByTestId("calendar-view-date").textContent;
 		expect(backToInitial).toBe(initialMonth);
 	});
@@ -63,7 +63,7 @@ describe("ActivityCalendar", () => {
 		const user = userEvent.setup();
 		// Mock a date where we know where day 15 is
 		const testDate = new Date(Date.UTC(2025, 0, 1)); // Jan 2025
-		
+
 		render(
 			<ActivityCalendar
 				events={[]}
@@ -72,7 +72,7 @@ describe("ActivityCalendar", () => {
 				onRangeChange={mockOnRangeChange}
 				timezone={timezone}
 				firstActivityTimestamp={null}
-			/>
+			/>,
 		);
 
 		// Find day 10
@@ -85,7 +85,7 @@ describe("ActivityCalendar", () => {
 	it("should show activity indicator for days with events", () => {
 		const eventDate = new Date(2025, 0, 15);
 		const events = [{ timestamp: eventDate.getTime() }];
-		
+
 		render(
 			<ActivityCalendar
 				events={events}
@@ -94,7 +94,7 @@ describe("ActivityCalendar", () => {
 				onRangeChange={mockOnRangeChange}
 				timezone={timezone}
 				firstActivityTimestamp={null}
-			/>
+			/>,
 		);
 
 		// Navigate to Jan 2025 if needed

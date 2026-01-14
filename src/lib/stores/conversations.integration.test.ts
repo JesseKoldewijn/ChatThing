@@ -1,24 +1,24 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearMessages, messagesAtom } from "./chat";
 import {
-	conversationsAtom,
 	activeChatIdAtom,
-	createConversation,
-	switchConversation,
-	deleteConversation,
 	archiveConversation,
-	unarchiveConversation,
-	restoreConversation,
-	permanentlyDeleteConversation,
-	updateConversationTitle,
-	saveCurrentConversation,
-	getConversationCounts,
-	runAutoArchive,
 	cleanupDeletedConversations,
-	exportConversations,
-	importConversations,
 	clearAllConversations,
+	conversationsAtom,
+	createConversation,
+	deleteConversation,
+	exportConversations,
+	getConversationCounts,
+	importConversations,
+	permanentlyDeleteConversation,
+	restoreConversation,
+	runAutoArchive,
+	saveCurrentConversation,
+	switchConversation,
+	unarchiveConversation,
+	updateConversationTitle,
 } from "./conversations";
-import { messagesAtom, clearMessages } from "./chat";
 import { archiveThresholdAtom } from "./settings";
 
 // Mock localStorage
@@ -116,7 +116,13 @@ describe("Conversations Store Integration", () => {
 
 		it("should clear existing messages when creating new conversation", () => {
 			messagesAtom.set([
-				{ id: "msg-1", role: "user", content: "Old message", transactionId: "tx-1", timestamp: Date.now() },
+				{
+					id: "msg-1",
+					role: "user",
+					content: "Old message",
+					transactionId: "tx-1",
+					timestamp: Date.now(),
+				},
 			]);
 
 			createConversation();
@@ -139,7 +145,13 @@ describe("Conversations Store Integration", () => {
 			// Create first conversation with messages
 			const conv1 = createConversation("First");
 			messagesAtom.set([
-				{ id: "msg-1", role: "user", content: "Hello", transactionId: "tx-1", timestamp: Date.now() },
+				{
+					id: "msg-1",
+					role: "user",
+					content: "Hello",
+					transactionId: "tx-1",
+					timestamp: Date.now(),
+				},
 			]);
 			await saveCurrentConversation();
 
@@ -158,7 +170,7 @@ describe("Conversations Store Integration", () => {
 
 		it("should do nothing if conversation does not exist", () => {
 			const conv = createConversation("Test");
-			
+
 			switchConversation("non-existent-id");
 
 			expect(activeChatIdAtom.get()).toBe(conv.id);
@@ -240,7 +252,7 @@ describe("Conversations Store Integration", () => {
 
 			const conversations = conversationsAtom.get();
 			expect(conversations[0].updatedAt).toBeGreaterThan(originalUpdatedAt);
-			
+
 			vi.useRealTimers();
 		});
 	});
@@ -324,7 +336,7 @@ describe("Conversations Store Integration", () => {
 			// Create a conversation with an old updatedAt timestamp (3 days ago)
 			const conv = createConversation("Old Conversation");
 			const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
-			
+
 			// Manually update the conversation's updatedAt to simulate an old conversation
 			const conversations = conversationsAtom.get();
 			const index = conversations.findIndex((c) => c.id === conv.id);
@@ -556,4 +568,3 @@ describe("Conversations Store Integration", () => {
 		});
 	});
 });
-

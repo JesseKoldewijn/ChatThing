@@ -1,56 +1,19 @@
-import {
-	streamText,
-	generateText,
-	type ModelMessage as CoreMessage,
-} from "ai";
+import { generateText, streamText } from "ai";
 import { createOllama } from "ai-sdk-ollama";
-import { type Message } from "@/lib/stores/chat";
-import { type AIProvider, type PromptOptions, type ProviderType, PROVIDER_OLLAMA, type StreamPart } from "../types";
+import {
+	type AIProvider,
+	PROVIDER_OLLAMA,
+	type PromptOptions,
+	type ProviderType,
+	type StreamPart,
+} from "../types";
+import { convertHistoryToMessages, stripDataUrlPrefix } from "../utils";
 
 export interface OllamaSettings {
 	baseUrl: string;
 	model: string;
 	apiKey?: string;
 }
-
-/**
- * Strip data URL prefix if present
- * e.g. "data:image/jpeg;base64,..." -> "..."
- */
-const stripDataUrlPrefix = (data: string): string => {
-	if (data.startsWith("data:")) {
-		const base64Index = data.indexOf(";base64,");
-		if (base64Index !== -1) {
-			return data.slice(base64Index + 8);
-		}
-	}
-	return data;
-};
-
-const convertHistoryToMessages = (history?: Message[]): CoreMessage[] => {
-	if (!history || history.length === 0) return [];
-
-	return history
-		.filter((msg) => msg.role !== "system")
-		.map((msg): CoreMessage => {
-			if (msg.role === "user") {
-				if (msg.images && msg.images.length > 0) {
-					return {
-						role: "user",
-						content: [
-							{ type: "text", text: msg.content },
-							...msg.images.map((img) => ({
-								type: "image" as const,
-								image: stripDataUrlPrefix(img.data),
-							})),
-						],
-					};
-				}
-				return { role: "user", content: msg.content };
-			}
-			return { role: "assistant", content: msg.content };
-		});
-};
 
 export class OllamaProvider implements AIProvider {
 	readonly type: ProviderType = PROVIDER_OLLAMA;
@@ -59,9 +22,11 @@ export class OllamaProvider implements AIProvider {
 
 	constructor(settings: OllamaSettings) {
 		this.settings = settings;
-		// ai-sdk-ollama (and the underlying ollama-js) typically expects the base URL 
+		// ai-sdk-ollama (and the underlying ollama-js) typically expects the base URL
 		// without the /api suffix, e.g., http://localhost:11434
-		const baseURL = settings.baseUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+		const baseURL = settings.baseUrl
+			.replace(/\/api\/?$/, "")
+			.replace(/\/$/, "");
 
 		this.client = createOllama({
 			baseURL,
@@ -82,7 +47,7 @@ export class OllamaProvider implements AIProvider {
 
 	async prompt(
 		prompt: string,
-		options?: PromptOptions
+		options?: PromptOptions,
 	): Promise<AsyncIterable<StreamPart>> {
 		const systemPrompt = `You are a helpful AI assistant. 
 Current Date and Time: ${new Date().toLocaleString()}
@@ -91,15 +56,15 @@ CRITICAL RULES:
 1. Respond naturally to the user.
 2. If you need to know about the conversation history, refer to the messages provided in the context.`;
 
-		const messages: CoreMessage[] = [
-			{ role: "system", content: systemPrompt },
+		const messages = [
+			{ role: "system" as const, content: systemPrompt },
 			...convertHistoryToMessages(options?.history),
 			{
-				role: "user",
+				role: "user" as const,
 				content:
 					options?.images && options.images.length > 0
 						? [
-								{ type: "text", text: prompt },
+								{ type: "text" as const, text: prompt },
 								...options.images.map((img) => ({
 									type: "image" as const,
 									image: stripDataUrlPrefix(img.data),
@@ -156,7 +121,7 @@ Title:`,
 				const lastSpace = truncated.lastIndexOf(" ");
 				title =
 					lastSpace > MAX_TITLE_LENGTH * 0.6
-						? truncated.slice(0, lastSpace)
+						? truncated.slice(0, lastSpace) + "..."
 						: truncated.trim() + "...";
 			}
 

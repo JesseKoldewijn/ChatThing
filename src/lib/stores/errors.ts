@@ -1,19 +1,19 @@
 import { atom } from "nanostores";
-import { 
-	providerTypeAtom, 
-	PROVIDER_OPEN_ROUTER,
+import {
 	PROVIDER_GOOGLE,
 	PROVIDER_OLLAMA,
+	PROVIDER_OPEN_ROUTER,
+	providerTypeAtom,
 } from "./settings";
 
-export type ErrorCategory = 
-	| "network"      // Network/connection issues
-	| "api"          // API-level errors from the AI
-	| "model"        // Model loading/availability issues
-	| "rate_limit"   // Rate limiting
-	| "context"      // Context length exceeded
-	| "permission"   // Permission denied
-	| "unknown";     // Unknown errors
+export type ErrorCategory =
+	| "network" // Network/connection issues
+	| "api" // API-level errors from the AI
+	| "model" // Model loading/availability issues
+	| "rate_limit" // Rate limiting
+	| "context" // Context length exceeded
+	| "permission" // Permission denied
+	| "unknown"; // Unknown errors
 
 export interface PromptError {
 	id: string;
@@ -35,20 +35,25 @@ export const errorHistoryAtom = atom<PromptError[]>([]);
 /**
  * Categorize an error based on its message and type
  */
-const categorizeError = (error: Error): { category: ErrorCategory; title: string; isRetryable: boolean } => {
+const categorizeError = (
+	error: Error,
+): { category: ErrorCategory; title: string; isRetryable: boolean } => {
 	const message = error.message.toLowerCase();
 	const name = error.name.toLowerCase();
 
 	// Check for AI SDK APICallError or similar patterns
-	const isAiCallError = 
-		error.name === "AI_APICallError" || 
+	const isAiCallError =
+		error.name === "AI_APICallError" ||
 		error.name === "APICallError" ||
+		error.name === "OllamaError" ||
 		name.includes("apicallerror") ||
 		name.includes("aicallerror") ||
 		name.includes("ai_apicallerror") ||
 		name.includes("apierror") ||
+		name.includes("ollamaerror") ||
 		error.constructor?.name === "APICallError" ||
-		error.constructor?.name === "AI_APICallError";
+		error.constructor?.name === "AI_APICallError" ||
+		error.constructor?.name === "OllamaError";
 
 	if (isAiCallError) {
 		// @ts-expect-error - AI SDK errors have statusCode, statusText, body
@@ -58,12 +63,15 @@ const categorizeError = (error: Error): { category: ErrorCategory; title: string
 		// @ts-expect-error - body is not in Error type
 		const responseBody = error.body || error.data;
 
-		console.error(`AI_APICallError Details:
+		console.error(
+			`AI_APICallError Details:
 Provider: ${providerTypeAtom.get()}
 Status Code: ${statusCode}
 Status Text: ${statusText}
 Response Body: ${JSON.stringify(responseBody, null, 2)}
-Original Error:`, error);
+Original Error:`,
+			error,
+		);
 
 		if (statusCode === 429) {
 			return {
@@ -72,7 +80,7 @@ Original Error:`, error);
 				isRetryable: true,
 			};
 		}
-		
+
 		if (statusCode === 401 || statusCode === 403) {
 			return {
 				category: "permission",
@@ -80,7 +88,7 @@ Original Error:`, error);
 				isRetryable: false,
 			};
 		}
-		
+
 		if (statusCode === 404) {
 			return {
 				category: "model",
@@ -88,7 +96,7 @@ Original Error:`, error);
 				isRetryable: false,
 			};
 		}
-		
+
 		if (statusCode >= 500) {
 			return {
 				category: "api",
@@ -111,6 +119,7 @@ Original Error:`, error);
 		message.includes("connection") ||
 		message.includes("offline") ||
 		name.includes("networkerror") ||
+		name.includes("ollamaerror") ||
 		(name.includes("typeerror") && message.includes("failed to fetch"))
 	) {
 		return {
@@ -177,7 +186,10 @@ Original Error:`, error);
 	}
 
 	// Image support errors
-	if (message.includes("no endpoints found that support image input") || message.includes("multimodal")) {
+	if (
+		message.includes("no endpoints found that support image input") ||
+		message.includes("multimodal")
+	) {
 		return {
 			category: "model",
 			title: "Image Input Not Supported",
@@ -210,29 +222,39 @@ Original Error:`, error);
 /**
  * Get a user-friendly message for an error
  */
-const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string => {
+const getUserFriendlyMessage = (
+	error: Error,
+	category: ErrorCategory,
+): string => {
 	const name = error.name.toLowerCase();
 
 	// Handle APICallError specifically for better messages
-	const isAiCallError = 
-		error.name === "AI_APICallError" || 
+	const isAiCallError =
+		error.name === "AI_APICallError" ||
 		error.name === "APICallError" ||
+		error.name === "OllamaError" ||
 		name.includes("apicallerror") ||
 		name.includes("aicallerror") ||
 		name.includes("ai_apicallerror") ||
 		name.includes("apierror") ||
+		name.includes("ollamaerror") ||
 		error.constructor?.name === "APICallError" ||
-		error.constructor?.name === "AI_APICallError";
+		error.constructor?.name === "AI_APICallError" ||
+		error.constructor?.name === "OllamaError";
 
 	if (isAiCallError) {
 		// @ts-expect-error - AI SDK errors have statusCode
 		const statusCode = error.statusCode || error.status || error.errorCode;
 		const providerType = providerTypeAtom.get();
-		const provider = 
-			providerType === PROVIDER_OPEN_ROUTER ? "OpenRouter" : 
-			providerType === PROVIDER_GOOGLE ? "Google Gemini" :
-			providerType === PROVIDER_OLLAMA ? "Ollama" : "AI Provider";
-		
+		const provider =
+			providerType === PROVIDER_OPEN_ROUTER
+				? "OpenRouter"
+				: providerType === PROVIDER_GOOGLE
+					? "Google Gemini"
+					: providerType === PROVIDER_OLLAMA
+						? "Ollama"
+						: "AI Provider";
+
 		switch (statusCode) {
 			case 401:
 				return `Your API key for ${provider} seems to be invalid. Please check your settings.`;
@@ -255,15 +277,20 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 	}
 
 	switch (category) {
-		case "network":
+		case "network": {
+			const providerType = providerTypeAtom.get();
+			if (providerType === PROVIDER_OLLAMA) {
+				return "Unable to connect to Ollama. Please ensure the Ollama server is running (usually at http://localhost:11434) and that you've enabled CORS if accessing from a different origin.";
+			}
 			return "Unable to connect to the AI. Please check your internet connection and try again.";
-		
+		}
+
 		case "rate_limit":
 			return "You're sending messages too quickly. Please wait a moment before trying again.";
-		
+
 		case "context":
 			return "Your message or conversation is too long. Try starting a new conversation or sending a shorter message.";
-		
+
 		case "model": {
 			const providerType = providerTypeAtom.get();
 			const msg = error.message.toLowerCase();
@@ -277,13 +304,13 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 			}
 			return "The AI model is temporarily unavailable. This might be due to the model still downloading or a temporary issue. Please try again in a moment.";
 		}
-		
+
 		case "permission":
 			return "You don't have permission to use this feature. Please check your browser settings and ensure the Prompt API is enabled.";
-		
+
 		case "api":
 			return `The AI encountered an error while processing your request. ${error.message}`;
-		
+
 		default:
 			return `An unexpected error occurred: ${error.message}`;
 	}
@@ -292,9 +319,12 @@ const getUserFriendlyMessage = (error: Error, category: ErrorCategory): string =
 /**
  * Set the current error with proper categorization
  */
-export const setError = (error: Error, retryAction?: () => void): PromptError => {
+export const setError = (
+	error: Error,
+	retryAction?: () => void,
+): PromptError => {
 	const { category, title, isRetryable } = categorizeError(error);
-	
+
 	const promptError: PromptError = {
 		id: crypto.randomUUID(),
 		category,
@@ -325,4 +355,3 @@ export const clearError = () => {
 export const clearErrorHistory = () => {
 	errorHistoryAtom.set([]);
 };
-

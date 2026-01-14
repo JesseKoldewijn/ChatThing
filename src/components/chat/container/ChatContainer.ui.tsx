@@ -7,7 +7,6 @@ export interface ChatContainerUIProps {
 	messageList: ReactNode;
 	input: ReactNode;
 	unlockSession?: ReactNode;
-	isLocked?: boolean;
 	errorBanner?: ReactNode;
 	isSidebarOpen?: boolean;
 	onCloseSidebar?: () => void;
@@ -19,7 +18,6 @@ export const ChatContainerUI = ({
 	messageList,
 	input,
 	unlockSession,
-	isLocked = false,
 	errorBanner,
 	isSidebarOpen = false,
 	onCloseSidebar,
@@ -27,7 +25,7 @@ export const ChatContainerUI = ({
 	return (
 		<div
 			data-testid="chat-container"
-			className="flex h-screen w-full overflow-hidden bg-background"
+			className="bg-background flex h-screen w-full overflow-hidden"
 		>
 			{/* Sidebar */}
 			{sidebar && (
@@ -39,13 +37,13 @@ export const ChatContainerUI = ({
 					inert={!isSidebarOpen ? true : undefined}
 					tabIndex={!isSidebarOpen ? -1 : undefined}
 					className={cn(
-						"flex h-full w-72 shrink-0 flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
+						"bg-sidebar flex h-full w-72 shrink-0 flex-col border-r transition-all duration-300 ease-in-out",
 						// On mobile: fixed positioning, slide in/out
-						"fixed left-0 top-0 z-40 lg:relative lg:z-auto",
+						"fixed top-0 left-0 z-40 lg:relative lg:z-auto",
 						// Control visibility with state on all screen sizes
 						isSidebarOpen
 							? "translate-x-0"
-							: "-translate-x-full lg:ml-[-288px] lg:translate-x-0"
+							: "-translate-x-full lg:ml-[-288px] lg:translate-x-0",
 					)}
 				>
 					{sidebar}
@@ -71,7 +69,7 @@ export const ChatContainerUI = ({
 				{header && (
 					<header
 						data-testid="chat-header"
-						className="flex h-14 shrink-0 items-center border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4"
+						className="bg-background/95 supports-backdrop-filter:bg-background/60 flex h-14 shrink-0 items-center border-b px-4 backdrop-blur"
 					>
 						{header}
 					</header>
@@ -82,29 +80,24 @@ export const ChatContainerUI = ({
 					data-testid="chat-message-list-container"
 					className="min-w-0 flex-1 overflow-hidden"
 				>
-					{isLocked ? unlockSession : messageList}
+					{messageList}
 				</div>
 
 				{/* Error banner - above input, fixed height when visible */}
-				{!isLocked && errorBanner && (
-					<div
-						data-testid="chat-error-banner-container"
-						className="shrink-0"
-					>
+				{errorBanner && (
+					<div data-testid="chat-error-banner-container" className="shrink-0">
 						{errorBanner}
 					</div>
 				)}
 
 				{/* Input - fixed at bottom */}
-				{!isLocked && input && (
-					<div
-						data-testid="chat-input-container"
-						className="shrink-0"
-					>
+				{input && (
+					<div data-testid="chat-input-container" className="shrink-0">
 						{input}
 					</div>
 				)}
 			</main>
+			{unlockSession}
 		</div>
 	);
 };

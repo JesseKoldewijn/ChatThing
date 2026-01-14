@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import { ScrollArea } from "./scroll-area";
 
@@ -9,7 +9,7 @@ describe("ScrollArea component", () => {
 			render(
 				<ScrollArea className="h-48 w-48">
 					<div data-testid="content">Scrollable content</div>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			expect(screen.getByTestId("content")).toBeInTheDocument();
@@ -19,7 +19,7 @@ describe("ScrollArea component", () => {
 			render(
 				<ScrollArea data-testid="scroll-area" className="h-48 w-48">
 					<div>Content</div>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			const scrollArea = screen.getByTestId("scroll-area");
@@ -33,7 +33,7 @@ describe("ScrollArea component", () => {
 					data-testid="scroll-area"
 				>
 					<div>Content</div>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			const scrollArea = screen.getByTestId("scroll-area");
@@ -46,7 +46,7 @@ describe("ScrollArea component", () => {
 			render(
 				<ScrollArea className="h-48 w-48" data-testid="scroll-area">
 					<div style={{ height: "500px" }}>Tall content</div>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			// ScrollBar is rendered as part of ScrollArea - check it's in the DOM structure
@@ -60,7 +60,7 @@ describe("ScrollArea component", () => {
 			const { container } = render(
 				<ScrollArea className="h-48 w-48">
 					<p>Simple content inside scroll area</p>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			const results = await axe(container);
@@ -77,7 +77,7 @@ describe("ScrollArea component", () => {
 						<li>Item 4</li>
 						<li>Item 5</li>
 					</ul>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			const results = await axe(container);
@@ -90,7 +90,7 @@ describe("ScrollArea component", () => {
 					<div style={{ height: "500px" }}>
 						<p>This content is taller than the container</p>
 					</div>
-				</ScrollArea>
+				</ScrollArea>,
 			);
 
 			const results = await axe(container);

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Minus, Plus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface NumberStepperProps {
 	id?: string;
@@ -37,7 +37,7 @@ export const NumberStepper = ({
 
 	const clamp = useCallback(
 		(val: number) => Math.min(max, Math.max(min, val)),
-		[min, max]
+		[min, max],
 	);
 
 	const handleIncrement = () => {
@@ -84,9 +84,9 @@ export const NumberStepper = ({
 	return (
 		<div
 			className={cn(
-				"inline-flex items-center rounded-lg border border-input bg-background",
-				"focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
-				className
+				"border-input bg-background inline-flex items-center rounded-lg border",
+				"focus-within:ring-ring focus-within:ring-offset-background focus-within:ring-2 focus-within:ring-offset-2",
+				className,
 			)}
 		>
 			<button
@@ -96,14 +96,14 @@ export const NumberStepper = ({
 				disabled={disabled || value <= min}
 				aria-label="Decrease value"
 				className={cn(
-					"flex h-9 w-9 shrink-0 items-center justify-center rounded-l-md transition-colors text-foreground",
+					"text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-l-md transition-colors",
 					"hover:bg-muted disabled:pointer-events-none disabled:opacity-50",
-					"focus:outline-none"
+					"focus:outline-none",
 				)}
 			>
 				<Minus className="h-4 w-4" />
 			</button>
-			<div className="h-6 w-px bg-border" />
+			<div className="bg-border h-6 w-px" />
 			{allowManualInput ? (
 				<input
 					id={`${id}-input`}
@@ -116,17 +116,17 @@ export const NumberStepper = ({
 					disabled={disabled}
 					aria-label={ariaLabel || "Value"}
 					className={cn(
-						"h-9 w-12 bg-transparent text-center text-sm font-medium text-foreground",
+						"text-foreground h-9 w-12 bg-transparent text-center text-sm font-medium",
 						"focus:outline-none disabled:pointer-events-none disabled:opacity-50",
-						"[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+						"[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
 					)}
 				/>
 			) : (
-				<div className="flex h-9 w-12 items-center justify-center text-sm font-medium text-foreground">
+				<div className="text-foreground flex h-9 w-12 items-center justify-center text-sm font-medium">
 					{value}
 				</div>
 			)}
-			<div className="h-6 w-px bg-border" />
+			<div className="bg-border h-6 w-px" />
 			<button
 				id={`${id}-increment`}
 				type="button"
@@ -134,9 +134,9 @@ export const NumberStepper = ({
 				disabled={disabled || value >= max}
 				aria-label="Increase value"
 				className={cn(
-					"flex h-9 w-9 shrink-0 items-center justify-center rounded-r-md transition-colors text-foreground",
+					"text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-r-md transition-colors",
 					"hover:bg-muted disabled:pointer-events-none disabled:opacity-50",
-					"focus:outline-none"
+					"focus:outline-none",
 				)}
 			>
 				<Plus className="h-4 w-4" />

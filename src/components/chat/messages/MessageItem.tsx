@@ -1,9 +1,14 @@
-import { useState, useCallback, useEffect } from "react";
-import { useStore } from "@nanostores/react";
-import { MessageItemUI } from "./MessageItem.ui";
-import { messagesAtom, removeMessagesFromTransaction, lastUserMessageAtom, type ImageAttachment } from "@/lib/stores/chat";
 import type { Message } from "@/lib/stores/chat";
+import {
+	type ImageAttachment,
+	lastUserMessageAtom,
+	messagesAtom,
+	removeMessagesFromTransaction,
+} from "@/lib/stores/chat";
 import { getImages } from "@/lib/stores/imageStorage";
+import { useStore } from "@nanostores/react";
+import { useCallback, useEffect, useState } from "react";
+import { MessageItemUI } from "./MessageItem.ui";
 
 interface MessageItemProps {
 	message: Message;
@@ -19,7 +24,9 @@ export const MessageItem = ({
 	renderContent,
 }: MessageItemProps) => {
 	const [isCopied, setIsCopied] = useState(false);
-	const [loadedImages, setLoadedImages] = useState<ImageAttachment[] | undefined>(message.images);
+	const [loadedImages, setLoadedImages] = useState<
+		ImageAttachment[] | undefined
+	>(message.images);
 	const messages = useStore(messagesAtom);
 	const lastUserMessage = useStore(lastUserMessageAtom);
 
@@ -33,7 +40,7 @@ export const MessageItem = ({
 
 			// Check if any images need to be loaded from IndexedDB
 			const imagesNeedingLoad = message.images.filter(
-				(img) => img.storedInDb && !img.data
+				(img) => img.storedInDb && !img.data,
 			);
 
 			if (imagesNeedingLoad.length === 0) {
@@ -44,8 +51,10 @@ export const MessageItem = ({
 
 			// Load images from IndexedDB
 			try {
-				const loadedFromDb = await getImages(imagesNeedingLoad.map((img) => img.id));
-				
+				const loadedFromDb = await getImages(
+					imagesNeedingLoad.map((img) => img.id),
+				);
+
 				// Merge loaded images with existing ones
 				const mergedImages = message.images.map((img) => {
 					if (img.storedInDb && !img.data) {
@@ -106,4 +115,3 @@ export const MessageItem = ({
 		/>
 	);
 };
-

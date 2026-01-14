@@ -1,11 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	clearError,
+	clearErrorHistory,
 	currentErrorAtom,
 	errorHistoryAtom,
 	setError,
-	clearError,
-	clearErrorHistory,
 } from "./errors";
+import { PROVIDER_OPEN_ROUTER, providerTypeAtom } from "./settings";
 
 describe("errors store", () => {
 	beforeEach(() => {
@@ -183,6 +184,8 @@ describe("errors store", () => {
 
 	describe("user-friendly messages", () => {
 		it("should provide helpful message for network errors", () => {
+			// Set provider to something other than Ollama to test generic network error message
+			providerTypeAtom.set(PROVIDER_OPEN_ROUTER);
 			const error = new Error("Network error");
 			const promptError = setError(error);
 
@@ -218,4 +221,3 @@ describe("errors store", () => {
 		});
 	});
 });
-

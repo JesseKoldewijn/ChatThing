@@ -9,7 +9,7 @@ export class AIManager {
 
 	async prompt(
 		prompt: string,
-		options?: PromptOptions
+		options?: PromptOptions,
 	): Promise<AsyncIterable<StreamPart>> {
 		return this.provider.prompt(prompt, options);
 	}

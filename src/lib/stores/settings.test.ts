@@ -1,27 +1,42 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-	appearanceAtom,
-	themeAtom,
-	outputLanguageAtom,
-	temperatureUnitAtom,
-	timezoneAtom,
 	aiSettingsAtom,
+	appearanceAtom,
 	archiveThresholdAtom,
-	thresholdToHours,
+	encryptedGoogleApiKeyAtom,
+	encryptedOllamaApiKeyAtom,
+	encryptedOpenRouterApiKeyAtom,
+	experimentsAtom,
 	formatThreshold,
-	getSystemTimezone,
 	getResolvedTimezone,
+	getSystemTimezone,
+	isProviderLockedAtom,
+	masterPasswordAtom,
+	outputLanguageAtom,
+	PROMPT_API_SUPPORTED_LANGUAGES,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+	PROVIDER_OPEN_ROUTER,
+	PROVIDER_PROMPT_API,
+	providerTypeAtom,
 	setAppearance,
-	setTheme,
-	setTemperatureUnit,
-	setTimezone,
 	setArchiveThreshold,
 	setArchiveThresholdDays,
+	setTemperatureUnit,
+	setTheme,
+	setTimezone,
+	setupSettingsPersistence,
+	temperatureUnitAtom,
+	themeAtom,
+	thresholdToHours,
+	timezoneAtom,
+	toggleExperiment,
 	updateAiSettings,
-	PROMPT_API_SUPPORTED_LANGUAGES,
 } from "./settings";
 
 describe("settings store", () => {
+	let cleanup: () => void;
+
 	beforeEach(() => {
 		// Reset atoms to defaults
 		appearanceAtom.set("system");
@@ -31,6 +46,14 @@ describe("settings store", () => {
 		timezoneAtom.set("auto");
 		aiSettingsAtom.set({});
 		archiveThresholdAtom.set({ value: 1, unit: "weeks" });
+		experimentsAtom.set({});
+		masterPasswordAtom.set(null);
+		localStorage.clear();
+		cleanup = setupSettingsPersistence();
+	});
+
+	afterEach(() => {
+		if (cleanup) cleanup();
 	});
 
 	describe("appearanceAtom", () => {
@@ -195,22 +218,14 @@ describe("settings store", () => {
 			expect(formatThreshold({ value: 1, unit: "hours" })).toBe("1 hour");
 			expect(formatThreshold({ value: 1, unit: "days" })).toBe("1 day");
 			expect(formatThreshold({ value: 1, unit: "weeks" })).toBe("1 week");
-			expect(formatThreshold({ value: 1, unit: "months" })).toBe(
-				"1 month"
-			);
+			expect(formatThreshold({ value: 1, unit: "months" })).toBe("1 month");
 		});
 
 		it("should format plural units correctly", () => {
-			expect(formatThreshold({ value: 2, unit: "hours" })).toBe(
-				"2 hours"
-			);
+			expect(formatThreshold({ value: 2, unit: "hours" })).toBe("2 hours");
 			expect(formatThreshold({ value: 3, unit: "days" })).toBe("3 days");
-			expect(formatThreshold({ value: 4, unit: "weeks" })).toBe(
-				"4 weeks"
-			);
-			expect(formatThreshold({ value: 6, unit: "months" })).toBe(
-				"6 months"
-			);
+			expect(formatThreshold({ value: 4, unit: "weeks" })).toBe("4 weeks");
+			expect(formatThreshold({ value: 6, unit: "months" })).toBe("6 months");
 		});
 	});
 
@@ -283,6 +298,72 @@ describe("settings store", () => {
 			expect(settings.expectedInputs).toHaveLength(2);
 			expect(settings.expectedInputs?.[0].type).toBe("text");
 			expect(settings.expectedInputs?.[1].type).toBe("image");
+		});
+	});
+
+	describe("experimentsAtom", () => {
+		it("should default to empty object", () => {
+			expect(experimentsAtom.get()).toEqual({});
+		});
+
+		it("should toggle an experiment to true", () => {
+			toggleExperiment("tools");
+			expect(experimentsAtom.get()).toEqual({ tools: true });
+			expect(localStorage.getItem("experiments")).toBe(
+				JSON.stringify({ tools: true }),
+			);
+		});
+
+		it("should toggle an experiment back to false", () => {
+			toggleExperiment("tools"); // Set to true
+			toggleExperiment("tools"); // Set to false
+			expect(experimentsAtom.get()).toEqual({ tools: false });
+			expect(localStorage.getItem("experiments")).toBe(
+				JSON.stringify({ tools: false }),
+			);
+		});
+
+		it("should handle multiple experiments", () => {
+			toggleExperiment("tools");
+			toggleExperiment("test-exp");
+			expect(experimentsAtom.get()).toEqual({
+				tools: true,
+				"test-exp": true,
+			});
+		});
+	});
+
+	describe("isProviderLockedAtom", () => {
+		it("should return false for Prompt API", () => {
+			providerTypeAtom.set(PROVIDER_PROMPT_API);
+			expect(isProviderLockedAtom.get()).toBe(false);
+		});
+
+		it("should return false for Ollama without key", () => {
+			providerTypeAtom.set(PROVIDER_OLLAMA);
+			encryptedOllamaApiKeyAtom.set(null);
+			expect(isProviderLockedAtom.get()).toBe(false);
+		});
+
+		it("should return true for Google with key but no password", () => {
+			providerTypeAtom.set(PROVIDER_GOOGLE);
+			encryptedGoogleApiKeyAtom.set("some-encrypted-key");
+			masterPasswordAtom.set(null);
+			expect(isProviderLockedAtom.get()).toBe(true);
+		});
+
+		it("should return false for Google with key and password", () => {
+			providerTypeAtom.set(PROVIDER_GOOGLE);
+			encryptedGoogleApiKeyAtom.set("some-encrypted-key");
+			masterPasswordAtom.set("some-password");
+			expect(isProviderLockedAtom.get()).toBe(false);
+		});
+
+		it("should return true for OpenRouter with key but no password", () => {
+			providerTypeAtom.set(PROVIDER_OPEN_ROUTER);
+			encryptedOpenRouterApiKeyAtom.set("some-encrypted-key");
+			masterPasswordAtom.set(null);
+			expect(isProviderLockedAtom.get()).toBe(true);
 		});
 	});
 });
