@@ -12,14 +12,17 @@ const PBKDF2_ITERATIONS = 100000;
 /**
  * Derive a crypto key from a password and salt
  */
-async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(
+	password: string,
+	salt: Uint8Array,
+): Promise<CryptoKey> {
 	const encoder = new TextEncoder();
 	const baseKey = await window.crypto.subtle.importKey(
 		"raw",
 		encoder.encode(password),
 		"PBKDF2",
 		false,
-		["deriveKey"]
+		["deriveKey"],
 	);
 
 	return window.crypto.subtle.deriveKey(
@@ -32,7 +35,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
 		baseKey,
 		{ name: ALGORITHM, length: KEY_LENGTH },
 		false,
-		["encrypt", "decrypt"]
+		["encrypt", "decrypt"],
 	);
 }
 
@@ -48,11 +51,13 @@ export async function encrypt(text: string, password: string): Promise<string> {
 	const encrypted = await window.crypto.subtle.encrypt(
 		{ name: ALGORITHM, iv },
 		key,
-		encoder.encode(text)
+		encoder.encode(text),
 	);
 
 	// Combine salt, iv, and encrypted data into a single base64 string
-	const combined = new Uint8Array(SALT_LENGTH + IV_LENGTH + encrypted.byteLength);
+	const combined = new Uint8Array(
+		SALT_LENGTH + IV_LENGTH + encrypted.byteLength,
+	);
 	combined.set(salt, 0);
 	combined.set(iv, SALT_LENGTH);
 	combined.set(new Uint8Array(encrypted), SALT_LENGTH + IV_LENGTH);
@@ -63,12 +68,15 @@ export async function encrypt(text: string, password: string): Promise<string> {
 /**
  * Decrypt a base64 string using a password
  */
-export async function decrypt(encryptedBase64: string, password: string): Promise<string> {
+export async function decrypt(
+	encryptedBase64: string,
+	password: string,
+): Promise<string> {
 	const decoder = new TextDecoder();
 	const combined = new Uint8Array(
 		atob(encryptedBase64)
 			.split("")
-			.map((c) => c.charCodeAt(0))
+			.map((c) => c.charCodeAt(0)),
 	);
 
 	const salt = combined.slice(0, SALT_LENGTH);
@@ -81,7 +89,7 @@ export async function decrypt(encryptedBase64: string, password: string): Promis
 		const decrypted = await window.crypto.subtle.decrypt(
 			{ name: ALGORITHM, iv },
 			key,
-			data
+			data,
 		);
 		return decoder.decode(decrypted);
 	} catch {

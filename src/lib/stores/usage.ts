@@ -1,8 +1,5 @@
-import { atom } from "nanostores";
 import type { ProviderType } from "@/lib/ai/constants";
-
-// Check if we're in browser environment
-const isBrowser = typeof window !== "undefined";
+import { atom } from "nanostores";
 
 // Storage key
 const STORAGE_KEY = "ai-chat-usage";
@@ -84,8 +81,6 @@ const getDateKey = (timestamp: number = Date.now()): string => {
  * Initialize usage data from localStorage
  */
 const initializeUsage = () => {
-	if (!isBrowser) return;
-
 	const stored = localStorage.getItem(STORAGE_KEY);
 	if (stored) {
 		try {
@@ -107,7 +102,6 @@ const initializeUsage = () => {
  * This should be called only on the client inside a useEffect.
  */
 export const hydrateUsage = () => {
-	if (!isBrowser) return;
 	initializeUsage();
 };
 
@@ -118,8 +112,6 @@ let pendingPersistTimeout: ReturnType<typeof setTimeout> | null = null;
  * Persist usage data to localStorage
  */
 const persist = (immediate = false) => {
-	if (!isBrowser) return;
-
 	const performPersist = () => {
 		const data = {
 			events: usageEventsAtom.get(),
@@ -141,6 +133,18 @@ const persist = (immediate = false) => {
 };
 
 /**
+ * Set up cleanup for usage store.
+ * This should be called inside a useEffect.
+ */
+export const setupUsagePersistence = () => {
+	return () => {
+		if (pendingPersistTimeout) {
+			clearTimeout(pendingPersistTimeout);
+		}
+	};
+};
+
+/**
  * Update daily aggregation with a new event
  */
 const updateDailyAggregation = (event: UsageEvent) => {
@@ -152,8 +156,7 @@ const updateDailyAggregation = (event: UsageEvent) => {
 		const existing = daily[existingIndex];
 		daily[existingIndex] = {
 			...existing,
-			messageCount:
-				existing.messageCount + (event.type === "message" ? 1 : 0),
+			messageCount: existing.messageCount + (event.type === "message" ? 1 : 0),
 			responseCount:
 				existing.responseCount + (event.type === "response" ? 1 : 0),
 			toolCallCount:
@@ -166,10 +169,11 @@ const updateDailyAggregation = (event: UsageEvent) => {
 							[event.toolName]:
 								((existing.toolBreakdown || {})[event.toolName] || 0) + 1,
 						}
-					: (existing.toolBreakdown || {}),
+					: existing.toolBreakdown || {},
 			providerBreakdown: {
 				...(existing.providerBreakdown || {}),
-				[event.provider]: ((existing.providerBreakdown || {})[event.provider] || 0) + 1,
+				[event.provider]:
+					((existing.providerBreakdown || {})[event.provider] || 0) + 1,
 			},
 			modelBreakdown: {
 				...(existing.modelBreakdown || {}),
@@ -206,7 +210,7 @@ export const recordMessage = (
 	conversationId: string,
 	characterCount: number,
 	provider: ProviderType,
-	model: string
+	model: string,
 ) => {
 	const event: UsageEvent = {
 		id: crypto.randomUUID(),
@@ -233,7 +237,7 @@ export const recordResponse = (
 	conversationId: string,
 	characterCount: number,
 	provider: ProviderType,
-	model: string
+	model: string,
 ) => {
 	const event: UsageEvent = {
 		id: crypto.randomUUID(),
@@ -256,10 +260,10 @@ export const recordResponse = (
  * Record a tool call
  */
 export const recordToolCall = (
-	conversationId: string, 
+	conversationId: string,
 	toolName: string,
 	provider: ProviderType,
-	model: string
+	model: string,
 ) => {
 	const event: UsageEvent = {
 		id: crypto.randomUUID(),
@@ -293,10 +297,7 @@ export const estimateTokens = (text: string): number => {
  * @param inputTokens - Number of input (prompt) tokens, or estimate from input text
  * @param outputTokens - Number of output (completion) tokens, or estimate from output text
  */
-export const recordTokenUsage = (
-	inputTokens: number,
-	outputTokens: number
-) => {
+export const recordTokenUsage = (inputTokens: number, outputTokens: number) => {
 	const dateKey = getDateKey();
 	const daily = [...dailyUsageAtom.get()];
 	const existingIndex = daily.findIndex((d) => d.date === dateKey);
@@ -344,13 +345,19 @@ export const getEarliestEventTimestamp = (): number | null => {
  */
 export const getEventsInRange = (start: number, end: number): UsageEvent[] => {
 	const events = usageEventsAtom.get();
-	return events.filter(e => e.timestamp >= start && e.timestamp <= end);
+	return events.filter((e) => e.timestamp >= start && e.timestamp <= end);
 };
 
 /**
  * Supported granularities for aggregation
  */
-export type UsageGranularity = "interaction" | "minute" | "hour" | "day" | "month" | "year";
+export type UsageGranularity =
+	| "interaction"
+	| "minute"
+	| "hour"
+	| "day"
+	| "month"
+	| "year";
 
 /**
  * Get aggregated usage for a range with specific granularity
@@ -358,24 +365,29 @@ export type UsageGranularity = "interaction" | "minute" | "hour" | "day" | "mont
 export const getAggregatedUsageForRange = (
 	start: number,
 	end: number,
-	granularity: UsageGranularity = "day"
+	granularity: UsageGranularity = "day",
 ): DailyUsage[] => {
 	const events = getEventsInRange(start, end);
-	
+
 	if (granularity === "interaction") {
 		// Return one entry per event
-		return events.map(event => ({
-			date: new Date(event.timestamp).toISOString(),
-			messageCount: event.type === "message" ? 1 : 0,
-			responseCount: event.type === "response" ? 1 : 0,
-			toolCallCount: event.type === "tool_call" ? 1 : 0,
-			totalCharacters: event.characterCount,
-			inputTokens: 0,
-			outputTokens: 0,
-			toolBreakdown: event.type === "tool_call" && event.toolName ? { [event.toolName]: 1 } : {},
-			providerBreakdown: { [event.provider]: 1 },
-			modelBreakdown: { [event.model]: 1 },
-		})).sort((a, b) => a.date.localeCompare(b.date));
+		return events
+			.map((event) => ({
+				date: new Date(event.timestamp).toISOString(),
+				messageCount: event.type === "message" ? 1 : 0,
+				responseCount: event.type === "response" ? 1 : 0,
+				toolCallCount: event.type === "tool_call" ? 1 : 0,
+				totalCharacters: event.characterCount,
+				inputTokens: 0,
+				outputTokens: 0,
+				toolBreakdown:
+					event.type === "tool_call" && event.toolName
+						? { [event.toolName]: 1 }
+						: {},
+				providerBreakdown: { [event.provider]: 1 },
+				modelBreakdown: { [event.model]: 1 },
+			}))
+			.sort((a, b) => a.date.localeCompare(b.date));
 	}
 
 	const aggregated: Record<string, DailyUsage> = {};
@@ -383,9 +395,9 @@ export const getAggregatedUsageForRange = (
 	for (const event of events) {
 		const date = new Date(event.timestamp);
 		let key: string;
-		
+
 		const iso = date.toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
-		
+
 		switch (granularity) {
 			case "minute":
 				key = iso.slice(0, 16).replace("T", " "); // YYYY-MM-DD HH:mm
@@ -427,13 +439,16 @@ export const getAggregatedUsageForRange = (
 		else if (event.type === "tool_call") {
 			entry.toolCallCount++;
 			if (event.toolName) {
-				entry.toolBreakdown[event.toolName] = (entry.toolBreakdown[event.toolName] || 0) + 1;
+				entry.toolBreakdown[event.toolName] =
+					(entry.toolBreakdown[event.toolName] || 0) + 1;
 			}
 		}
 
 		entry.totalCharacters += event.characterCount;
-		entry.providerBreakdown[event.provider] = (entry.providerBreakdown[event.provider] || 0) + 1;
-		entry.modelBreakdown[event.model] = (entry.modelBreakdown[event.model] || 0) + 1;
+		entry.providerBreakdown[event.provider] =
+			(entry.providerBreakdown[event.provider] || 0) + 1;
+		entry.modelBreakdown[event.model] =
+			(entry.modelBreakdown[event.model] || 0) + 1;
 	}
 
 	// For daily granularity, merge in tokens from dailyUsageAtom
@@ -453,7 +468,10 @@ export const getAggregatedUsageForRange = (
 /**
  * Get usage summary for a specific range
  */
-export const getUsageSummaryForRange = (start: number, end: number): UsageSummary => {
+export const getUsageSummaryForRange = (
+	start: number,
+	end: number,
+): UsageSummary => {
 	const events = getEventsInRange(start, end);
 	const daily = getAggregatedUsageForRange(start, end, "day");
 
@@ -477,13 +495,16 @@ export const getUsageSummaryForRange = (start: number, end: number): UsageSummar
 		else if (event.type === "tool_call") {
 			summary.totalToolCalls++;
 			if (event.toolName) {
-				summary.toolBreakdown[event.toolName] = (summary.toolBreakdown[event.toolName] || 0) + 1;
+				summary.toolBreakdown[event.toolName] =
+					(summary.toolBreakdown[event.toolName] || 0) + 1;
 			}
 		}
 
 		summary.totalCharacters += event.characterCount;
-		summary.providerBreakdown[event.provider] = (summary.providerBreakdown[event.provider] || 0) + 1;
-		summary.modelBreakdown[event.model] = (summary.modelBreakdown[event.model] || 0) + 1;
+		summary.providerBreakdown[event.provider] =
+			(summary.providerBreakdown[event.provider] || 0) + 1;
+		summary.modelBreakdown[event.model] =
+			(summary.modelBreakdown[event.model] || 0) + 1;
 	}
 
 	// Sum up tokens from the daily aggregation for the range
@@ -493,7 +514,9 @@ export const getUsageSummaryForRange = (start: number, end: number): UsageSummar
 	}
 
 	if (summary.totalResponses > 0) {
-		summary.averageResponseLength = Math.round(summary.totalCharacters / summary.totalResponses);
+		summary.averageResponseLength = Math.round(
+			summary.totalCharacters / summary.totalResponses,
+		);
 	}
 
 	return summary;
@@ -565,11 +588,10 @@ export const getRecentDailyUsage = (days: number = 30): DailyUsage[] => {
 					toolBreakdown: {},
 					providerBreakdown: {},
 					modelBreakdown: {},
-				}
+				},
 			);
 		}
 	}
 
 	return result;
 };
-

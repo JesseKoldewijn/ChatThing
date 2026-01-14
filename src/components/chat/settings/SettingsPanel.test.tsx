@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SettingsPanel } from "./SettingsPanel";
 import { SettingsPanelUI } from "./SettingsPanel.ui";
 
@@ -27,13 +27,17 @@ describe("SettingsPanel", () => {
 		it("should render the settings button", () => {
 			render(<SettingsPanel />);
 
-			expect(screen.getByRole("button", { name: /settings/i })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /settings/i }),
+			).toBeInTheDocument();
 		});
 
 		it("should render the usage button", () => {
 			render(<SettingsPanel />);
 
-			expect(screen.getByRole("button", { name: /usage/i })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /usage/i }),
+			).toBeInTheDocument();
 		});
 
 		it("should render both buttons", () => {
@@ -90,8 +94,12 @@ describe("SettingsPanelUI", () => {
 
 			render(<SettingsPanelUI {...mockProps} />);
 
-			expect(screen.getByRole("button", { name: /settings/i })).toBeInTheDocument();
-			expect(screen.getByRole("button", { name: /usage/i })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /settings/i }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /usage/i }),
+			).toBeInTheDocument();
 		});
 
 		it("should render icons", () => {
@@ -119,7 +127,7 @@ describe("SettingsPanelUI", () => {
 				<SettingsPanelUI
 					onOpenSettings={onOpenSettings}
 					onOpenUsage={onOpenUsage}
-				/>
+				/>,
 			);
 
 			await user.click(screen.getByRole("button", { name: /settings/i }));
@@ -137,7 +145,7 @@ describe("SettingsPanelUI", () => {
 				<SettingsPanelUI
 					onOpenSettings={onOpenSettings}
 					onOpenUsage={onOpenUsage}
-				/>
+				/>,
 			);
 
 			await user.click(screen.getByRole("button", { name: /usage/i }));

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 import { Textarea } from "./textarea";
 
@@ -18,7 +18,7 @@ describe("Textarea component", () => {
 			render(<Textarea placeholder="Enter your message..." />);
 
 			expect(
-				screen.getByPlaceholderText("Enter your message...")
+				screen.getByPlaceholderText("Enter your message..."),
 			).toBeInTheDocument();
 		});
 
@@ -89,7 +89,7 @@ describe("Textarea component", () => {
 			render(<Textarea aria-label="Message content" />);
 
 			expect(
-				screen.getByRole("textbox", { name: /message content/i })
+				screen.getByRole("textbox", { name: /message content/i }),
 			).toBeInTheDocument();
 		});
 
@@ -98,12 +98,12 @@ describe("Textarea component", () => {
 				<>
 					<Textarea aria-describedby="helper" aria-label="Message" />
 					<span id="helper">Enter your message</span>
-				</>
+				</>,
 			);
 
 			expect(screen.getByRole("textbox")).toHaveAttribute(
 				"aria-describedby",
-				"helper"
+				"helper",
 			);
 		});
 
@@ -112,16 +112,14 @@ describe("Textarea component", () => {
 				<div>
 					<label htmlFor="message">Message</label>
 					<Textarea id="message" />
-				</div>
+				</div>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
 		});
 
 		it("should have no axe violations with aria-label", async () => {
-			const { container } = render(
-				<Textarea aria-label="Description" />
-			);
+			const { container } = render(<Textarea aria-label="Description" />);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
 		});
@@ -131,11 +129,10 @@ describe("Textarea component", () => {
 				<div>
 					<label htmlFor="disabled-textarea">Disabled</label>
 					<Textarea id="disabled-textarea" disabled />
-				</div>
+				</div>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
 });
-

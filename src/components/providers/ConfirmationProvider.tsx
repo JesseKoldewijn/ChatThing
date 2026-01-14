@@ -1,5 +1,4 @@
-import { useStore } from "@nanostores/react";
-import { confirmationAtom, clearConfirmation } from "@/lib/stores/confirmation";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -8,7 +7,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { clearConfirmation, confirmationAtom } from "@/lib/stores/confirmation";
+import { useStore } from "@nanostores/react";
 import { useEffect, useState } from "react";
 
 export const ConfirmationProvider = () => {
@@ -36,7 +36,10 @@ export const ConfirmationProvider = () => {
 	};
 
 	return (
-		<Dialog open={!!confirmation} onOpenChange={(open) => !open && handleCancel()}>
+		<Dialog
+			open={!!confirmation}
+			onOpenChange={(open) => !open && handleCancel()}
+		>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{confirmation?.title}</DialogTitle>
@@ -47,7 +50,11 @@ export const ConfirmationProvider = () => {
 						{confirmation?.cancelText || "Cancel"}
 					</Button>
 					<Button
-						variant={confirmation?.variant === "destructive" ? "destructive" : "default"}
+						variant={
+							confirmation?.variant === "destructive"
+								? "destructive"
+								: "default"
+						}
 						onClick={handleConfirm}
 					>
 						{confirmation?.confirmText || "Confirm"}

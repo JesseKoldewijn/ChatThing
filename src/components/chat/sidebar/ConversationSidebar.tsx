@@ -1,28 +1,28 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
-import { useStore } from "@nanostores/react";
-import {
-	ConversationSidebarUI,
-	type ConversationItem,
-} from "./ConversationSidebar.ui";
-import { SettingsPanel } from "../settings/SettingsPanel";
-import {
-	conversationsAtom,
-	activeConversationIdAtom,
-	createConversation,
-	switchConversation,
-	deleteConversation,
-	updateConversationTitle,
-	triggerTitleGeneration,
-	saveCurrentConversation,
-	archiveConversation,
-	unarchiveConversation,
-	restoreConversation,
-	permanentlyDeleteConversation,
-} from "@/lib/stores/conversations";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
 import { confirmAction } from "@/lib/stores/confirmation";
-import { promptAction } from "@/lib/stores/prompt";
+import {
+	activeConversationIdAtom,
+	archiveConversation,
+	conversationsAtom,
+	createConversation,
+	deleteConversation,
+	permanentlyDeleteConversation,
+	restoreConversation,
+	saveCurrentConversation,
+	switchConversation,
+	triggerTitleGeneration,
+	unarchiveConversation,
+	updateConversationTitle,
+} from "@/lib/stores/conversations";
 import { showSuccess } from "@/lib/stores/notifications";
+import { promptAction } from "@/lib/stores/prompt";
+import { useStore } from "@nanostores/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { SettingsPanel } from "../settings/SettingsPanel";
+import {
+	type ConversationItem,
+	ConversationSidebarUI,
+} from "./ConversationSidebar.ui";
 
 // Desktop breakpoint (lg)
 const DESKTOP_BREAKPOINT = 1024;
@@ -52,10 +52,9 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 		() => ({
 			archivedCount: conversations.filter((c) => c.status === "archived")
 				.length,
-			deletedCount: conversations.filter((c) => c.status === "deleted")
-				.length,
+			deletedCount: conversations.filter((c) => c.status === "deleted").length,
 		}),
-		[conversations]
+		[conversations],
 	);
 
 	// Map conversations to items
@@ -69,7 +68,7 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 				isGeneratingTitle: c.isGeneratingTitle,
 				status: c.status,
 			})),
-		[conversations, activeConversationId]
+		[conversations, activeConversationId],
 	);
 
 	// Ensure deterministic render between server and client
@@ -97,7 +96,7 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 			}
 			closeSidebarOnMobile();
 		},
-		[activeConversationId, closeSidebarOnMobile]
+		[activeConversationId, closeSidebarOnMobile],
 	);
 
 	const handleDeleteConversation = useCallback(
@@ -109,7 +108,8 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 				// Already deleted - permanently delete
 				confirmAction({
 					title: "Permanently Delete",
-					message: "This will permanently delete the conversation. This cannot be undone. Continue?",
+					message:
+						"This will permanently delete the conversation. This cannot be undone. Continue?",
 					confirmText: "Delete Permanently",
 					variant: "destructive",
 					onConfirm: () => {
@@ -131,7 +131,7 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 				});
 			}
 		},
-		[conversations]
+		[conversations],
 	);
 
 	const handleRenameConversation = useCallback(
@@ -152,7 +152,7 @@ export const ConversationSidebar = ({ onClose }: ConversationSidebarProps) => {
 				},
 			});
 		},
-		[conversations]
+		[conversations],
 	);
 
 	const handleRegenerateTitle = useCallback((id: string) => {

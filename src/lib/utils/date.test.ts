@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { 
-	formatInTimezone, 
-	getStartOfDayInTimezone, 
-	getDaysInMonth, 
-	getWeekdays, 
-	getMonths,
+import { describe, expect, it } from "vitest";
+import {
 	formatDateByGranularity,
-	getFriendlyDate
+	formatInTimezone,
+	getDaysInMonth,
+	getFriendlyDate,
+	getMonths,
+	getStartOfDayInTimezone,
+	getWeekdays,
 } from "./date";
 
 describe("date utilities", () => {
@@ -26,7 +26,10 @@ describe("date utilities", () => {
 		});
 
 		it("should respect options.includeTime", () => {
-			const formatted = formatInTimezone(testTimestamp, timezone, { includeTime: false, compact: true });
+			const formatted = formatInTimezone(testTimestamp, timezone, {
+				includeTime: false,
+				compact: true,
+			});
 			expect(formatted).not.toContain(":");
 		});
 	});
@@ -74,7 +77,11 @@ describe("date utilities", () => {
 		});
 
 		it("should format for 'month' granularity", () => {
-			const formatted = formatDateByGranularity(testTimestamp, timezone, "month");
+			const formatted = formatDateByGranularity(
+				testTimestamp,
+				timezone,
+				"month",
+			);
 			expect(formatted).toBe("January 2025");
 		});
 	});

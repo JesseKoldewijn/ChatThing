@@ -1,30 +1,25 @@
-import { useEffect } from "react";
-import { useStore } from "@nanostores/react";
-import { 
-	appearanceAtom, 
-	themeAtom, 
-	type Appearance, 
-	type Theme 
+import {
+	type Appearance,
+	appearanceAtom,
+	type Theme,
+	themeAtom,
 } from "@/lib/stores/settings";
+import { useStore } from "@nanostores/react";
+import { useEffect } from "react";
 
 interface ThemeProviderProps {
 	children: React.ReactNode;
 }
 
 /**
- * Check if running in browser environment
- */
-const isBrowser = typeof window !== "undefined";
-
-/**
  * Apply theme and appearance classes to the document root
  * SSR-safe: only runs in browser
  */
 const applyThemeToDOM = (appearance: Appearance, theme: Theme) => {
-	if (!isBrowser) return;
+	if (typeof window === "undefined") return;
 
 	const root = document.documentElement;
-	
+
 	// Determine if we should use dark mode
 	const isDark =
 		appearance === "dark" ||
@@ -57,7 +52,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 
 	// Listen for system theme changes when using "system" appearance
 	useEffect(() => {
-		if (!isBrowser || appearance !== "system") return;
+		if (typeof window === "undefined" || appearance !== "system") return;
 
 		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 		const handleChange = () => applyThemeToDOM("system", theme);
@@ -94,4 +89,3 @@ export const themeScript = `
 	} catch (e) {}
 })();
 `;
-

@@ -1,0 +1,9 @@
+node_modules
+dist
+.output
+.tanstack
+coverage
+routeTree.gen.ts
+public
+*.webmanifest
+.badges

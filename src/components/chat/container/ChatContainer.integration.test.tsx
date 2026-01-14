@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
 import { PROVIDER_OLLAMA } from "@/lib/ai/constants";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create mock functions at module level
 const mockPromptAsync = vi.fn();
@@ -9,7 +9,7 @@ const mockAddMessage = vi.fn(
 	(_role: string, _content: string, _options?: Record<string, unknown>) => ({
 		id: "msg-1",
 		transactionId: "tx-1",
-	})
+	}),
 );
 const mockAppendToStream = vi.fn();
 const mockClearStream = vi.fn();
@@ -20,7 +20,13 @@ const mockRecordResponse = vi.fn();
 const mockRecordToolCall = vi.fn();
 const mockRecordTokenUsage = vi.fn();
 const mockClearError = vi.fn();
-const mockSetError = vi.fn();
+const mockSetError = vi.fn((error: Error, _retryFn?: () => void) => ({
+	id: "err-1",
+	title: "Error",
+	message: error.message,
+	category: "api",
+	isRetryable: true,
+}));
 const mockTriggerTitleGeneration = vi.fn();
 
 // Mock dependencies
@@ -65,7 +71,7 @@ vi.mock("@/lib/stores/chat", () => ({
 	addMessage: (
 		role: string,
 		content: string,
-		options?: Record<string, unknown>
+		options?: Record<string, unknown>,
 	) => mockAddMessage(role, content, options),
 	isStreamingAtom: { get: () => mockIsStreaming, set: vi.fn() },
 	currentStreamAtom: { get: () => mockCurrentStream, set: vi.fn() },
@@ -73,18 +79,25 @@ vi.mock("@/lib/stores/chat", () => ({
 	appendToStream: (text: string) => mockAppendToStream(text),
 	messagesAtom: { get: () => mockMessages },
 	pendingImagesAtom: { get: () => [] },
+	hydrateMessages: vi.fn((messages) => Promise.resolve(messages)),
 }));
 
 vi.mock("@/lib/stores/conversations", () => ({
 	saveCurrentConversation: () => mockSaveCurrentConversation(),
-	activeConversationIdAtom: { get: () => mockActiveConversationId, subscribe: vi.fn(() => () => {}) },
+	activeConversationIdAtom: {
+		get: () => mockActiveConversationId,
+		subscribe: vi.fn(() => () => {}),
+	},
 	isSyncingFromUrlAtom: { get: () => false },
 	isConversationsHydratedAtom: { get: () => true },
 	createConversation: () => mockCreateConversation(),
 	setActiveChat: vi.fn(),
 	switchConversation: vi.fn(),
-	triggerTitleGeneration: (conversationId: string, force?: boolean, initialPrompt?: string) =>
-		mockTriggerTitleGeneration(conversationId, force, initialPrompt),
+	triggerTitleGeneration: (
+		conversationId: string,
+		force?: boolean,
+		initialPrompt?: string,
+	) => mockTriggerTitleGeneration(conversationId, force, initialPrompt),
 }));
 
 vi.mock("@/lib/stores/settings", () => ({
@@ -92,6 +105,11 @@ vi.mock("@/lib/stores/settings", () => ({
 	temperatureUnitAtom: { get: () => "auto" },
 	providerTypeAtom: { get: () => mockProviderType },
 	isLockedAtom: { get: () => false },
+	isProviderLockedAtom: { get: () => false },
+	isUnlockDialogOpenAtom: { get: () => false },
+	setIsUnlockDialogOpen: vi.fn(),
+	experimentsAtom: { get: () => ({}) },
+	toggleExperiment: vi.fn(),
 	openRouterModelAtom: { get: () => "model-or" },
 	googleModelAtom: { get: () => "model-g" },
 	ollamaModelAtom: { get: () => "model-ol" },
@@ -99,6 +117,7 @@ vi.mock("@/lib/stores/settings", () => ({
 	PROVIDER_OPEN_ROUTER: "open-router",
 	PROVIDER_GOOGLE: "google",
 	PROVIDER_OLLAMA: "ollama",
+	PROVIDER_PROMPT_API: "prompt-api",
 }));
 
 vi.mock("@/lib/stores/errors", () => ({
@@ -108,12 +127,24 @@ vi.mock("@/lib/stores/errors", () => ({
 }));
 
 vi.mock("@/lib/stores/usage", () => ({
-	recordMessage: (conversationId: string, length: number, provider: string, model: string) =>
-		mockRecordMessage(conversationId, length, provider, model),
-	recordResponse: (conversationId: string, length: number, provider: string, model: string) =>
-		mockRecordResponse(conversationId, length, provider, model),
-	recordToolCall: (conversationId: string, toolName: string, provider: string, model: string) =>
-		mockRecordToolCall(conversationId, toolName, provider, model),
+	recordMessage: (
+		conversationId: string,
+		length: number,
+		provider: string,
+		model: string,
+	) => mockRecordMessage(conversationId, length, provider, model),
+	recordResponse: (
+		conversationId: string,
+		length: number,
+		provider: string,
+		model: string,
+	) => mockRecordResponse(conversationId, length, provider, model),
+	recordToolCall: (
+		conversationId: string,
+		toolName: string,
+		provider: string,
+		model: string,
+	) => mockRecordToolCall(conversationId, toolName, provider, model),
 	recordTokenUsage: (input: number, output: number) =>
 		mockRecordTokenUsage(input, output),
 	estimateTokens: vi.fn(() => 100),
@@ -250,7 +281,7 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 					"Hello AI!",
 					expect.objectContaining({
 						transactionId: expect.any(String),
-					})
+					}),
 				);
 			});
 		});
@@ -266,7 +297,7 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 					"Hello AI!",
 					expect.objectContaining({
 						history: expect.any(Array),
-					})
+					}),
 				);
 			});
 		});
@@ -290,7 +321,7 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 				expect(mockAppendToStream).toHaveBeenCalled();
 				// The text might be buffered depending on animation frames
 				const calls = mockAppendToStream.mock.calls;
-				const fullText = calls.map(c => c[0]).join("");
+				const fullText = calls.map((c) => c[0]).join("");
 				expect(fullText).toContain("Hello");
 				expect(fullText).toContain(" World");
 			});
@@ -316,9 +347,9 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 					expect.any(String),
 					expect.objectContaining({
 						images: expect.arrayContaining([
-							expect.objectContaining({ data: "base64data" })
-						])
-					})
+							expect.objectContaining({ data: "base64data" }),
+						]),
+					}),
 				);
 			});
 		});
@@ -339,8 +370,8 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 			await waitFor(() => {
 				expect(mockAddMessage).toHaveBeenCalledWith(
 					"system",
-					expect.stringContaining("Stream interrupted"),
-					expect.any(Object)
+					expect.stringContaining("Error: Stream interrupted"),
+					expect.any(Object),
 				);
 			});
 		});
@@ -368,10 +399,9 @@ describe("ChatContainer Integration - Streaming Logic", () => {
 				expect(mockAddMessage).toHaveBeenCalledWith(
 					"system",
 					expect.stringContaining("Using tool: weather"),
-					expect.any(Object)
+					expect.any(Object),
 				);
 			});
 		});
 	});
 });
-

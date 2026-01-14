@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MarkdownRenderer, createMarkdownRenderer } from "./markdown";
+import { describe, expect, it } from "vitest";
+import { createMarkdownRenderer, MarkdownRenderer } from "./markdown";
 
 describe("MarkdownRenderer extended tests", () => {
 	describe("basic text rendering", () => {
@@ -10,16 +10,24 @@ describe("MarkdownRenderer extended tests", () => {
 		});
 
 		it("should render multiple paragraphs", () => {
-			render(<MarkdownRenderer content={`First paragraph.
+			render(
+				<MarkdownRenderer
+					content={`First paragraph.
 
-Second paragraph.`} />);
+Second paragraph.`}
+				/>,
+			);
 			expect(screen.getByText("First paragraph.")).toBeInTheDocument();
 			expect(screen.getByText("Second paragraph.")).toBeInTheDocument();
 		});
 
 		it("should preserve text within paragraphs", () => {
-			render(<MarkdownRenderer content="This is a longer paragraph with multiple sentences. It should all render correctly." />);
-			expect(screen.getByText(/This is a longer paragraph/)).toBeInTheDocument();
+			render(
+				<MarkdownRenderer content="This is a longer paragraph with multiple sentences. It should all render correctly." />,
+			);
+			expect(
+				screen.getByText(/This is a longer paragraph/),
+			).toBeInTheDocument();
 		});
 	});
 
@@ -51,7 +59,9 @@ Second paragraph.`} />);
 		});
 
 		it("should render bold and italic combined", () => {
-			render(<MarkdownRenderer content="This is ***bold and italic*** text." />);
+			render(
+				<MarkdownRenderer content="This is ***bold and italic*** text." />,
+			);
 			const bold = document.querySelector("strong");
 			const italic = document.querySelector("em");
 			expect(bold).toBeInTheDocument();
@@ -61,35 +71,51 @@ Second paragraph.`} />);
 
 	describe("lists", () => {
 		it("should render unordered lists with dashes", () => {
-			render(<MarkdownRenderer content={`- Item 1
+			render(
+				<MarkdownRenderer
+					content={`- Item 1
 - Item 2
-- Item 3`} />);
+- Item 3`}
+				/>,
+			);
 			const list = document.querySelector("ul");
 			expect(list).toBeInTheDocument();
 			expect(list?.querySelectorAll("li").length).toBe(3);
 		});
 
 		it("should render unordered lists with asterisks", () => {
-			render(<MarkdownRenderer content={`* Item 1
-* Item 2`} />);
+			render(
+				<MarkdownRenderer
+					content={`* Item 1
+* Item 2`}
+				/>,
+			);
 			const list = document.querySelector("ul");
 			expect(list).toBeInTheDocument();
 		});
 
 		it("should render ordered lists", () => {
-			render(<MarkdownRenderer content={`1. First
+			render(
+				<MarkdownRenderer
+					content={`1. First
 2. Second
-3. Third`} />);
+3. Third`}
+				/>,
+			);
 			const list = document.querySelector("ol");
 			expect(list).toBeInTheDocument();
 			expect(list?.querySelectorAll("li").length).toBe(3);
 		});
 
 		it("should render nested lists", () => {
-			render(<MarkdownRenderer content={`- Item 1
+			render(
+				<MarkdownRenderer
+					content={`- Item 1
   - Nested 1
   - Nested 2
-- Item 2`} />);
+- Item 2`}
+				/>,
+			);
 			const lists = document.querySelectorAll("ul");
 			expect(lists.length).toBeGreaterThanOrEqual(1);
 		});
@@ -104,7 +130,9 @@ Second paragraph.`} />);
 		});
 
 		it("should render multiple inline code snippets", () => {
-			render(<MarkdownRenderer content="Use `const` or `let` for variables." />);
+			render(
+				<MarkdownRenderer content="Use `const` or `let` for variables." />,
+			);
 			const codes = document.querySelectorAll("code");
 			expect(codes.length).toBeGreaterThanOrEqual(2);
 		});
@@ -118,7 +146,9 @@ Second paragraph.`} />);
 
 	describe("links", () => {
 		it("should render links with href", () => {
-			render(<MarkdownRenderer content="Visit [Google](https://google.com) for more." />);
+			render(
+				<MarkdownRenderer content="Visit [Google](https://google.com) for more." />,
+			);
 			const link = document.querySelector("a");
 			expect(link).toBeInTheDocument();
 			expect(link?.getAttribute("href")).toBe("https://google.com");
@@ -159,11 +189,15 @@ Second paragraph.`} />);
 		});
 
 		it("should render multiple heading levels", () => {
-			render(<MarkdownRenderer content={`# H1
+			render(
+				<MarkdownRenderer
+					content={`# H1
 
 ## H2
 
-### H3`} />);
+### H3`}
+				/>,
+			);
 			expect(document.querySelector("h1")).toBeInTheDocument();
 			expect(document.querySelector("h2")).toBeInTheDocument();
 			expect(document.querySelector("h3")).toBeInTheDocument();
@@ -178,8 +212,12 @@ Second paragraph.`} />);
 		});
 
 		it("should render multi-line blockquotes", () => {
-			render(<MarkdownRenderer content={`> Line 1
-> Line 2`} />);
+			render(
+				<MarkdownRenderer
+					content={`> Line 1
+> Line 2`}
+				/>,
+			);
 			const blockquote = document.querySelector("blockquote");
 			expect(blockquote).toBeInTheDocument();
 		});
@@ -224,21 +262,29 @@ Second paragraph.`} />);
 
 	describe("horizontal rules", () => {
 		it("should render horizontal rules with dashes", () => {
-			render(<MarkdownRenderer content={`Above
+			render(
+				<MarkdownRenderer
+					content={`Above
 
 ---
 
-Below`} />);
+Below`}
+				/>,
+			);
 			const hr = document.querySelector("hr");
 			expect(hr).toBeInTheDocument();
 		});
 
 		it("should render horizontal rules with asterisks", () => {
-			render(<MarkdownRenderer content={`Above
+			render(
+				<MarkdownRenderer
+					content={`Above
 
 ***
 
-Below`} />);
+Below`}
+				/>,
+			);
 			const hr = document.querySelector("hr");
 			expect(hr).toBeInTheDocument();
 		});
@@ -256,7 +302,7 @@ Below`} />);
 		});
 
 		it("should handle special characters", () => {
-			render(<MarkdownRenderer content={'Special chars: < > & " \''} />);
+			render(<MarkdownRenderer content={"Special chars: < > & \" '"} />);
 			expect(screen.getByText(/Special chars/)).toBeInTheDocument();
 		});
 
@@ -282,19 +328,19 @@ describe("createMarkdownRenderer", () => {
 	it("should render markdown content", () => {
 		const renderer = createMarkdownRenderer();
 		const element = renderer("**bold** text");
-		
+
 		render(element);
-		
+
 		expect(screen.getByText("bold")).toBeInTheDocument();
 	});
 
 	it("should be reusable", () => {
 		const renderer = createMarkdownRenderer();
-		
+
 		const { unmount } = render(renderer("First"));
 		expect(screen.getByText("First")).toBeInTheDocument();
 		unmount();
-		
+
 		render(renderer("Second"));
 		expect(screen.getByText("Second")).toBeInTheDocument();
 	});
@@ -311,15 +357,23 @@ describe("MarkdownRenderer component elements", () => {
 
 	describe("list styling", () => {
 		it("should style unordered lists with disc markers", () => {
-			render(<MarkdownRenderer content={`- Item 1
-- Item 2`} />);
+			render(
+				<MarkdownRenderer
+					content={`- Item 1
+- Item 2`}
+				/>,
+			);
 			const ul = document.querySelector("ul");
 			expect(ul?.className).toContain("list-disc");
 		});
 
 		it("should style ordered lists with decimal markers", () => {
-			render(<MarkdownRenderer content={`1. First
-2. Second`} />);
+			render(
+				<MarkdownRenderer
+					content={`1. First
+2. Second`}
+				/>,
+			);
 			const ol = document.querySelector("ol");
 			expect(ol?.className).toContain("list-decimal");
 		});
@@ -414,11 +468,15 @@ describe("MarkdownRenderer component elements", () => {
 
 	describe("horizontal rule styling", () => {
 		it("should have border styling", () => {
-			render(<MarkdownRenderer content={`Above
+			render(
+				<MarkdownRenderer
+					content={`Above
 
 ---
 
-Below`} />);
+Below`}
+				/>,
+			);
 			const hr = document.querySelector("hr");
 			expect(hr?.className).toContain("border-border");
 		});
@@ -437,7 +495,7 @@ Some **bold** and *italic* text with \`inline code\`.
 > A blockquote
 
 [A link](https://example.com)`;
-		
+
 		render(<MarkdownRenderer content={content} />);
 
 		expect(document.querySelector("h1")).toBeInTheDocument();

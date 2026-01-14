@@ -1,5 +1,5 @@
-import { atom } from "nanostores";
 import { getDecryptedGoogleApiKey } from "@/lib/stores/settings";
+import { atom } from "nanostores";
 
 export interface GoogleModel {
 	id: string;
@@ -27,15 +27,19 @@ export const fetchGoogleModels = async () => {
 
 	isLoadingGoogleModelsAtom.set(true);
 	try {
-		const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+		const response = await fetch(
+			`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+		);
 		if (!response.ok) throw new Error("Failed to fetch Google models");
-		
-		const data = await response.json() as { models: Array<{
-			name: string;
-			displayName?: string;
-			description?: string;
-			supportedGenerationMethods: string[];
-		}> };
+
+		const data = (await response.json()) as {
+			models: Array<{
+				name: string;
+				displayName?: string;
+				description?: string;
+				supportedGenerationMethods: string[];
+			}>;
+		};
 		if (data.models && Array.isArray(data.models)) {
 			const models = data.models
 				.filter((m) => m.supportedGenerationMethods.includes("generateContent"))

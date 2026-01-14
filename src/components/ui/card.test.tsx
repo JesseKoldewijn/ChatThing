@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import {
 	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	CardFooter,
 } from "./card";
 
 describe("Card components", () => {
@@ -31,7 +31,7 @@ describe("Card components", () => {
 			render(
 				<Card>
 					<div data-testid="child">Child Element</div>
-				</Card>
+				</Card>,
 			);
 
 			expect(screen.getByTestId("child")).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("Card components", () => {
 
 		it("should apply custom className", () => {
 			render(
-				<CardDescription className="custom-desc">Description</CardDescription>
+				<CardDescription className="custom-desc">Description</CardDescription>,
 			);
 
 			expect(screen.getByText("Description")).toHaveClass("custom-desc");
@@ -130,13 +130,15 @@ describe("Card components", () => {
 					</CardHeader>
 					<CardContent>This is the main content of the card.</CardContent>
 					<CardFooter>Footer actions</CardFooter>
-				</Card>
+				</Card>,
 			);
 
 			expect(screen.getByText("Card Title")).toBeInTheDocument();
-			expect(screen.getByText("Card description goes here")).toBeInTheDocument();
 			expect(
-				screen.getByText("This is the main content of the card.")
+				screen.getByText("Card description goes here"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByText("This is the main content of the card."),
 			).toBeInTheDocument();
 			expect(screen.getByText("Footer actions")).toBeInTheDocument();
 		});
@@ -147,7 +149,7 @@ describe("Card components", () => {
 			const { container } = render(
 				<Card>
 					<CardContent>Simple content</CardContent>
-				</Card>
+				</Card>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
@@ -162,11 +164,10 @@ describe("Card components", () => {
 					</CardHeader>
 					<CardContent>This is the main content of the card.</CardContent>
 					<CardFooter>Footer actions</CardFooter>
-				</Card>
+				</Card>,
 			);
 			const results = await axe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
 });
-

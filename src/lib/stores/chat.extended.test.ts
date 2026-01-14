@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	saveImagesToIndexedDB,
 	compressImage,
 	fileToImageAttachment,
 	type ImageAttachment,
+	saveImagesToIndexedDB,
 } from "./chat";
 import * as imageStorage from "./imageStorage";
 
@@ -40,7 +40,7 @@ describe("chat store - image handling", () => {
 				"conv-123",
 				"data:image/png;base64,abc123",
 				"image/png",
-				"test.png"
+				"test.png",
 			);
 			expect(result).toHaveLength(1);
 			expect(result[0]).toEqual({
@@ -54,8 +54,16 @@ describe("chat store - image handling", () => {
 
 		it("should handle multiple images", async () => {
 			const images: ImageAttachment[] = [
-				{ id: "img-1", data: "data:image/png;base64,abc", mimeType: "image/png" },
-				{ id: "img-2", data: "data:image/jpeg;base64,xyz", mimeType: "image/jpeg" },
+				{
+					id: "img-1",
+					data: "data:image/png;base64,abc",
+					mimeType: "image/png",
+				},
+				{
+					id: "img-2",
+					data: "data:image/jpeg;base64,xyz",
+					mimeType: "image/jpeg",
+				},
 			];
 
 			const result = await saveImagesToIndexedDB(images, "conv-456");
@@ -68,7 +76,7 @@ describe("chat store - image handling", () => {
 
 		it("should keep original data if IndexedDB save fails", async () => {
 			vi.mocked(imageStorage.saveImage).mockRejectedValueOnce(
-				new Error("IndexedDB error")
+				new Error("IndexedDB error"),
 			);
 
 			const images: ImageAttachment[] = [
@@ -93,8 +101,16 @@ describe("chat store - image handling", () => {
 				.mockRejectedValueOnce(new Error("Failed"));
 
 			const images: ImageAttachment[] = [
-				{ id: "img-1", data: "data:image/png;base64,abc", mimeType: "image/png" },
-				{ id: "img-2", data: "data:image/jpeg;base64,xyz", mimeType: "image/jpeg" },
+				{
+					id: "img-1",
+					data: "data:image/png;base64,abc",
+					mimeType: "image/png",
+				},
+				{
+					id: "img-2",
+					data: "data:image/jpeg;base64,xyz",
+					mimeType: "image/jpeg",
+				},
 			];
 
 			const result = await saveImagesToIndexedDB(images, "conv-123");
@@ -166,8 +182,10 @@ describe("chat store - image handling", () => {
 			const result = await compressImage("data:image/png;base64,original");
 
 			expect(result).toBe("data:image/jpeg;base64,compressed");
-			expect(mockCanvas.getContext).toHaveBeenCalledWith("2d");
-			expect(mockCanvas.toDataURL).toHaveBeenCalledWith("image/jpeg", 0.7);
+			expect(mockCanvas.getContext).toHaveBeenCalledWith("2d", {
+				alpha: false,
+			});
+			expect(mockCanvas.toDataURL).toHaveBeenCalledWith("image/jpeg", 0.8);
 		});
 
 		it("should resize images that are too large", async () => {
@@ -187,7 +205,7 @@ describe("chat store - image handling", () => {
 			mockCanvas.getContext = vi.fn().mockReturnValue(null);
 
 			await expect(
-				compressImage("data:image/png;base64,original")
+				compressImage("data:image/png;base64,original"),
 			).rejects.toThrow("Failed to get canvas context");
 		});
 
@@ -209,7 +227,7 @@ describe("chat store - image handling", () => {
 			globalThis.Image = FailingImage as unknown as typeof Image;
 
 			await expect(
-				compressImage("data:image/png;base64,invalid")
+				compressImage("data:image/png;base64,invalid"),
 			).rejects.toThrow("Failed to load image for compression");
 		});
 	});
@@ -306,7 +324,9 @@ describe("chat store - image handling", () => {
 		});
 
 		it("should keep GIF files uncompressed", async () => {
-			const mockFile = new File(["test"], "animation.gif", { type: "image/gif" });
+			const mockFile = new File(["test"], "animation.gif", {
+				type: "image/gif",
+			});
 
 			const result = await fileToImageAttachment(mockFile);
 
@@ -332,7 +352,9 @@ describe("chat store - image handling", () => {
 
 				readAsDataURL(_file: Blob) {
 					queueMicrotask(() => {
-						this.onerror?.(new Error("Read failed") as unknown as ProgressEvent<FileReader>);
+						this.onerror?.(
+							new Error("Read failed") as unknown as ProgressEvent<FileReader>,
+						);
 					});
 				}
 			}
@@ -358,4 +380,3 @@ describe("chat store - image handling", () => {
 		});
 	});
 });
-

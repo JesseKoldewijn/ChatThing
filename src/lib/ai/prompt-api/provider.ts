@@ -1,11 +1,13 @@
-import {
-	type ModelMessage as CoreMessage,
-	streamText,
-	generateText,
-} from "ai";
+import type { Message } from "@/lib/stores/chat";
 import { builtInAI } from "@built-in-ai/core";
-import { type Message } from "@/lib/stores/chat";
-import { type AIProvider, type PromptOptions, type ProviderType, PROVIDER_PROMPT_API, type StreamPart } from "../types";
+import { type ModelMessage as CoreMessage, generateText, streamText } from "ai";
+import {
+	type AIProvider,
+	PROVIDER_PROMPT_API,
+	type PromptOptions,
+	type ProviderType,
+	type StreamPart,
+} from "../types";
 
 const convertHistoryToMessages = (history?: Message[]): CoreMessage[] => {
 	if (!history || history.length === 0) return [];
@@ -26,17 +28,17 @@ export class PromptApiProvider implements AIProvider {
 
 	async prompt(
 		prompt: string,
-		options?: PromptOptions
+		options?: PromptOptions,
 	): Promise<AsyncIterable<StreamPart>> {
 		const messages: CoreMessage[] = [
-			{ 
-				role: "system", 
+			{
+				role: "system",
 				content: `You are a helpful AI assistant running locally in the browser. 
 Current Date and Time: ${new Date().toLocaleString()}
 
 CRITICAL RULES:
 1. Respond naturally to the user.
-2. If you need to know about the conversation history, refer to the messages provided in the context.` 
+2. If you need to know about the conversation history, refer to the messages provided in the context.`,
 			},
 			...convertHistoryToMessages(options?.history),
 			{

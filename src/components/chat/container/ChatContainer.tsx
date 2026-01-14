@@ -1,66 +1,82 @@
-import { useCallback, useRef, useEffect, useMemo } from "react";
-import { useStore } from "@nanostores/react";
-import { ChatContainerUI } from "./ChatContainer.ui";
-import { MessageList } from "../messages/MessageList";
-import { ChatInput } from "../input/ChatInput";
-import { ConversationSidebar } from "../sidebar/ConversationSidebar";
-import { ChatHeader } from "../sidebar/ChatHeader";
-import { ErrorBanner } from "../errors/ErrorBanner";
-import { createMarkdownRenderer } from "@/lib/utils/markdown";
-import {
-	addMessage,
-	isStreamingAtom,
-	currentStreamAtom,
-	clearStream,
-	appendToStream,
-	messagesAtom,
-	type ImageAttachment,
-} from "@/lib/stores/chat";
-import {
-	saveCurrentConversation,
-	activeConversationIdAtom,
-	setActiveChat as setActiveChatAtom,
-	createConversation,
-	triggerTitleGeneration,
-	isSyncingFromUrlAtom,
-	switchConversation,
-	isConversationsHydratedAtom,
-} from "@/lib/stores/conversations";
-import {
-	isLockedAtom,
-	providerTypeAtom,
-	openRouterModelAtom,
-	googleModelAtom,
-	ollamaModelAtom,
-	PROVIDER_OPEN_ROUTER,
-	PROVIDER_GOOGLE,
-	PROVIDER_OLLAMA,
-} from "@/lib/stores/settings";
-import { setError, clearError } from "@/lib/stores/errors";
-import {
-	recordMessage,
-	recordResponse,
-	recordToolCall,
-	recordTokenUsage,
-	estimateTokens,
-} from "@/lib/stores/usage";
 import { getAIManager } from "@/lib/ai";
 import { loadingAtom } from "@/lib/ai/store";
 import { useChatSearchParams } from "@/lib/hooks/useNavigation";
-import { UnlockSession } from "../UnlockSession";
+import {
+	addMessage,
+	appendToStream,
+	clearStream,
+	currentStreamAtom,
+	hydrateMessages,
+	type ImageAttachment,
+	isStreamingAtom,
+	messagesAtom,
+} from "@/lib/stores/chat";
+import {
+	activeConversationIdAtom,
+	createConversation,
+	isConversationsHydratedAtom,
+	isSyncingFromUrlAtom,
+	saveCurrentConversation,
+	setActiveChat as setActiveChatAtom,
+	switchConversation,
+	triggerTitleGeneration,
+} from "@/lib/stores/conversations";
+import { clearError, setError } from "@/lib/stores/errors";
+import {
+	experimentsAtom,
+	googleModelAtom,
+	isProviderLockedAtom,
+	isUnlockDialogOpenAtom,
+	ollamaModelAtom,
+	openRouterModelAtom,
+	PROVIDER_GOOGLE,
+	PROVIDER_OLLAMA,
+	PROVIDER_OPEN_ROUTER,
+	providerTypeAtom,
+	setIsUnlockDialogOpen,
+} from "@/lib/stores/settings";
+import {
+	estimateTokens,
+	recordMessage,
+	recordResponse,
+	recordTokenUsage,
+	recordToolCall,
+} from "@/lib/stores/usage";
+import { createMarkdownRenderer } from "@/lib/utils/markdown";
+import { useStore } from "@nanostores/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ErrorBanner } from "../errors/ErrorBanner";
+import { ChatInput } from "../input/ChatInput";
+import { MessageList } from "../messages/MessageList";
+import { ChatHeader } from "../sidebar/ChatHeader";
+import { ConversationSidebar } from "../sidebar/ConversationSidebar";
+import { UnlockDialog } from "../UnlockDialog";
+import { ChatContainerUI } from "./ChatContainer.ui";
 
 // Abort controller for stopping streams
 let abortController: AbortController | null = null;
 
 export const ChatContainer = () => {
-	const { activeChat, sidebarOpen: isSidebarOpen, toggleSidebar, setSidebar, setActiveChat } =
-		useChatSearchParams();
+	const {
+		activeChat,
+		sidebarOpen: isSidebarOpen,
+		toggleSidebar,
+		setSidebar,
+		setActiveChat,
+	} = useChatSearchParams();
 	const activeConversationId = useStore(activeConversationIdAtom);
 
 	const isStreaming = useStore(isStreamingAtom);
 	const isConversationsHydrated = useStore(isConversationsHydratedAtom);
 	const lastUrlChatRef = useRef<string | undefined>(undefined);
 	const hasInitializedRef = useRef(false);
+
+	// Unlock UX state
+	const isUnlockDialogOpen = useStore(isUnlockDialogOpenAtom);
+	const [pendingMessage, setPendingMessage] = useState<{
+		message: string;
+		images?: ImageAttachment[];
+	} | null>(null);
 
 	// Sync URL -> Atom
 	useEffect(() => {
@@ -85,14 +101,22 @@ export const ChatContainer = () => {
 		// Subsequent syncs
 		if (currentUrlId !== lastUrlChatRef.current) {
 			const wasJustInitialized = lastUrlChatRef.current === undefined;
-			// Strict check: only clear if the URL param was present and is now GONE, 
+			// Strict check: only clear if the URL param was present and is now GONE,
 			// and we are NOT in the middle of a hydration/initialization phase.
-			const transitionedFromIdToNone = lastUrlChatRef.current !== undefined && lastUrlChatRef.current !== null && !currentUrlId;
-			
+			const transitionedFromIdToNone =
+				lastUrlChatRef.current !== undefined &&
+				lastUrlChatRef.current !== null &&
+				!currentUrlId;
+
 			if (currentUrlId && currentUrlId !== currentAtomId) {
 				switchConversation(currentUrlId, false);
-			} else if (transitionedFromIdToNone && currentAtomId && !isStreaming && !wasJustInitialized) {
-				// We only clear the atom if the URL was previously set and is now cleared. 
+			} else if (
+				transitionedFromIdToNone &&
+				currentAtomId &&
+				!isStreaming &&
+				!wasJustInitialized
+			) {
+				// We only clear the atom if the URL was previously set and is now cleared.
 				// This prevents accidental clearing during hydration if the router briefly reports undefined.
 				setActiveChatAtom(null, false);
 			}
@@ -108,7 +132,12 @@ export const ChatContainer = () => {
 
 			// Only sync to URL if initialized, hydrated, not currently syncing FROM the URL,
 			// and the values actually differ.
-			if (hasInitializedRef.current && isConversationsHydrated && !isSyncingFromUrlAtom.get() && currentAtomId !== currentUrlId) {
+			if (
+				hasInitializedRef.current &&
+				isConversationsHydrated &&
+				!isSyncingFromUrlAtom.get() &&
+				currentAtomId !== currentUrlId
+			) {
 				setActiveChat(currentAtomId);
 			}
 		});
@@ -140,7 +169,7 @@ export const ChatContainer = () => {
 				addUserMessage?: boolean;
 				images?: ImageAttachment[];
 				transactionId?: string;
-			} = {}
+			} = {},
 		) => {
 			const { addUserMessage = true, images } = options;
 
@@ -168,17 +197,27 @@ export const ChatContainer = () => {
 			currentTransactionIdRef.current = transactionId;
 
 			// Get the current message history for context BEFORE adding the new user message
-			const currentMessages = messagesAtom.get();
+			// Hydrate images from IndexedDB for the history
+			const currentMessages = await hydrateMessages(messagesAtom.get());
+
+			// Get experiments
+			const experiments = experimentsAtom.get();
+			const toolsEnabled = experiments.tools;
 
 			// Add user message only if this is a new message (not a retry/regenerate)
 			const provider = providerTypeAtom.get();
-			const model = provider === PROVIDER_OPEN_ROUTER ? openRouterModelAtom.get() :
-						  provider === PROVIDER_GOOGLE ? googleModelAtom.get() :
-						  provider === PROVIDER_OLLAMA ? ollamaModelAtom.get() : "prompt-api";
+			const model =
+				provider === PROVIDER_OPEN_ROUTER
+					? openRouterModelAtom.get()
+					: provider === PROVIDER_GOOGLE
+						? googleModelAtom.get()
+						: provider === PROVIDER_OLLAMA
+							? ollamaModelAtom.get()
+							: "prompt-api";
 
 			if (addUserMessage) {
 				addMessage("user", prompt, { images, transactionId });
-				
+
 				// Run non-critical tasks in background
 				queueMicrotask(() => {
 					if (conversationId) {
@@ -202,11 +241,12 @@ export const ChatContainer = () => {
 				const stream = await manager.prompt(prompt, {
 					images,
 					history: currentMessages,
+					toolsEnabled,
 				});
 
 				// Process the stream
 				let textBuffer = "";
-				let streamImages: ImageAttachment[] = [];
+				const streamImages: ImageAttachment[] = [];
 				let animationFrameId: number | null = null;
 
 				const updateUI = () => {
@@ -229,6 +269,13 @@ export const ChatContainer = () => {
 					}
 
 					if (!part) continue;
+
+					// If the stream yields an error part, throw it so it's handled by the main catch block
+					if (part.type === "error") {
+						throw part.error instanceof Error
+							? part.error
+							: new Error(String(part.error));
+					}
 
 					try {
 						if (part.type === "text") {
@@ -255,7 +302,7 @@ export const ChatContainer = () => {
 									(m) =>
 										m.transactionId === transactionId &&
 										m.role === "system" &&
-										m.content === toolAnnouncement
+										m.content === toolAnnouncement,
 								);
 							if (!existingAnnouncement) {
 								addMessage("system", toolAnnouncement, {
@@ -263,8 +310,6 @@ export const ChatContainer = () => {
 								});
 								recordToolCall(conversationId!, part.toolName, provider, model);
 							}
-						} else if (part.type === "error") {
-							addMessage("system", `❌ Stream Error: ${part.error instanceof Error ? part.error.message : String(part.error)}`, { transactionId });
 						}
 					} catch (chunkError) {
 						if (import.meta.env.DEV) {
@@ -287,8 +332,7 @@ export const ChatContainer = () => {
 				if (
 					finalContent.startsWith("{") &&
 					finalContent.endsWith("}") &&
-					(finalContent.includes('"name":') ||
-						finalContent.includes('"tool":'))
+					(finalContent.includes('"name":') || finalContent.includes('"tool":'))
 				) {
 					// It's likely a leaked JSON tool call - check if it's the ONLY thing in the message
 					try {
@@ -302,15 +346,20 @@ export const ChatContainer = () => {
 				}
 
 				if (finalContent || streamImages.length > 0) {
-					addMessage("assistant", finalContent, { 
+					addMessage("assistant", finalContent, {
 						transactionId,
-						images: streamImages.length > 0 ? streamImages : undefined 
+						images: streamImages.length > 0 ? streamImages : undefined,
 					});
-					
+
 					// Run non-critical tasks in background
 					queueMicrotask(() => {
 						if (finalContent) {
-							recordResponse(conversationId!, finalContent.length, provider, model);
+							recordResponse(
+								conversationId!,
+								finalContent.length,
+								provider,
+								model,
+							);
 
 							// Track token usage (estimated since built-in AI doesn't provide actual counts)
 							// Input tokens: prompt + context from history
@@ -319,20 +368,21 @@ export const ChatContainer = () => {
 							const outputTokens = estimateTokens(finalContent);
 							recordTokenUsage(inputTokens, outputTokens);
 						}
-						
+
 						// Final save
 						saveCurrentConversation();
 					});
 				}
 			} catch (error) {
-				const isAbortError = 
+				const isAbortError =
 					error instanceof Error && error.name === "AbortError";
-				
+
 				if (!isAbortError) {
 					// Error handled by UI via system message
-					
+
 					// Ensure we have an Error object
-					const errorObj = error instanceof Error ? error : new Error(String(error));
+					const errorObj =
+						error instanceof Error ? error : new Error(String(error));
 
 					// Set the error with retry action (don't add user message on retry)
 					const retryMessage = lastMessageRef.current;
@@ -346,9 +396,13 @@ export const ChatContainer = () => {
 					});
 
 					// ALSO show the error inside the chat conversation for better visibility
-					addMessage("system", `❌ ${promptError.title}: ${promptError.message}`, {
-						transactionId,
-					});
+					addMessage(
+						"system",
+						`❌ ${promptError.title}: ${promptError.message}`,
+						{
+							transactionId,
+						},
+					);
 
 					// Save the conversation even on error to persist the error message
 					saveCurrentConversation();
@@ -361,15 +415,20 @@ export const ChatContainer = () => {
 				currentTransactionIdRef.current = null;
 			}
 		},
-		[]
+		[],
 	);
 
 	// Public handler for sending new messages (with optional images)
 	const handleSend = useCallback(
 		async (message: string, images?: ImageAttachment[]) => {
+			if (isProviderLockedAtom.get()) {
+				setPendingMessage({ message, images });
+				setIsUnlockDialogOpen(true);
+				return;
+			}
 			await streamResponse(message, { addUserMessage: true, images });
 		},
-		[streamResponse]
+		[streamResponse],
 	);
 
 	const handleStop = useCallback(() => {
@@ -397,8 +456,18 @@ export const ChatContainer = () => {
 		(prompt: string, transactionId: string) => {
 			streamResponse(prompt, { addUserMessage: false, transactionId });
 		},
-		[streamResponse]
+		[streamResponse],
 	);
+
+	const handleUnlockSuccess = useCallback(() => {
+		if (pendingMessage) {
+			streamResponse(pendingMessage.message, {
+				addUserMessage: true,
+				images: pendingMessage.images,
+			});
+			setPendingMessage(null);
+		}
+	}, [pendingMessage, streamResponse]);
 
 	const handleToggleSidebar = useCallback(() => {
 		toggleSidebar();
@@ -411,12 +480,19 @@ export const ChatContainer = () => {
 	// Move focus to main content when sidebar closes to prevent a11y warnings
 	useEffect(() => {
 		if (!isSidebarOpen) {
-			const mainContent = document.querySelector('main');
+			const mainContent = document.querySelector("main");
 			if (mainContent && mainContent.contains(document.activeElement)) {
 				// Focus is already in main, good
-			} else if (document.activeElement && document.querySelector('#chat-sidebar')?.contains(document.activeElement)) {
+			} else if (
+				document.activeElement &&
+				document
+					.querySelector("#chat-sidebar")
+					?.contains(document.activeElement)
+			) {
 				// Focus was in sidebar, move it to the menu button or header
-				const menuButton = document.querySelector('[aria-controls="chat-sidebar"]');
+				const menuButton = document.querySelector(
+					'[aria-controls="chat-sidebar"]',
+				);
 				(menuButton as HTMLElement)?.focus();
 			}
 		}
@@ -424,29 +500,32 @@ export const ChatContainer = () => {
 
 	const markdownRenderer = useMemo(() => createMarkdownRenderer(), []);
 
-	const isLocked = useStore(isLockedAtom);
-
 	return (
-		<ChatContainerUI
-			isSidebarOpen={isSidebarOpen}
-			onCloseSidebar={handleCloseSidebar}
-			sidebar={<ConversationSidebar onClose={handleCloseSidebar} />}
-			header={
-				<ChatHeader
-					onMenuClick={handleToggleSidebar}
-					isSidebarOpen={isSidebarOpen}
-				/>
-			}
-			isLocked={isLocked}
-			unlockSession={<UnlockSession />}
-			messageList={
-				<MessageList
-					onRegenerate={handleRegenerate}
-					renderContent={markdownRenderer}
-				/>
-			}
-			errorBanner={<ErrorBanner />}
-			input={<ChatInput onSend={handleSend} onStop={handleStop} />}
-		/>
+		<>
+			<ChatContainerUI
+				isSidebarOpen={isSidebarOpen}
+				onCloseSidebar={handleCloseSidebar}
+				sidebar={<ConversationSidebar onClose={handleCloseSidebar} />}
+				header={
+					<ChatHeader
+						onMenuClick={handleToggleSidebar}
+						isSidebarOpen={isSidebarOpen}
+					/>
+				}
+				messageList={
+					<MessageList
+						onRegenerate={handleRegenerate}
+						renderContent={markdownRenderer}
+					/>
+				}
+				errorBanner={<ErrorBanner />}
+				input={<ChatInput onSend={handleSend} onStop={handleStop} />}
+			/>
+			<UnlockDialog
+				isOpen={isUnlockDialogOpen}
+				onOpenChange={setIsUnlockDialogOpen}
+				onUnlockSuccess={handleUnlockSuccess}
+			/>
+		</>
 	);
 };

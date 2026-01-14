@@ -1,23 +1,19 @@
-import { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
-import { 
-	getFriendlyDate,
-	getDaysInMonth,
-	getWeekdays,
-	getMonths
-} from "@/lib/utils/date";
-import { 
-	Tooltip, 
-	TooltipContent, 
-	TooltipTrigger,
-	TooltipProvider
-} from "@/components/ui/tooltip";
-import { 
-	ChevronLeft, 
-	ChevronRight, 
-	Sparkles
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import {
+	getDaysInMonth,
+	getFriendlyDate,
+	getMonths,
+	getWeekdays,
+} from "@/lib/utils/date";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ActivityCalendarProps {
 	events: Array<{ timestamp: number }>;
@@ -37,7 +33,26 @@ export const ActivityCalendar = ({
 	firstActivityTimestamp,
 }: ActivityCalendarProps) => {
 	// Local state for month navigation in the picker
-	const [viewDate, setViewDate] = useState(() => new Date());
+	// Initialize with a fixed date for SSR consistency
+	const [viewDate, setViewDate] = useState(() => {
+		const d = new Date("2026-01-01T00:00:00Z");
+		return d;
+	});
+
+	// Use state to store "today" timestamp to avoid hydration mismatch
+	const [todayTs, setTodayTs] = useState<number | null>(null);
+
+	useEffect(() => {
+		// Set view date to current month on mount
+		const d = new Date();
+		d.setUTCHours(0, 0, 0, 0);
+		setViewDate(d);
+
+		// Set today's timestamp for the indicator
+		const today = new Date();
+		today.setUTCHours(0, 0, 0, 0);
+		setTodayTs(today.getTime());
+	}, []);
 
 	const weekdays = useMemo(() => getWeekdays(), []);
 	const months = useMemo(() => getMonths(), []);
@@ -45,7 +60,7 @@ export const ActivityCalendar = ({
 	// Activity per day map (simple boolean check for activity)
 	const activityMap = useMemo(() => {
 		const map = new Set<string>();
-		events.forEach(e => {
+		events.forEach((e) => {
 			const d = new Date(e.timestamp);
 			const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 			map.add(key);
@@ -58,7 +73,7 @@ export const ActivityCalendar = ({
 		const month = viewDate.getUTCMonth();
 		const daysInMonth = getDaysInMonth(year, month);
 		const firstDayOfMonth = new Date(Date.UTC(year, month, 1)).getUTCDay();
-		
+
 		const days = [];
 		// Padding
 		for (let i = 0; i < firstDayOfMonth; i++) {
@@ -69,23 +84,31 @@ export const ActivityCalendar = ({
 			const ts = Date.UTC(year, month, i);
 			const key = `${year}-${month}-${i}`;
 			const hasActivity = activityMap.has(key);
-			const isFirst = firstActivityTimestamp ? (
-				new Date(firstActivityTimestamp).getUTCFullYear() === year &&
-				new Date(firstActivityTimestamp).getUTCMonth() === month &&
-				new Date(firstActivityTimestamp).getUTCDate() === i
-			) : false;
-			
+			const isFirst = firstActivityTimestamp
+				? new Date(firstActivityTimestamp).getUTCFullYear() === year &&
+					new Date(firstActivityTimestamp).getUTCMonth() === month &&
+					new Date(firstActivityTimestamp).getUTCDate() === i
+				: false;
+
 			days.push({ ts, hasActivity, isFirst, day: i });
 		}
 		return days;
 	}, [viewDate, activityMap, firstActivityTimestamp]);
 
 	const handlePrevMonth = () => {
-		setViewDate(new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() - 1, 1)));
+		setViewDate(
+			new Date(
+				Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() - 1, 1),
+			),
+		);
 	};
 
 	const handleNextMonth = () => {
-		setViewDate(new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + 1, 1)));
+		setViewDate(
+			new Date(
+				Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + 1, 1),
+			),
+		);
 	};
 
 	const handleDayClick = (ts: number) => {
@@ -103,14 +126,29 @@ export const ActivityCalendar = ({
 	return (
 		<div data-testid="activity-calendar" className="space-y-4">
 			<div className="flex items-center justify-between px-1">
-				<h4 data-testid="calendar-view-date" className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+				<h4
+					data-testid="calendar-view-date"
+					className="text-muted-foreground text-sm font-bold tracking-wider uppercase"
+				>
 					{months[viewDate.getUTCMonth()]} {viewDate.getUTCFullYear()}
 				</h4>
 				<div className="flex gap-1">
-					<Button data-testid="prev-month-btn" variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrevMonth}>
+					<Button
+						data-testid="prev-month-btn"
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8"
+						onClick={handlePrevMonth}
+					>
 						<ChevronLeft className="h-4 w-4" />
 					</Button>
-					<Button data-testid="next-month-btn" variant="ghost" size="icon" className="h-8 w-8" onClick={handleNextMonth}>
+					<Button
+						data-testid="next-month-btn"
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8"
+						onClick={handleNextMonth}
+					>
 						<ChevronRight className="h-4 w-4" />
 					</Button>
 				</div>
@@ -118,14 +156,19 @@ export const ActivityCalendar = ({
 
 			<div className="grid grid-cols-7 gap-1 text-center">
 				{weekdays.map((d, i) => (
-					<div key={`${d}-${i}`} className="text-[10px] font-bold text-muted-foreground/50 py-1">{d}</div>
+					<div
+						key={`${d}-${i}`}
+						className="text-muted-foreground/50 py-1 text-[10px] font-bold"
+					>
+						{d}
+					</div>
 				))}
 				<TooltipProvider delayDuration={0}>
 					{calendarDays.map((day, idx) => {
 						if (!day) return <div key={`empty-${idx}`} className="h-9 w-9" />;
-						
+
 						const isSelected = day.ts >= startDate && day.ts <= endDate;
-						const isToday = new Date().setUTCHours(0,0,0,0) === day.ts;
+						const isToday = todayTs === day.ts;
 
 						return (
 							<Tooltip key={day.ts}>
@@ -135,26 +178,43 @@ export const ActivityCalendar = ({
 										onClick={() => handleDayClick(day.ts)}
 										className={cn(
 											"relative flex h-9 w-9 items-center justify-center rounded-lg text-xs transition-all",
-											isSelected 
-												? "bg-primary text-primary-foreground font-bold shadow-sm" 
+											isSelected
+												? "bg-primary text-primary-foreground font-bold shadow-sm"
 												: "text-foreground hover:bg-muted/80",
-											isToday && !isSelected && "border border-primary/30",
-											day.isFirst && !isSelected && "ring-1 ring-amber-500/50"
+											isToday && !isSelected && "border-primary/30 border",
+											day.isFirst && !isSelected && "ring-1 ring-amber-500/50",
 										)}
 									>
 										{day.day}
 										{day.hasActivity && !isSelected && (
-											<span data-testid={`activity-indicator-${day.day}`} className="absolute bottom-1.5 h-1 w-1 rounded-full bg-primary/40" />
+											<span
+												data-testid={`activity-indicator-${day.day}`}
+												className="bg-primary/40 absolute bottom-1.5 h-1 w-1 rounded-full"
+											/>
 										)}
 										{day.isFirst && (
-											<Sparkles data-testid="first-activity-indicator" className={cn("absolute -right-0.5 -top-0.5 h-3 w-3", isSelected ? "text-primary-foreground fill-primary-foreground" : "text-amber-500 fill-amber-500")} />
+											<Sparkles
+												data-testid="first-activity-indicator"
+												className={cn(
+													"absolute -top-0.5 -right-0.5 h-3 w-3",
+													isSelected
+														? "text-primary-foreground fill-primary-foreground"
+														: "fill-amber-500 text-amber-500",
+												)}
+											/>
 										)}
 									</button>
 								</TooltipTrigger>
 								<TooltipContent className="text-[10px]">
-									<div className="font-bold">{getFriendlyDate(day.ts, timezone)}</div>
+									<div className="font-bold">
+										{getFriendlyDate(day.ts, timezone)}
+									</div>
 									{day.hasActivity && <div>Has activity</div>}
-									{day.isFirst && <div className="text-amber-500 font-bold">✨ First ever activity</div>}
+									{day.isFirst && (
+										<div className="font-bold text-amber-500">
+											✨ First ever activity
+										</div>
+									)}
 								</TooltipContent>
 							</Tooltip>
 						);
@@ -162,9 +222,9 @@ export const ActivityCalendar = ({
 				</TooltipProvider>
 			</div>
 
-			<div className="flex items-center justify-center gap-4 border-t pt-4 text-[10px] font-bold uppercase tracking-tight text-muted-foreground">
+			<div className="text-muted-foreground flex items-center justify-center gap-4 border-t pt-4 text-[10px] font-bold tracking-tight uppercase">
 				<div className="flex items-center gap-1.5">
-					<span className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+					<span className="bg-primary/40 h-1.5 w-1.5 rounded-full" />
 					<span>Activity</span>
 				</div>
 				<div className="flex items-center gap-1.5">
@@ -172,7 +232,7 @@ export const ActivityCalendar = ({
 					<span>First Activity</span>
 				</div>
 				<div className="flex items-center gap-1.5">
-					<div className="h-2.5 w-2.5 rounded-sm border border-primary/30" />
+					<div className="border-primary/30 h-2.5 w-2.5 rounded-sm border" />
 					<span>Today</span>
 				</div>
 			</div>

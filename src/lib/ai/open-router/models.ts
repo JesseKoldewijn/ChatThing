@@ -27,15 +27,15 @@ export const fetchOpenRouterModels = async () => {
 	try {
 		const response = await fetch("https://openrouter.ai/api/v1/models");
 		if (!response.ok) throw new Error("Failed to fetch models");
-		
-		const data = await response.json() as { data: unknown[] };
+
+		const data = (await response.json()) as { data: unknown[] };
 		if (data.data && Array.isArray(data.data)) {
 			const models = data.data.map((m: unknown) => {
-				const model = m as { 
-					id: string; 
-					name: string; 
-					description?: string; 
-					pricing?: { prompt: string; completion: string } 
+				const model = m as {
+					id: string;
+					name: string;
+					description?: string;
+					pricing?: { prompt: string; completion: string };
 				};
 				return {
 					id: model.id,
@@ -52,4 +52,3 @@ export const fetchOpenRouterModels = async () => {
 		isLoadingModelsAtom.set(false);
 	}
 };
-

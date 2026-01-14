@@ -1,5 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Bot } from "lucide-react";
+import { Bot, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 export interface MessageListUIProps {
@@ -14,18 +14,18 @@ export interface MessageListUIProps {
  */
 const TypingIndicator = () => (
 	<div className="flex items-center gap-1">
-		<span className="text-sm text-muted-foreground">Thinking</span>
+		<span className="text-muted-foreground text-sm">Thinking</span>
 		<div className="flex gap-0.5">
 			<span
-				className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce"
+				className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full"
 				style={{ animationDelay: "0ms", animationDuration: "600ms" }}
 			/>
 			<span
-				className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce"
+				className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full"
 				style={{ animationDelay: "150ms", animationDuration: "600ms" }}
 			/>
 			<span
-				className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce"
+				className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full"
 				style={{ animationDelay: "300ms", animationDuration: "600ms" }}
 			/>
 		</div>
@@ -43,11 +43,11 @@ const ShimmerBar = ({
 	delay?: number;
 }) => (
 	<div
-		className="h-3 rounded-full bg-muted-foreground/10 overflow-hidden"
+		className="bg-muted-foreground/10 h-3 overflow-hidden rounded-full"
 		style={{ width }}
 	>
 		<div
-			className="h-full w-full bg-linear-to-r from-transparent via-muted-foreground/20 to-transparent animate-shimmer"
+			className="via-muted-foreground/20 animate-shimmer h-full w-full bg-linear-to-r from-transparent to-transparent"
 			style={{ animationDelay: `${delay}ms` }}
 		/>
 	</div>
@@ -63,55 +63,63 @@ export const MessageListUI = ({
 		<ScrollArea data-testid="message-list" className="h-full w-full">
 			<div ref={scrollRef} className="flex min-h-full min-w-0 flex-col">
 				{isEmpty && !isLoading ? (
-					<div data-testid="empty-chat-state" className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+					<div
+						data-testid="empty-chat-state"
+						className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center"
+					>
 						<div className="relative mb-6">
-							<div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 shadow-inner">
-								<Sparkles className="h-10 w-10 text-primary" />
+							<div className="from-primary/20 to-primary/5 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br shadow-inner">
+								<Sparkles className="text-primary h-10 w-10" />
 							</div>
-							<div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-muted shadow-sm ring-2 ring-background">
-								<Bot className="h-4 w-4 text-muted-foreground" />
+							<div className="bg-muted ring-background absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full shadow-sm ring-2">
+								<Bot className="text-muted-foreground h-4 w-4" />
 							</div>
 						</div>
-						<h2 data-testid="empty-chat-title" className="mb-2 text-2xl font-semibold tracking-tight">
+						<h2
+							data-testid="empty-chat-title"
+							className="mb-2 text-2xl font-semibold tracking-tight"
+						>
 							How can I help you today?
 						</h2>
-						<p data-testid="empty-chat-description" className="max-w-md text-muted-foreground">
-							Start a conversation by typing a message below. I'm
-							here to assist with questions, ideas, or anything
-							else you'd like to explore.
+						<p
+							data-testid="empty-chat-description"
+							className="text-muted-foreground max-w-md"
+						>
+							Start a conversation by typing a message below. I'm here to assist
+							with questions, ideas, or anything else you'd like to explore.
 						</p>
 					</div>
 				) : (
-					<div data-testid="message-list-content" className="flex-1 min-w-0 py-4">
+					<div
+						data-testid="message-list-content"
+						className="min-w-0 flex-1 py-4"
+					>
 						{children}
 						{isLoading && (
-							<div data-testid="ai-typing-indicator" className="flex gap-3 px-4 py-4">
+							<div
+								data-testid="ai-typing-indicator"
+								className="flex gap-3 px-4 py-4"
+							>
 								{/* AI Avatar with pulse animation */}
-								<div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-									<Bot className="h-4 w-4 text-muted-foreground" />
-									<span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+								<div className="bg-muted relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+									<Bot className="text-muted-foreground h-4 w-4" />
+									<span className="bg-primary/20 absolute inset-0 animate-ping rounded-full" />
 								</div>
 
 								{/* Loading bubble */}
 								<div className="flex flex-col gap-1">
-									<span className="px-1 text-xs font-medium text-muted-foreground">
+									<span className="text-muted-foreground px-1 text-xs font-medium">
 										AI
 									</span>
-									<div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3 min-w-[200px]">
+									<div className="bg-muted min-w-[200px] rounded-2xl rounded-tl-sm px-4 py-3">
 										{/* Typing indicator */}
 										<TypingIndicator />
 
 										{/* Shimmer loading bars */}
 										<div className="mt-3 space-y-2">
 											<ShimmerBar width="85%" delay={0} />
-											<ShimmerBar
-												width="70%"
-												delay={100}
-											/>
-											<ShimmerBar
-												width="45%"
-												delay={200}
-											/>
+											<ShimmerBar width="70%" delay={100} />
+											<ShimmerBar width="45%" delay={200} />
 										</div>
 									</div>
 								</div>

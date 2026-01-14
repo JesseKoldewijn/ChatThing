@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { weatherTool } from "./weather";
 
 // Mock fetch globally
@@ -225,9 +225,9 @@ describe("weather tool", () => {
 
 			const result = await executeWeather({ location: "Paris" });
 
-			expect(
-				(result as WeatherSuccess).condition?.toLowerCase()
-			).toContain("clear");
+			expect((result as WeatherSuccess).condition?.toLowerCase()).toContain(
+				"clear",
+			);
 		});
 
 		it("should include wind speed in response", async () => {

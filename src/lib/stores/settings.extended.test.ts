@@ -1,25 +1,52 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
-	appearanceAtom,
-	themeAtom,
-	outputLanguageAtom,
-	temperatureUnitAtom,
-	timezoneAtom,
 	aiSettingsAtom,
+	appearanceAtom,
 	archiveThresholdAtom,
 	archiveThresholdDaysAtom,
-	thresholdToHours,
-	getSystemTimezone,
+	encryptedGoogleApiKeyAtom,
+	encryptedOllamaApiKeyAtom,
+	encryptedOpenRouterApiKeyAtom,
+	experimentsAtom,
+	getDecryptedGoogleApiKey,
+	getDecryptedOllamaApiKey,
+	getDecryptedOpenRouterApiKey,
 	getResolvedTimezone,
+	getSystemTimezone,
+	hydrateSettings,
+	masterPasswordAtom,
+	ollamaBaseUrlAtom,
+	outputLanguageAtom,
+	resetSecuritySettings,
 	setAppearance,
-	setTheme,
-	setTemperatureUnit,
-	setTimezone,
 	setArchiveThreshold,
+	setArchiveThresholdDays,
+	setGoogleApiKey,
+	setGoogleModel,
+	setMasterPassword,
+	setOllamaApiKey,
+	setOllamaBaseUrl,
+	setOllamaModel,
+	setOpenRouterApiKey,
+	setOpenRouterModel,
+	setOutputLanguage,
+	setProviderType,
+	setTemperatureUnit,
+	setTheme,
+	setTimezone,
+	setupSettingsPersistence,
+	temperatureUnitAtom,
+	themeAtom,
+	thresholdToHours,
+	timezoneAtom,
+	toggleExperiment,
 	updateAiSettings,
 } from "./settings";
 
 describe("settings store - extended coverage", () => {
+	let cleanup: () => void;
+
 	beforeEach(() => {
 		// Reset atoms to defaults
 		appearanceAtom.set("system");
@@ -29,7 +56,25 @@ describe("settings store - extended coverage", () => {
 		timezoneAtom.set("auto");
 		aiSettingsAtom.set({});
 		archiveThresholdAtom.set({ value: 2, unit: "days" });
+		ollamaBaseUrlAtom.set("http://localhost:11434");
+		masterPasswordAtom.set(null);
+		experimentsAtom.set({});
+		encryptedOpenRouterApiKeyAtom.set(null);
+		encryptedGoogleApiKeyAtom.set(null);
+		encryptedOllamaApiKeyAtom.set(null);
+
+		// Clear and setup spies for localStorage
+		vi.spyOn(Storage.prototype, "setItem");
+		vi.spyOn(Storage.prototype, "getItem");
+		vi.spyOn(Storage.prototype, "removeItem");
 		localStorage.clear();
+
+		cleanup = setupSettingsPersistence();
+	});
+
+	afterEach(() => {
+		if (cleanup) cleanup();
+		vi.restoreAllMocks();
 	});
 
 	describe("getSystemTimezone edge cases", () => {
@@ -110,11 +155,11 @@ describe("settings store - extended coverage", () => {
 			expect(localStorage.getItem("appearance")).toBe("light");
 			setAppearance("dark");
 			expect(localStorage.getItem("appearance")).toBe("dark");
-			
-			setTheme("default");
-			expect(localStorage.getItem("theme")).toBe("default");
+
 			setTheme("vibrant");
 			expect(localStorage.getItem("theme")).toBe("vibrant");
+			setTheme("default");
+			expect(localStorage.getItem("theme")).toBe("default");
 		});
 
 		it("should handle multiple temperature unit changes", () => {
@@ -136,7 +181,7 @@ describe("settings store - extended coverage", () => {
 		it("should preserve existing settings when adding new ones", () => {
 			aiSettingsAtom.set({ expectedInputs: [{ type: "text" }] });
 			updateAiSettings({});
-			
+
 			const settings = aiSettingsAtom.get();
 			expect(settings.expectedInputs).toHaveLength(1);
 		});
@@ -148,7 +193,7 @@ describe("settings store - extended coverage", () => {
 			updateAiSettings({
 				expectedInputs: [{ type: "image" }],
 			});
-			
+
 			const settings = aiSettingsAtom.get();
 			expect(settings.expectedInputs).toHaveLength(1);
 			expect(settings.expectedInputs?.[0].type).toBe("image");
@@ -210,5 +255,228 @@ describe("settings store - extended coverage", () => {
 			expect(temperatureUnitAtom.get()).toBe("celsius");
 		});
 	});
-});
 
+	describe("ollama base url", () => {
+		it("should set and persist ollama base url", () => {
+			setOllamaBaseUrl("http://localhost:11435");
+			expect(ollamaBaseUrlAtom.get()).toBe("http://localhost:11435");
+			expect(localStorage.getItem("ollama-base-url")).toBe(
+				"http://localhost:11435",
+			);
+		});
+	});
+
+	describe("security settings", () => {
+		beforeEach(() => {
+			resetSecuritySettings();
+		});
+
+		it("should set and get master password", () => {
+			setMasterPassword("test-password");
+			expect(masterPasswordAtom.get()).toBe("test-password");
+		});
+
+		it("should set and decrypt google api key", async () => {
+			setMasterPassword("test-password");
+			await setGoogleApiKey("google-key");
+
+			const encrypted = encryptedGoogleApiKeyAtom.get();
+			expect(encrypted).not.toBeNull();
+			expect(encrypted).not.toBe("google-key");
+
+			const decrypted = await getDecryptedGoogleApiKey();
+			expect(decrypted).toBe("google-key");
+		});
+
+		it("should set and decrypt ollama api key", async () => {
+			setMasterPassword("test-password");
+			await setOllamaApiKey("ollama-key");
+
+			const encrypted = encryptedOllamaApiKeyAtom.get();
+			expect(encrypted).not.toBeNull();
+			expect(encrypted).not.toBe("ollama-key");
+
+			const decrypted = await getDecryptedOllamaApiKey();
+			expect(decrypted).toBe("ollama-key");
+		});
+
+		it("should throw error if setting key without master password", async () => {
+			await expect(setGoogleApiKey("key")).rejects.toThrow(
+				"Master password required to set API key",
+			);
+			await expect(setOllamaApiKey("key")).rejects.toThrow(
+				"Master password required to set API key",
+			);
+		});
+
+		it("should reset security settings", () => {
+			setMasterPassword("p");
+			encryptedOpenRouterApiKeyAtom.set("e1");
+			encryptedGoogleApiKeyAtom.set("e2");
+			encryptedOllamaApiKeyAtom.set("e3");
+
+			resetSecuritySettings();
+
+			expect(masterPasswordAtom.get()).toBeNull();
+			expect(encryptedOpenRouterApiKeyAtom.get()).toBeNull();
+			expect(encryptedGoogleApiKeyAtom.get()).toBeNull();
+			expect(encryptedOllamaApiKeyAtom.get()).toBeNull();
+		});
+	});
+
+	describe("legacy compatibility", () => {
+		it("should set archive threshold days", () => {
+			setArchiveThresholdDays(5);
+			expect(archiveThresholdAtom.get()).toEqual({ value: 5, unit: "days" });
+			expect(archiveThresholdDaysAtom.get()).toBe(5);
+		});
+
+		it("should load archive threshold from legacy number format", () => {
+			localStorage.setItem("archive-threshold", "10");
+			hydrateSettings();
+			expect(archiveThresholdAtom.get()).toEqual({ value: 10, unit: "days" });
+			expect(archiveThresholdDaysAtom.get()).toBe(10);
+		});
+
+		it("should migrate from old vibrant theme", () => {
+			localStorage.setItem("appearance", "vibrant");
+
+			hydrateSettings();
+
+			expect(appearanceAtom.get()).toBe("dark");
+			expect(themeAtom.get()).toBe("vibrant");
+			expect(localStorage.getItem("appearance")).toBe("dark");
+			expect(localStorage.getItem("theme")).toBe("vibrant");
+		});
+	});
+
+	describe("persistence listeners", () => {
+		it("should persist appearance changes", () => {
+			setAppearance("dark");
+			expect(localStorage.getItem("appearance")).toBe("dark");
+		});
+
+		it("should persist theme changes", () => {
+			setTheme("vibrant");
+			expect(localStorage.getItem("theme")).toBe("vibrant");
+		});
+
+		it("should persist provider type changes", () => {
+			setProviderType("google");
+			expect(localStorage.getItem("ai-provider-type")).toBe("google");
+		});
+
+		it("should persist model changes for all providers", () => {
+			setOpenRouterModel("model-or");
+			expect(localStorage.getItem("openrouter-model")).toBe("model-or");
+
+			setGoogleModel("model-g");
+			expect(localStorage.getItem("google-model")).toBe("model-g");
+
+			setOllamaModel("model-ol");
+			expect(localStorage.getItem("ollama-model")).toBe("model-ol");
+		});
+
+		it("should persist output language changes", () => {
+			setOutputLanguage("ja");
+			expect(localStorage.getItem("output-language")).toBe("ja");
+		});
+
+		it("should not set invalid output language", () => {
+			const current = outputLanguageAtom.get();
+			// @ts-expect-error - testing invalid input
+			setOutputLanguage("invalid");
+			expect(outputLanguageAtom.get()).toBe(current);
+		});
+
+		it("should persist encrypted keys", async () => {
+			masterPasswordAtom.set("password");
+			await setOpenRouterApiKey("key123");
+			expect(
+				localStorage.getItem("encrypted-openrouter-api-key"),
+			).toBeDefined();
+			expect(
+				localStorage.getItem("encrypted-openrouter-api-key"),
+			).not.toBeNull();
+
+			encryptedOpenRouterApiKeyAtom.set(null);
+			expect(localStorage.getItem("encrypted-openrouter-api-key")).toBeNull();
+		});
+
+		it("should decrypt keys correctly", async () => {
+			const password = "password123";
+			const rawKey = "test-api-key";
+			masterPasswordAtom.set(password);
+
+			await setOpenRouterApiKey(rawKey);
+			await setGoogleApiKey(rawKey);
+			await setOllamaApiKey(rawKey);
+
+			expect(await getDecryptedOpenRouterApiKey()).toBe(rawKey);
+			expect(await getDecryptedGoogleApiKey()).toBe(rawKey);
+			expect(await getDecryptedOllamaApiKey()).toBe(rawKey);
+		});
+
+		it("should return null if decryption fails or no key", async () => {
+			expect(await getDecryptedOpenRouterApiKey()).toBeNull();
+
+			masterPasswordAtom.set("password");
+			expect(await getDecryptedOpenRouterApiKey()).toBeNull();
+		});
+	});
+
+	describe("security settings", () => {
+		it("should reset security settings", () => {
+			masterPasswordAtom.set("password");
+			encryptedOpenRouterApiKeyAtom.set("key1");
+			encryptedGoogleApiKeyAtom.set("key2");
+			encryptedOllamaApiKeyAtom.set("key3");
+
+			resetSecuritySettings();
+
+			expect(masterPasswordAtom.get()).toBe(null);
+			expect(encryptedOpenRouterApiKeyAtom.get()).toBe(null);
+			expect(encryptedGoogleApiKeyAtom.get()).toBe(null);
+			expect(encryptedOllamaApiKeyAtom.get()).toBe(null);
+		});
+	});
+
+	describe("experiments", () => {
+		it("should toggle experiments and persist", () => {
+			toggleExperiment("tools");
+			expect(experimentsAtom.get().tools).toBe(true);
+			expect(localStorage.getItem("experiments")).toBe(
+				JSON.stringify({ tools: true }),
+			);
+
+			toggleExperiment("tools");
+			expect(experimentsAtom.get().tools).toBe(false);
+			expect(localStorage.getItem("experiments")).toBe(
+				JSON.stringify({ tools: false }),
+			);
+		});
+	});
+
+	describe("hydration", () => {
+		it("should hydrate all settings from localStorage", () => {
+			localStorage.setItem("theme", "vibrant");
+			localStorage.setItem("output-language", "es");
+			localStorage.setItem("temperature-unit", "celsius");
+			localStorage.setItem("timezone", "Europe/Madrid");
+			localStorage.setItem(
+				"archive-threshold",
+				JSON.stringify({ value: 5, unit: "weeks" }),
+			);
+			localStorage.setItem("experiments", JSON.stringify({ tools: true }));
+
+			hydrateSettings();
+
+			expect(themeAtom.get()).toBe("vibrant");
+			expect(outputLanguageAtom.get()).toBe("es");
+			expect(temperatureUnitAtom.get()).toBe("celsius");
+			expect(timezoneAtom.get()).toBe("Europe/Madrid");
+			expect(archiveThresholdAtom.get()).toEqual({ value: 5, unit: "weeks" });
+			expect(experimentsAtom.get().tools).toBe(true);
+		});
+	});
+});

@@ -1,7 +1,7 @@
-import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import path from "path";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
 	plugins: [react()],
@@ -11,7 +11,7 @@ export default defineConfig({
 		},
 	},
 	test: {
-		setupFiles: ["./src/test/setup.e2e.ts"],
+		setupFiles: ["./src/test/setup.e2e.tsx"],
 		include: ["src/**/*.e2e.test.{ts,tsx}"],
 		exclude: ["src/**/*.integration.test.{ts,tsx}", "node_modules"],
 		globals: true,
@@ -33,6 +33,12 @@ export default defineConfig({
 				"src/test/**",
 				"src/main.tsx",
 				"src/entry-*.tsx",
+				"src/routeTree.gen.ts",
+				"src/router.tsx",
+				"src/types/**",
+				"src/routes/**",
+				"src/layout/**",
+				"src/components/providers/**",
 			],
 			// Enable all to ensure browser context code is instrumented
 			all: true,

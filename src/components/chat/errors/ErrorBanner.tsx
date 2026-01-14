@@ -1,7 +1,7 @@
-import { useCallback } from "react";
+import { clearError, currentErrorAtom } from "@/lib/stores/errors";
 import { useStore } from "@nanostores/react";
+import { useCallback } from "react";
 import { ErrorBannerUI } from "./ErrorBanner.ui";
-import { currentErrorAtom, clearError } from "@/lib/stores/errors";
 
 export const ErrorBanner = () => {
 	const error = useStore(currentErrorAtom);
@@ -32,4 +32,3 @@ export const ErrorBanner = () => {
 		/>
 	);
 };
-

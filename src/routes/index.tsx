@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { ChatContainer } from "@/components/chat/container/ChatContainer";
+import { createFileRoute } from "@tanstack/react-router";
 
 // Typed search params for the chat page
 interface ChatSearchParams {
@@ -7,6 +7,7 @@ interface ChatSearchParams {
 	sidebar?: boolean; // Sidebar open state
 	archived?: boolean; // Show archived chats
 	deleted?: boolean; // Show deleted chats
+	inactive?: boolean; // Show inactive chats
 	forceCompat?: boolean; // Force show compatibility UI (for testing)
 }
 
@@ -17,16 +18,16 @@ export const Route = createFileRoute("/")({
 		};
 
 		if ("sidebar" in search) {
-			result.sidebar =
-				search.sidebar === true || search.sidebar === "true";
+			result.sidebar = search.sidebar === true || search.sidebar === "true";
 		}
 		if ("archived" in search) {
-			result.archived =
-				search.archived === true || search.archived === "true";
+			result.archived = search.archived === true || search.archived === "true";
 		}
 		if ("deleted" in search) {
-			result.deleted =
-				search.deleted === true || search.deleted === "true";
+			result.deleted = search.deleted === true || search.deleted === "true";
+		}
+		if ("inactive" in search) {
+			result.inactive = search.inactive === true || search.inactive === "true";
 		}
 		if ("forceCompat" in search) {
 			result.forceCompat =

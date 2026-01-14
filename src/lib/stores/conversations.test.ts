@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock imageStorage before importing conversations
 vi.mock("./imageStorage", () => ({
@@ -9,22 +9,22 @@ vi.mock("./imageStorage", () => ({
 	getImages: vi.fn().mockResolvedValue(new Map()),
 }));
 
+import { messagesAtom } from "./chat";
 import {
+	activeChatIdAtom,
+	archiveConversation,
+	cleanupDeletedConversations,
+	clearAllConversations,
 	conversationsAtom,
 	createConversation,
 	deleteConversation,
-	archiveConversation,
-	unarchiveConversation,
-	restoreConversation,
-	permanentlyDeleteConversation,
-	updateConversationTitle,
 	getConversationCounts,
-	cleanupDeletedConversations,
-	clearAllConversations,
+	permanentlyDeleteConversation,
+	restoreConversation,
+	unarchiveConversation,
+	updateConversationTitle,
 	type Conversation,
 } from "./conversations";
-import { messagesAtom } from "./chat";
-import { activeChatIdAtom } from "./conversations";
 
 // Mock AI manager
 vi.mock("@/lib/ai", () => {
@@ -151,7 +151,9 @@ describe("conversations store", () => {
 
 			unarchiveConversation("unarch-1");
 
-			const unarchived = conversationsAtom.get().find((c) => c.id === "unarch-1");
+			const unarchived = conversationsAtom
+				.get()
+				.find((c) => c.id === "unarch-1");
 			expect(unarchived?.status).toBe("active");
 		});
 	});
@@ -171,7 +173,9 @@ describe("conversations store", () => {
 
 			restoreConversation("restore-1");
 
-			const restored = conversationsAtom.get().find((c) => c.id === "restore-1");
+			const restored = conversationsAtom
+				.get()
+				.find((c) => c.id === "restore-1");
 			expect(restored?.status).toBe("active");
 			expect(restored?.deletedAt).toBeUndefined();
 		});
@@ -438,4 +442,3 @@ describe("conversations store", () => {
 		});
 	});
 });
-

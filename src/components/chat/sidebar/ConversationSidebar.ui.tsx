@@ -1,29 +1,29 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuTrigger,
 	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { ConversationStatus } from "@/lib/stores/conversations";
+import { cn } from "@/lib/utils";
 import {
-	Plus,
-	MessageSquare,
-	MoreVertical,
-	Trash2,
-	Pencil,
-	X,
-	Loader2,
 	Archive,
 	ArchiveRestore,
 	ChevronDown,
 	ChevronRight,
+	Loader2,
+	MessageSquare,
+	MoreVertical,
+	Pencil,
+	Plus,
 	RotateCcw,
+	Trash2,
+	X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { ConversationStatus } from "@/lib/stores/conversations";
+import { useEffect, useState } from "react";
 
 export interface ConversationItem {
 	id: string;
@@ -75,13 +75,13 @@ export const ConversationSidebarUI = ({
 }: ConversationSidebarUIProps) => {
 	// Filter conversations by status
 	const activeConversations = conversations.filter(
-		(c) => c.status === "active"
+		(c) => c.status === "active",
 	);
 	const archivedConversations = conversations.filter(
-		(c) => c.status === "archived"
+		(c) => c.status === "archived",
 	);
 	const deletedConversations = conversations.filter(
-		(c) => c.status === "deleted"
+		(c) => c.status === "deleted",
 	);
 
 	const renderSection = (
@@ -91,7 +91,7 @@ export const ConversationSidebarUI = ({
 		isOpen: boolean,
 		onToggle: () => void,
 		count: number,
-		icon?: React.ReactNode
+		icon?: React.ReactNode,
 	) => {
 		if (!isCollapsible && items.length === 0) {
 			return null;
@@ -108,7 +108,7 @@ export const ConversationSidebarUI = ({
 						data-testid={`section-toggle-${title.toLowerCase()}`}
 						onClick={onToggle}
 						aria-expanded={isOpen}
-						className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px]"
+						className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex min-h-[44px] w-full items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-medium transition-colors"
 					>
 						{isOpen ? (
 							<ChevronDown className="h-4 w-4" />
@@ -117,13 +117,13 @@ export const ConversationSidebarUI = ({
 						)}
 						{icon}
 						<span>{title}</span>
-						<span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px]">
+						<span className="bg-muted ml-auto rounded-full px-2 py-0.5 text-[10px]">
 							{count}
 						</span>
 					</button>
 				) : (
 					items.length > 0 && (
-						<p className="px-3 py-2.5 text-xs font-medium text-muted-foreground">
+						<p className="text-muted-foreground px-3 py-2.5 text-xs font-medium">
 							{title}
 						</p>
 					)
@@ -157,7 +157,12 @@ export const ConversationSidebarUI = ({
 		<div className="flex h-full flex-col">
 			{/* Header */}
 			<div className="flex h-14 items-center justify-between border-b px-3">
-				<h2 data-testid="sidebar-title" className="font-semibold text-sidebar-foreground">Chats</h2>
+				<h2
+					data-testid="sidebar-title"
+					className="text-sidebar-foreground font-semibold"
+				>
+					Chats
+				</h2>
 				<div className="flex items-center gap-0.5">
 					<Button
 						data-testid="new-chat-button"
@@ -185,10 +190,10 @@ export const ConversationSidebarUI = ({
 			</div>
 
 			{/* Conversation list - flex-1 with min-h-0 enables scrolling in flex container */}
-			<ScrollArea className="flex-1 min-h-0">
+			<ScrollArea className="min-h-0 flex-1">
 				<div className="p-2">
 					{!hasAnyConversations ? (
-						<div className="px-2 py-8 text-center text-sm text-muted-foreground">
+						<div className="text-muted-foreground px-2 py-8 text-center text-sm">
 							No conversations yet.
 							<br />
 							Start a new chat!
@@ -202,7 +207,7 @@ export const ConversationSidebarUI = ({
 								false,
 								true,
 								() => {},
-								activeConversations.length
+								activeConversations.length,
 							)}
 
 							{/* Archived chats */}
@@ -213,7 +218,7 @@ export const ConversationSidebarUI = ({
 								showArchived,
 								onToggleArchived,
 								archivedCount,
-								<Archive className="h-3 w-3" />
+								<Archive className="h-3 w-3" />,
 							)}
 
 							{/* Deleted chats */}
@@ -224,7 +229,7 @@ export const ConversationSidebarUI = ({
 								showDeleted,
 								onToggleDeleted,
 								deletedCount,
-								<Trash2 className="h-3 w-3" />
+								<Trash2 className="h-3 w-3" />,
 							)}
 						</>
 					)}
@@ -232,9 +237,7 @@ export const ConversationSidebarUI = ({
 			</ScrollArea>
 
 			{/* Footer with settings */}
-			{settingsButton && (
-				<div className="border-t p-2">{settingsButton}</div>
-			)}
+			{settingsButton && <div className="border-t p-2">{settingsButton}</div>}
 		</div>
 	);
 };
@@ -269,7 +272,7 @@ const ConversationRow = ({
 		const date = new Date(conversation.updatedAt);
 		const now = new Date();
 		const diffDays = Math.floor(
-			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
 		);
 
 		if (diffDays === 0) setDisplayDate("Today");
@@ -289,20 +292,20 @@ const ConversationRow = ({
 			aria-current={conversation.isActive ? "true" : undefined}
 			aria-label={`Conversation: ${conversation.title}`}
 			className={cn(
-				"group relative flex items-center rounded-lg px-3 py-3 cursor-pointer min-h-[52px] outline-none focus-visible:ring-2 focus-visible:ring-sidebar-primary focus-visible:ring-inset",
+				"group focus-visible:ring-sidebar-primary relative flex min-h-[52px] cursor-pointer items-center rounded-lg px-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-inset",
 				"hover:bg-sidebar-accent active:bg-sidebar-accent",
 				conversation.isActive && "bg-sidebar-accent",
-				isDeleted && "opacity-60"
+				isDeleted && "opacity-60",
 			)}
 			onClick={() => !isMenuOpen && onSelect(conversation.id)}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
-						if (!isMenuOpen) {
-							onSelect(conversation.id);
-						}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					if (!isMenuOpen) {
+						onSelect(conversation.id);
 					}
-				}}
+				}
+			}}
 		>
 			<MessageSquare
 				className={cn(
@@ -310,40 +313,35 @@ const ConversationRow = ({
 					isArchived
 						? "text-amber-500"
 						: isDeleted
-						? "text-destructive"
-						: "text-muted-foreground"
+							? "text-destructive"
+							: "text-muted-foreground",
 				)}
 			/>
 			<div className="min-w-0 flex-1 overflow-hidden">
 				{conversation.isGeneratingTitle ? (
 					<div className="flex items-center gap-1.5">
-						<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-						<span className="text-sm text-muted-foreground italic">
+						<Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+						<span className="text-muted-foreground text-sm italic">
 							Generating title...
 						</span>
 					</div>
 				) : (
 					<span
 						className={cn(
-							"truncate text-sm font-medium max-w-[180px] inline-block first-letter:uppercase",
+							"inline-block max-w-[180px] truncate text-sm font-medium first-letter:uppercase",
 							isDeleted
 								? "text-muted-foreground line-through"
-								: "text-sidebar-foreground"
+								: "text-sidebar-foreground",
 						)}
 					>
 						{conversation.title}
 					</span>
 				)}
-				<p className="text-xs text-muted-foreground h-4">
-					{displayDate}
-				</p>
+				<p className="text-muted-foreground h-4 text-xs">{displayDate}</p>
 			</div>
 
 			{/* Actions dropdown */}
-			<DropdownMenu
-				open={isMenuOpen}
-				onOpenChange={setIsMenuOpen}
-			>
+			<DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
 				<DropdownMenuTrigger asChild>
 					<Button
 						variant="ghost"
@@ -352,18 +350,14 @@ const ConversationRow = ({
 						className={cn(
 							"h-10 w-10 shrink-0 transition-opacity",
 							"opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
-							isMenuOpen && "lg:opacity-100"
+							isMenuOpen && "lg:opacity-100",
 						)}
 						onClick={(e) => e.stopPropagation()}
 					>
 						<MoreVertical className="h-5 w-5" />
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent
-					align="end"
-					side="bottom"
-					className="w-48 p-1.5"
-				>
+				<DropdownMenuContent align="end" side="bottom" className="w-48 p-1.5">
 					{/* Rename - only for active/archived */}
 					{!isDeleted && (
 						<DropdownMenuItem
@@ -446,7 +440,7 @@ const ConversationRow = ({
 					{/* Delete */}
 					<DropdownMenuItem
 						data-testid={`conversation-delete-${conversation.id}`}
-						className="py-2.5 text-sm text-destructive focus:text-destructive"
+						className="text-destructive focus:text-destructive py-2.5 text-sm"
 						onClick={(e) => {
 							e.stopPropagation();
 							setIsMenuOpen(false);

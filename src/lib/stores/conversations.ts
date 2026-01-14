@@ -1,16 +1,15 @@
+import { getAIManager } from "@/lib/ai";
 import { atom } from "nanostores";
 import {
-	messagesAtom,
 	clearMessages,
 	type Message,
+	messagesAtom,
 	saveImagesToIndexedDB,
 } from "./chat";
-import { getAIManager } from "@/lib/ai";
+import { clearAllImages, deleteConversationImages } from "./imageStorage";
 import { archiveThresholdAtom, thresholdToHours } from "./settings";
-import { deleteConversationImages, clearAllImages } from "./imageStorage";
 
 // Check if we're in browser environment
-const isBrowser = typeof window !== "undefined";
 
 // Active conversation ID atom
 export const activeChatIdAtom = atom<string | null>(null);
@@ -95,8 +94,6 @@ export const isConversationsHydratedAtom = atom<boolean>(false);
  * Initialize conversations from localStorage and set up URL syncing
  */
 const initializeConversations = () => {
-	if (!isBrowser) return;
-
 	const stored = localStorage.getItem(STORAGE_KEY);
 
 	if (stored) {
@@ -125,9 +122,13 @@ const initializeConversations = () => {
 	isConversationsHydratedAtom.set(true);
 };
 
-// Global subscription to activeChatIdAtom changes (e.g., browser back/forward)
-if (isBrowser) {
-	activeChatIdAtom.subscribe((newChatId) => {
+/**
+ * Set up listeners to persist conversations and handle navigation.
+ * This should be called inside a useEffect.
+ */
+export const setupConversationsPersistence = () => {
+	// Global subscription to activeChatIdAtom changes (e.g., browser back/forward)
+	const unsubActiveChat = activeChatIdAtom.subscribe((newChatId) => {
 		// Skip if chat ID hasn't actually changed
 		if (newChatId === previousChatId) return;
 
@@ -142,8 +143,7 @@ if (isBrowser) {
 			// Double-check the value hasn't changed again
 			if (activeChatIdAtom.get() !== newChatId) return;
 			// Skip if programmatic switch started while we were waiting
-			if (programmaticSwitchInProgress || programmaticSwitchCounter > 0)
-				return;
+			if (programmaticSwitchInProgress || programmaticSwitchCounter > 0) return;
 
 			// Save the previous conversation before switching
 			// Only do this for browser navigation (back/forward), not programmatic switches
@@ -156,7 +156,15 @@ if (isBrowser) {
 			previousChatId = newChatId;
 		});
 	});
-}
+
+	// Return cleanup function
+	return () => {
+		unsubActiveChat();
+		if (pendingPersistTimeout) {
+			clearTimeout(pendingPersistTimeout);
+		}
+	};
+};
 
 /**
  * Prepare messages for localStorage by saving images to IndexedDB
@@ -164,7 +172,7 @@ if (isBrowser) {
  */
 const prepareMessagesForStorage = async (
 	messages: Message[],
-	conversationId: string
+	conversationId: string,
 ): Promise<Message[]> => {
 	const preparedMessages: Message[] = [];
 
@@ -172,20 +180,18 @@ const prepareMessagesForStorage = async (
 		if (msg.images && msg.images.length > 0) {
 			// Check if images need to be saved to IndexedDB
 			const imagesNeedingSave = msg.images.filter(
-				(img) => img.data && !img.storedInDb
+				(img) => img.data && !img.storedInDb,
 			);
 
 			if (imagesNeedingSave.length > 0) {
 				// Save images to IndexedDB
 				const savedImages = await saveImagesToIndexedDB(
 					imagesNeedingSave,
-					conversationId
+					conversationId,
 				);
 
 				// Merge saved images with already-stored images
-				const alreadyStored = msg.images.filter(
-					(img) => img.storedInDb
-				);
+				const alreadyStored = msg.images.filter((img) => img.storedInDb);
 				const allImages = [...alreadyStored, ...savedImages];
 
 				preparedMessages.push({
@@ -210,8 +216,6 @@ let pendingPersistTimeout: ReturnType<typeof setTimeout> | null = null;
 // Save to localStorage with error handling
 // Images are stored in IndexedDB, so localStorage only contains metadata
 const persist = (immediate = false) => {
-	if (!isBrowser) return;
-
 	const performPersist = () => {
 		const conversations = conversationsAtom.get();
 		try {
@@ -226,7 +230,7 @@ const persist = (immediate = false) => {
 				if (import.meta.env.DEV) {
 					console.error(
 						"Storage quota exceeded. This shouldn't happen with hybrid storage. " +
-							"Consider clearing old conversations."
+							"Consider clearing old conversations.",
 					);
 				}
 			} else if (import.meta.env.DEV) {
@@ -260,9 +264,7 @@ const saveCurrentConversationById = async (chatId: string) => {
 		// If we are saving the CURRENTLY active chat, use the current messagesAtom content.
 		// Otherwise use what's already in the conversation object.
 		const messagesToSave =
-			chatId === currentActiveId
-				? messages
-				: conversations[index].messages;
+			chatId === currentActiveId ? messages : conversations[index].messages;
 
 		// Don't save if there are no messages
 		if (messagesToSave.length === 0) return;
@@ -270,13 +272,11 @@ const saveCurrentConversationById = async (chatId: string) => {
 		// Prepare messages (save images to IndexedDB)
 		const preparedMessages = await prepareMessagesForStorage(
 			messagesToSave,
-			chatId
+			chatId,
 		);
 
 		const currentConversations = conversationsAtom.get();
-		const currentIndex = currentConversations.findIndex(
-			(c) => c.id === chatId
-		);
+		const currentIndex = currentConversations.findIndex((c) => c.id === chatId);
 
 		if (currentIndex !== -1) {
 			const updated = [...currentConversations];
@@ -305,7 +305,7 @@ export const saveCurrentConversation = async () => {
  */
 const shouldAutoArchive = (
 	conversation: Conversation,
-	thresholdHours: number
+	thresholdHours: number,
 ): boolean => {
 	if (thresholdHours <= 0) return false; // Disabled
 	if (conversation.status !== "active") return false;
@@ -364,10 +364,7 @@ export const createConversation = (title?: string): Conversation => {
 		programmaticSwitchInProgress = false;
 		// Wait one more microtask to clear the counter to handle the subscriber's microtask
 		queueMicrotask(() => {
-			programmaticSwitchCounter = Math.max(
-				0,
-				programmaticSwitchCounter - 1
-			);
+			programmaticSwitchCounter = Math.max(0, programmaticSwitchCounter - 1);
 		});
 	});
 
@@ -405,7 +402,7 @@ export const switchConversation = async (id: string, syncToUrl = true) => {
 				queueMicrotask(() => {
 					programmaticSwitchCounter = Math.max(
 						0,
-						programmaticSwitchCounter - 1
+						programmaticSwitchCounter - 1,
 					);
 				});
 			});
@@ -430,7 +427,7 @@ export const switchConversation = async (id: string, syncToUrl = true) => {
  */
 const generateTitleAsync = async (
 	conversationId: string,
-	firstMessage: string
+	firstMessage: string,
 ) => {
 	// Prevent duplicate generation
 	if (titleGenerationInProgress.has(conversationId)) return;
@@ -452,7 +449,7 @@ const generateTitleAsync = async (
 		// Ensure we use the latest state from the atom to avoid race conditions
 		const latestConversations = conversationsAtom.get();
 		const currentIndex = latestConversations.findIndex(
-			(c) => c.id === conversationId
+			(c) => c.id === conversationId,
 		);
 
 		if (currentIndex !== -1) {
@@ -473,7 +470,7 @@ const generateTitleAsync = async (
 		// On error, use fallback title from first message
 		const currentConversations = conversationsAtom.get();
 		const currentIndex = currentConversations.findIndex(
-			(c) => c.id === conversationId
+			(c) => c.id === conversationId,
 		);
 
 		if (currentIndex !== -1) {
@@ -503,7 +500,7 @@ const generateTitleAsync = async (
 export const triggerTitleGeneration = (
 	conversationId: string,
 	force = false,
-	initialPrompt?: string
+	initialPrompt?: string,
 ): void => {
 	const conversations = conversationsAtom.get();
 	const conversation = conversations.find((c) => c.id === conversationId);
@@ -651,7 +648,7 @@ export const permanentlyDeleteConversation = async (id: string) => {
 	// If we deleted the active conversation, switch to another or clear
 	if (activeChatIdAtom.get() === id) {
 		const activeConversations = conversations.filter(
-			(c) => c.status === "active"
+			(c) => c.status === "active",
 		);
 		if (activeConversations.length > 0) {
 			switchConversation(activeConversations[0].id);
@@ -670,7 +667,7 @@ export const permanentlyDeleteConversation = async (id: string) => {
 export const cleanupDeletedConversations = async (): Promise<number> => {
 	const conversations = conversationsAtom.get();
 	const deletedConversations = conversations.filter(
-		(c) => c.status === "deleted"
+		(c) => c.status === "deleted",
 	);
 	const deletedCount = deletedConversations.length;
 
@@ -684,7 +681,7 @@ export const cleanupDeletedConversations = async (): Promise<number> => {
 					console.error(
 						"Failed to delete conversation images:",
 						conv.id,
-						error
+						error,
 					);
 				}
 			}
@@ -780,7 +777,7 @@ export const exportConversations = (): void => {
  */
 export const importConversations = async (
 	file: File,
-	mode: "merge" | "replace" = "merge"
+	mode: "merge" | "replace" = "merge",
 ): Promise<{ success: boolean; imported: number; error?: string }> => {
 	try {
 		const text = await file.text();
@@ -842,7 +839,7 @@ export const importConversations = async (
 			const existing = conversationsAtom.get();
 			const existingIds = new Set(existing.map((c) => c.id));
 			const newConversations = validConversations.filter(
-				(c) => !existingIds.has(c.id)
+				(c) => !existingIds.has(c.id),
 			);
 			conversationsAtom.set([...newConversations, ...existing]);
 		}
@@ -853,8 +850,7 @@ export const importConversations = async (
 		return {
 			success: false,
 			imported: 0,
-			error:
-				error instanceof Error ? error.message : "Failed to parse file",
+			error: error instanceof Error ? error.message : "Failed to parse file",
 		};
 	}
 };
@@ -872,7 +868,7 @@ export const clearAllConversations = async (): Promise<void> => {
 	try {
 		await clearAllImages();
 	} catch (error) {
-		if (import.meta.env.DEV) {
+		if (typeof window !== "undefined" && import.meta.env.DEV) {
 			console.error("Failed to clear all images:", error);
 		}
 	}
@@ -883,6 +879,6 @@ export const clearAllConversations = async (): Promise<void> => {
  * This should be called only on the client inside a useEffect.
  */
 export const hydrateConversations = () => {
-	if (!isBrowser) return;
+	if (typeof window === "undefined") return;
 	initializeConversations();
 };

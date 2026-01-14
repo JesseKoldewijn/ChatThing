@@ -1,17 +1,17 @@
 import { Button } from "@/components/ui/button";
+import type { ErrorCategory } from "@/lib/stores/errors";
 import { cn } from "@/lib/utils";
 import {
 	AlertTriangle,
-	Wifi,
+	Bot,
 	Clock,
 	FileWarning,
-	ShieldAlert,
-	Bot,
 	HelpCircle,
-	X,
 	RefreshCw,
+	ShieldAlert,
+	Wifi,
+	X,
 } from "lucide-react";
-import type { ErrorCategory } from "@/lib/stores/errors";
 
 export interface ErrorBannerUIProps {
 	title: string;
@@ -22,7 +22,10 @@ export interface ErrorBannerUIProps {
 	onDismiss?: () => void;
 }
 
-const categoryIcons: Record<ErrorCategory, React.ComponentType<{ className?: string }>> = {
+const categoryIcons: Record<
+	ErrorCategory,
+	React.ComponentType<{ className?: string }>
+> = {
 	network: Wifi,
 	rate_limit: Clock,
 	context: FileWarning,
@@ -66,7 +69,7 @@ export const ErrorBannerUI = ({
 		<div
 			className={cn(
 				"mx-4 mb-4 rounded-lg border-2 p-4",
-				categoryColors[category]
+				categoryColors[category],
 			)}
 			role="alert"
 		>
@@ -78,8 +81,8 @@ export const ErrorBannerUI = ({
 
 				{/* Content */}
 				<div className="min-w-0 flex-1">
-					<h3 className="font-semibold text-foreground">{title}</h3>
-					<p className="mt-1 text-sm text-muted-foreground">{message}</p>
+					<h3 className="text-foreground font-semibold">{title}</h3>
+					<p className="text-muted-foreground mt-1 text-sm">{message}</p>
 
 					{/* Actions */}
 					<div className="mt-3 flex flex-wrap items-center gap-2">
@@ -110,7 +113,7 @@ export const ErrorBannerUI = ({
 						)}
 
 						{category === "rate_limit" && (
-							<span className="text-xs text-muted-foreground">
+							<span className="text-muted-foreground text-xs">
 								Please wait a few seconds before retrying
 							</span>
 						)}
@@ -133,4 +136,3 @@ export const ErrorBannerUI = ({
 		</div>
 	);
 };
-

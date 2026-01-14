@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
 	conversationAtom,
-	loadingAtom,
-	errorAtom,
-	streamDataAtom,
 	dataAtom,
+	errorAtom,
+	loadingAtom,
+	streamDataAtom,
 } from "./store";
 
 describe("AI store atoms", () => {
@@ -98,9 +98,7 @@ describe("AI store atoms", () => {
 			};
 			// The type is complex, so we just verify it can be set
 			streamDataAtom.set(
-				mockStream as unknown as Parameters<
-					typeof streamDataAtom.set
-				>[0]
+				mockStream as unknown as Parameters<typeof streamDataAtom.set>[0],
 			);
 			expect(streamDataAtom.get()).toBe(mockStream);
 		});
@@ -126,9 +124,7 @@ describe("AI store atoms", () => {
 					textDelta: "world",
 				},
 			];
-			dataAtom.set(
-				mockData as unknown as Parameters<typeof dataAtom.set>[0]
-			);
+			dataAtom.set(mockData as unknown as Parameters<typeof dataAtom.set>[0]);
 			expect(dataAtom.get()).toHaveLength(2);
 		});
 
@@ -141,9 +137,7 @@ describe("AI store atoms", () => {
 					textDelta: "Test",
 				},
 			];
-			dataAtom.set(
-				mockData as unknown as Parameters<typeof dataAtom.set>[0]
-			);
+			dataAtom.set(mockData as unknown as Parameters<typeof dataAtom.set>[0]);
 			dataAtom.set(null);
 			expect(dataAtom.get()).toBeNull();
 		});

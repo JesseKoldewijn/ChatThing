@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { StoredImage } from "./imageStorage";
 
 // The imageStorage module uses IndexedDB which is complex to mock properly
@@ -80,11 +80,11 @@ describe("imageStorage module", () => {
 	describe("getStorageEstimate", () => {
 		it("should handle missing storage API", async () => {
 			const { getStorageEstimate } = await import("./imageStorage");
-			
+
 			// The mock may or may not have storage API
 			const result = await getStorageEstimate();
 			// Result is either null or an object with used/quota
-			expect(result === null || (typeof result?.used === "number")).toBe(true);
+			expect(result === null || typeof result?.used === "number").toBe(true);
 		});
 	});
 });

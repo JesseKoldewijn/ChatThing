@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock nanostores
 vi.mock("@nanostores/react", () => ({
@@ -33,7 +34,10 @@ vi.mock("@/lib/stores/conversations", () => {
 		},
 	];
 	return {
-		conversationsAtom: { get: () => mockConversations, _mockValue: mockConversations },
+		conversationsAtom: {
+			get: () => mockConversations,
+			_mockValue: mockConversations,
+		},
 		activeConversationIdAtom: { get: () => "conv-1", _mockValue: "conv-1" },
 		createConversation: vi.fn(),
 		switchConversation: vi.fn(),
@@ -66,10 +70,14 @@ vi.mock("./ConversationSidebar.ui", () => ({
 			<span data-testid="conversation-count">{conversations.length}</span>
 			<span data-testid="archived-count">{archivedCount}</span>
 			<span data-testid="deleted-count">{deletedCount}</span>
-			<button data-testid="new-chat" onClick={onNewChat}>
+			<button type="button" data-testid="new-chat" onClick={onNewChat}>
 				New Chat
 			</button>
-			<button data-testid="select-conv" onClick={() => onSelect("conv-2")}>
+			<button
+				type="button"
+				data-testid="select-conv"
+				onClick={() => onSelect("conv-2")}
+			>
 				Select
 			</button>
 		</div>
@@ -80,13 +88,15 @@ vi.mock("../settings/SettingsPanel", () => ({
 	SettingsPanel: () => <div data-testid="settings-panel" />,
 }));
 
-import { ConversationSidebar } from "./ConversationSidebar";
 import {
 	createConversation,
 	saveCurrentConversation,
 } from "@/lib/stores/conversations";
+import { ConversationSidebar } from "./ConversationSidebar";
 
 describe("ConversationSidebar", () => {
+	const user = userEvent.setup();
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -115,11 +125,10 @@ describe("ConversationSidebar", () => {
 
 	describe("new chat handler", () => {
 		it("should save current conversation when creating new chat", async () => {
-			const { fireEvent } = await import("@testing-library/react");
 			render(<ConversationSidebar />);
 
 			const newChatButton = screen.getByTestId("new-chat");
-			fireEvent.click(newChatButton);
+			await user.click(newChatButton);
 
 			expect(saveCurrentConversation).toHaveBeenCalled();
 			expect(createConversation).toHaveBeenCalled();
@@ -146,19 +155,27 @@ describe("ConversationSidebar helper functions", () => {
 
 		it("should return true for mobile width", () => {
 			// Simulate mobile viewport
-			Object.defineProperty(window, "innerWidth", { value: 768, writable: true });
+			Object.defineProperty(window, "innerWidth", {
+				value: 768,
+				writable: true,
+			});
 			expect(isMobile()).toBe(true);
 		});
 
 		it("should return false for desktop width", () => {
-			Object.defineProperty(window, "innerWidth", { value: 1280, writable: true });
+			Object.defineProperty(window, "innerWidth", {
+				value: 1280,
+				writable: true,
+			});
 			expect(isMobile()).toBe(false);
 		});
 
 		it("should return false at exact breakpoint", () => {
-			Object.defineProperty(window, "innerWidth", { value: 1024, writable: true });
+			Object.defineProperty(window, "innerWidth", {
+				value: 1024,
+				writable: true,
+			});
 			expect(isMobile()).toBe(false);
 		});
 	});
 });
-

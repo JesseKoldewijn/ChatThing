@@ -29,8 +29,12 @@ export interface OllamaTagsResponse {
 /**
  * Check if Ollama is available at the given base URL
  */
-export async function checkOllamaAvailability(baseUrl: string): Promise<boolean> {
-	const url = baseUrl.endsWith("/api") ? `${baseUrl}/tags` : `${baseUrl}/api/tags`;
+export async function checkOllamaAvailability(
+	baseUrl: string,
+): Promise<boolean> {
+	const url = baseUrl.endsWith("/api")
+		? `${baseUrl}/tags`
+		: `${baseUrl}/api/tags`;
 	try {
 		const response = await fetch(url, {
 			method: "GET",
@@ -44,8 +48,12 @@ export async function checkOllamaAvailability(baseUrl: string): Promise<boolean>
 /**
  * Fetch installed models from Ollama
  */
-export async function fetchOllamaModels(baseUrl: string): Promise<OllamaModel[]> {
-	const url = baseUrl.endsWith("/api") ? `${baseUrl}/tags` : `${baseUrl}/api/tags`;
+export async function fetchOllamaModels(
+	baseUrl: string,
+): Promise<OllamaModel[]> {
+	const url = baseUrl.endsWith("/api")
+		? `${baseUrl}/tags`
+		: `${baseUrl}/api/tags`;
 	const response = await fetch(url, {
 		method: "GET",
 	});
@@ -64,9 +72,11 @@ export async function fetchOllamaModels(baseUrl: string): Promise<OllamaModel[]>
 export async function pullOllamaModel(
 	baseUrl: string,
 	model: string,
-	onProgress: (progress: PullProgress) => void
+	onProgress: (progress: PullProgress) => void,
 ): Promise<void> {
-	const url = baseUrl.endsWith("/api") ? `${baseUrl}/pull` : `${baseUrl}/api/pull`;
+	const url = baseUrl.endsWith("/api")
+		? `${baseUrl}/pull`
+		: `${baseUrl}/api/pull`;
 	const response = await fetch(url, {
 		method: "POST",
 		body: JSON.stringify({ name: model }),
@@ -123,4 +133,3 @@ export async function pullOllamaModel(
 		}
 	}
 }
-

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock stores
 vi.mock("@nanostores/react", () => ({
@@ -89,14 +89,14 @@ vi.mock("./ChatInput.ui", () => ({
 	),
 }));
 
-import { ChatInput } from "./ChatInput";
 import {
 	addPendingImage,
-	removePendingImage,
 	fileToImageAttachment,
+	removePendingImage,
 } from "@/lib/stores/chat";
 import { useStore } from "@nanostores/react";
 import type { ReadableAtom } from "nanostores";
+import { ChatInput } from "./ChatInput";
 
 describe("ChatInput", () => {
 	beforeEach(() => {
@@ -229,4 +229,3 @@ describe("ChatInput validation logic", () => {
 		});
 	});
 });
-

@@ -1,10 +1,10 @@
-import 'vitest';
+import "vitest";
 
-declare module 'vitest' {
-  interface Assertion<T = unknown> {
-    toHaveNoViolations(): T;
-  }
-  interface AsymmetricMatchersContaining {
-    toHaveNoViolations(): void;
-  }
+declare module "vitest" {
+	interface Assertion<T = unknown> {
+		toHaveNoViolations(): T;
+	}
+	interface AsymmetricMatchersContaining {
+		toHaveNoViolations(): void;
+	}
 }

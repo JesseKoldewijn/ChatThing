@@ -1,4 +1,4 @@
-import { useNavigate, useSearch, useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
 
 /**
@@ -9,6 +9,7 @@ export interface ChatSearchParams {
 	sidebar?: boolean;
 	archived?: boolean;
 	deleted?: boolean;
+	inactive?: boolean;
 	forceCompat?: boolean;
 }
 
@@ -67,7 +68,7 @@ export function useChatSearchParams() {
 				replace: true,
 			});
 		},
-		[navigate]
+		[navigate],
 	);
 
 	const toggleSidebar = useCallback(() => {
@@ -79,6 +80,9 @@ export function useChatSearchParams() {
 					newSearch.sidebar = true;
 				} else {
 					delete newSearch.sidebar;
+					delete newSearch.archived;
+					delete newSearch.deleted;
+					delete newSearch.inactive;
 				}
 				return newSearch;
 			},
@@ -95,13 +99,16 @@ export function useChatSearchParams() {
 						newSearch.sidebar = true;
 					} else {
 						delete newSearch.sidebar;
+						delete newSearch.archived;
+						delete newSearch.deleted;
+						delete newSearch.inactive;
 					}
 					return newSearch;
 				},
 				replace: true,
 			});
 		},
-		[navigate]
+		[navigate],
 	);
 
 	const toggleShowArchived = useCallback(() => {
@@ -135,7 +142,7 @@ export function useChatSearchParams() {
 				replace: true,
 			});
 		},
-		[navigate]
+		[navigate],
 	);
 
 	const toggleShowDeleted = useCallback(() => {
@@ -169,7 +176,7 @@ export function useChatSearchParams() {
 				replace: true,
 			});
 		},
-		[navigate]
+		[navigate],
 	);
 
 	return {
@@ -178,6 +185,7 @@ export function useChatSearchParams() {
 		sidebarOpen: search.sidebar ?? false,
 		showArchived: search.archived ?? false,
 		showDeleted: search.deleted ?? false,
+		showInactive: search.inactive ?? false,
 		forceCompat: search.forceCompat ?? false,
 		// Setters
 		setActiveChat,

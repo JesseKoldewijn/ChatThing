@@ -35,12 +35,14 @@ export const initImageStorage = (): Promise<IDBDatabase> => {
 
 		request.onupgradeneeded = (event) => {
 			const database = (event.target as IDBOpenDBRequest).result;
-			
+
 			// Create the images store if it doesn't exist
 			if (!database.objectStoreNames.contains(STORE_NAME)) {
 				const store = database.createObjectStore(STORE_NAME, { keyPath: "id" });
 				// Index by conversation ID for bulk operations
-				store.createIndex("conversationId", "conversationId", { unique: false });
+				store.createIndex("conversationId", "conversationId", {
+					unique: false,
+				});
 			}
 		};
 	});
@@ -66,14 +68,14 @@ export const saveImage = async (
 	conversationId: string,
 	data: string,
 	mimeType: string,
-	name?: string
+	name?: string,
 ): Promise<void> => {
 	const database = await initImageStorage();
-	
+
 	return new Promise((resolve, reject) => {
 		const transaction = database.transaction(STORE_NAME, "readwrite");
 		const store = transaction.objectStore(STORE_NAME);
-		
+
 		const record: StoredImage = {
 			id,
 			conversationId,
@@ -82,9 +84,9 @@ export const saveImage = async (
 			name,
 			createdAt: Date.now(),
 		};
-		
+
 		const request = store.put(record);
-		
+
 		request.onsuccess = () => resolve();
 		request.onerror = () => {
 			if (import.meta.env.DEV) {
@@ -100,12 +102,12 @@ export const saveImage = async (
  */
 export const getImage = async (id: string): Promise<StoredImage | null> => {
 	const database = await initImageStorage();
-	
+
 	return new Promise((resolve, reject) => {
 		const transaction = database.transaction(STORE_NAME, "readonly");
 		const store = transaction.objectStore(STORE_NAME);
 		const request = store.get(id);
-		
+
 		request.onsuccess = () => resolve(request.result || null);
 		request.onerror = () => {
 			if (import.meta.env.DEV) {
@@ -119,24 +121,26 @@ export const getImage = async (id: string): Promise<StoredImage | null> => {
 /**
  * Get multiple images by their IDs
  */
-export const getImages = async (ids: string[]): Promise<Map<string, StoredImage>> => {
+export const getImages = async (
+	ids: string[],
+): Promise<Map<string, StoredImage>> => {
 	const database = await initImageStorage();
 	const results = new Map<string, StoredImage>();
-	
+
 	return new Promise((resolve) => {
 		const transaction = database.transaction(STORE_NAME, "readonly");
 		const store = transaction.objectStore(STORE_NAME);
-		
+
 		let completed = 0;
-		
+
 		if (ids.length === 0) {
 			resolve(results);
 			return;
 		}
-		
+
 		for (const id of ids) {
 			const request = store.get(id);
-			
+
 			request.onsuccess = () => {
 				if (request.result) {
 					results.set(id, request.result);
@@ -146,7 +150,7 @@ export const getImages = async (ids: string[]): Promise<Map<string, StoredImage>
 					resolve(results);
 				}
 			};
-			
+
 			request.onerror = () => {
 				if (import.meta.env.DEV) {
 					console.error("Failed to get image:", id, request.error);
@@ -165,12 +169,12 @@ export const getImages = async (ids: string[]): Promise<Map<string, StoredImage>
  */
 export const deleteImage = async (id: string): Promise<void> => {
 	const database = await initImageStorage();
-	
+
 	return new Promise((resolve, reject) => {
 		const transaction = database.transaction(STORE_NAME, "readwrite");
 		const store = transaction.objectStore(STORE_NAME);
 		const request = store.delete(id);
-		
+
 		request.onsuccess = () => resolve();
 		request.onerror = () => {
 			if (import.meta.env.DEV) {
@@ -184,17 +188,19 @@ export const deleteImage = async (id: string): Promise<void> => {
 /**
  * Delete all images for a conversation
  */
-export const deleteConversationImages = async (conversationId: string): Promise<number> => {
+export const deleteConversationImages = async (
+	conversationId: string,
+): Promise<number> => {
 	const database = await initImageStorage();
-	
+
 	return new Promise((resolve, reject) => {
 		const transaction = database.transaction(STORE_NAME, "readwrite");
 		const store = transaction.objectStore(STORE_NAME);
 		const index = store.index("conversationId");
 		const request = index.openCursor(IDBKeyRange.only(conversationId));
-		
+
 		let deletedCount = 0;
-		
+
 		request.onsuccess = (event) => {
 			const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
 			if (cursor) {
@@ -205,7 +211,7 @@ export const deleteConversationImages = async (conversationId: string): Promise<
 				resolve(deletedCount);
 			}
 		};
-		
+
 		request.onerror = () => {
 			if (import.meta.env.DEV) {
 				console.error("Failed to delete conversation images:", request.error);
@@ -220,12 +226,12 @@ export const deleteConversationImages = async (conversationId: string): Promise<
  */
 export const clearAllImages = async (): Promise<void> => {
 	const database = await initImageStorage();
-	
+
 	return new Promise((resolve, reject) => {
 		const transaction = database.transaction(STORE_NAME, "readwrite");
 		const store = transaction.objectStore(STORE_NAME);
 		const request = store.clear();
-		
+
 		request.onsuccess = () => resolve();
 		request.onerror = () => {
 			if (import.meta.env.DEV) {
@@ -239,11 +245,14 @@ export const clearAllImages = async (): Promise<void> => {
 /**
  * Get storage usage estimate
  */
-export const getStorageEstimate = async (): Promise<{ used: number; quota: number } | null> => {
+export const getStorageEstimate = async (): Promise<{
+	used: number;
+	quota: number;
+} | null> => {
 	if (!navigator.storage?.estimate) {
 		return null;
 	}
-	
+
 	try {
 		const estimate = await navigator.storage.estimate();
 		return {
@@ -254,4 +263,3 @@ export const getStorageEstimate = async (): Promise<{ used: number; quota: numbe
 		return null;
 	}
 };
-

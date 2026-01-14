@@ -2,12 +2,15 @@ import { tool } from "ai";
 import { z } from "zod";
 
 export const datetimeTool = tool({
-	description: "Get the current date and time. Use ONLY if the user EXPLICITLY asks for the current time or date (e.g., 'What time is it?', 'What is today's date?'). NEVER use this for greetings, introductions, or general conversation.",
+	description:
+		"Get the current date and time. Use ONLY if the user EXPLICITLY asks for the current time or date (e.g., 'What time is it?', 'What is today's date?'). NEVER use this for greetings, introductions, or general conversation.",
 	inputSchema: z.object({
 		timezone: z
 			.string()
 			.optional()
-			.describe("Optional timezone (e.g., 'America/New_York', 'Europe/London'). Defaults to user's local timezone."),
+			.describe(
+				"Optional timezone (e.g., 'America/New_York', 'Europe/London'). Defaults to user's local timezone.",
+			),
 	}),
 	execute: async ({ timezone }) => {
 		const now = new Date();
@@ -32,7 +35,8 @@ export const datetimeTool = tool({
 		try {
 			const date = now.toLocaleDateString("en-US", dateOptions);
 			const time = now.toLocaleTimeString("en-US", timeOptions);
-			const resolvedTimezone = timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+			const resolvedTimezone =
+				timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 			return {
 				date,
@@ -43,8 +47,14 @@ export const datetimeTool = tool({
 			};
 		} catch {
 			// Invalid timezone - fall back to local
-			const date = now.toLocaleDateString("en-US", { ...dateOptions, timeZone: undefined });
-			const time = now.toLocaleTimeString("en-US", { ...timeOptions, timeZone: undefined });
+			const date = now.toLocaleDateString("en-US", {
+				...dateOptions,
+				timeZone: undefined,
+			});
+			const time = now.toLocaleTimeString("en-US", {
+				...timeOptions,
+				timeZone: undefined,
+			});
 			const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 			return {
@@ -57,4 +67,3 @@ export const datetimeTool = tool({
 		}
 	},
 });
-

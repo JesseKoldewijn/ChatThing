@@ -75,16 +75,16 @@ function displayCoverageSummary(type, total) {
 	console.log(`\n📊 ${typeLabel} Test Coverage:`);
 	console.log("─".repeat(50));
 	console.log(
-		`  Statements: ${total.statements.covered}/${total.statements.total} (${total.statements.pct.toFixed(1)}%)`
+		`  Statements: ${total.statements.covered}/${total.statements.total} (${total.statements.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Branches:   ${total.branches.covered}/${total.branches.total} (${total.branches.pct.toFixed(1)}%)`
+		`  Branches:   ${total.branches.covered}/${total.branches.total} (${total.branches.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Functions:  ${total.functions.covered}/${total.functions.total} (${total.functions.pct.toFixed(1)}%)`
+		`  Functions:  ${total.functions.covered}/${total.functions.total} (${total.functions.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Lines:      ${total.lines.covered}/${total.lines.total} (${total.lines.pct.toFixed(1)}%)`
+		`  Lines:      ${total.lines.covered}/${total.lines.total} (${total.lines.pct.toFixed(1)}%)`,
 	);
 	console.log("─".repeat(50));
 }
@@ -124,13 +124,13 @@ function processCoverage(type) {
 		const label = labelMap[type] || `${type} coverage`;
 
 		const badge = generateBadge(label, percentage);
-		
+
 		// Write badge to .badges/ in CI, coverage/ locally
 		const inCI = isCI();
 		const badgeDir = inCI
 			? path.join(rootDir, ".badges")
 			: path.join(coverageDir);
-		
+
 		if (!fs.existsSync(badgeDir)) {
 			fs.mkdirSync(badgeDir, { recursive: true });
 		}
@@ -138,7 +138,7 @@ function processCoverage(type) {
 
 		fs.writeFileSync(badgePath, badge);
 		console.log(
-			`✅ Generated ${type} coverage badge: ${percentage.toFixed(1)}%`
+			`✅ Generated ${type} coverage badge: ${percentage.toFixed(1)}%`,
 		);
 
 		return { percentage, total };
@@ -163,14 +163,12 @@ function calculateTotalCoverage() {
 
 		if (fs.existsSync(summaryFile)) {
 			try {
-				const summary = JSON.parse(
-					fs.readFileSync(summaryFile, "utf-8")
-				);
+				const summary = JSON.parse(fs.readFileSync(summaryFile, "utf-8"));
 				summaries[type] = summary;
 			} catch (error) {
 				console.warn(
 					`⚠️  Could not load ${type} coverage summary:`,
-					error.message
+					error.message,
 				);
 			}
 		}
@@ -204,11 +202,11 @@ function calculateTotalCoverage() {
 				if (fileData[metric]) {
 					mergedCoverage[filePath][metric].total = Math.max(
 						mergedCoverage[filePath][metric].total,
-						fileData[metric].total || 0
+						fileData[metric].total || 0,
 					);
 					mergedCoverage[filePath][metric].covered = Math.max(
 						mergedCoverage[filePath][metric].covered,
-						fileData[metric].covered || 0
+						fileData[metric].covered || 0,
 					);
 				}
 			}
@@ -237,8 +235,7 @@ function calculateTotalCoverage() {
 			covered: totals.statements.covered,
 			pct:
 				totals.statements.total > 0
-					? (totals.statements.covered / totals.statements.total) *
-						100
+					? (totals.statements.covered / totals.statements.total) * 100
 					: 0,
 		},
 		branches: {
@@ -282,32 +279,32 @@ const totalCoverage = calculateTotalCoverage();
 
 if (totalCoverage) {
 	const totalPercentage = totalCoverage.lines.pct;
-	
+
 	// Display total coverage summary
 	console.log(`\n📊 Total Coverage (Union of all test types):`);
 	console.log("─".repeat(50));
 	console.log(
-		`  Statements: ${totalCoverage.statements.covered}/${totalCoverage.statements.total} (${totalCoverage.statements.pct.toFixed(1)}%)`
+		`  Statements: ${totalCoverage.statements.covered}/${totalCoverage.statements.total} (${totalCoverage.statements.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Branches:   ${totalCoverage.branches.covered}/${totalCoverage.branches.total} (${totalCoverage.branches.pct.toFixed(1)}%)`
+		`  Branches:   ${totalCoverage.branches.covered}/${totalCoverage.branches.total} (${totalCoverage.branches.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Functions:  ${totalCoverage.functions.covered}/${totalCoverage.functions.total} (${totalCoverage.functions.pct.toFixed(1)}%)`
+		`  Functions:  ${totalCoverage.functions.covered}/${totalCoverage.functions.total} (${totalCoverage.functions.pct.toFixed(1)}%)`,
 	);
 	console.log(
-		`  Lines:      ${totalCoverage.lines.covered}/${totalCoverage.lines.total} (${totalCoverage.lines.pct.toFixed(1)}%)`
+		`  Lines:      ${totalCoverage.lines.covered}/${totalCoverage.lines.total} (${totalCoverage.lines.pct.toFixed(1)}%)`,
 	);
 	console.log("─".repeat(50));
-	
+
 	const badge = generateBadge("total coverage", totalPercentage);
-	
+
 	// Write badge to .badges/ in CI, coverage/ locally
 	const inCI = isCI();
 	const badgeDir = inCI
 		? path.join(rootDir, ".badges")
 		: path.join(rootDir, "coverage");
-	
+
 	if (!fs.existsSync(badgeDir)) {
 		fs.mkdirSync(badgeDir, { recursive: true });
 	}
@@ -315,7 +312,7 @@ if (totalCoverage) {
 
 	fs.writeFileSync(badgePath, badge);
 	console.log(
-		`✅ Generated total coverage badge: ${totalPercentage.toFixed(1)}%`
+		`✅ Generated total coverage badge: ${totalPercentage.toFixed(1)}%`,
 	);
 }
 

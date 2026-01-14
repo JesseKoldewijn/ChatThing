@@ -1,6 +1,6 @@
+import { useNavigation } from "@/lib/hooks/useNavigation";
 import { useCallback } from "react";
 import { SettingsPanelUI } from "./SettingsPanel.ui";
-import { useNavigation } from "@/lib/hooks/useNavigation";
 
 export const SettingsPanel = () => {
 	const { goToSettings, goToUsage } = useNavigation();

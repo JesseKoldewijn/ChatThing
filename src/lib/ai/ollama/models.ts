@@ -1,10 +1,16 @@
-import { atom } from "nanostores";
 import { ollamaBaseUrlAtom } from "@/lib/stores/settings";
-import { fetchOllamaModels, type OllamaModel, checkOllamaAvailability } from "./api";
+import { atom } from "nanostores";
+import {
+	checkOllamaAvailability,
+	fetchOllamaModels,
+	type OllamaModel,
+} from "./api";
 
 export const ollamaModelsAtom = atom<OllamaModel[]>([]);
 export const isLoadingOllamaModelsAtom = atom<boolean>(false);
-export const ollamaStatusAtom = atom<"idle" | "checking" | "available" | "unavailable">("idle");
+export const ollamaStatusAtom = atom<
+	"idle" | "checking" | "available" | "unavailable"
+>("idle");
 
 export const fetchOllamaModelsAction = async () => {
 	const baseUrl = ollamaBaseUrlAtom.get();

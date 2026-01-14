@@ -1,6 +1,6 @@
+import { getResolvedTimezone } from "@/lib/stores/settings";
 import { tool } from "ai";
 import { z } from "zod";
-import { getResolvedTimezone } from "@/lib/stores/settings";
 
 // Open-Meteo API response types
 interface GeocodingResult {
@@ -79,7 +79,7 @@ async function geocodeLocation(location: string): Promise<{
 	longitude: number;
 } | null> {
 	const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-		location
+		location,
 	)}&count=1&language=en&format=json`;
 
 	const response = await fetch(url);
@@ -108,7 +108,7 @@ async function geocodeLocation(location: string): Promise<{
  */
 async function fetchWeather(
 	latitude: number,
-	longitude: number
+	longitude: number,
 ): Promise<{
 	temperature: number;
 	feelsLike: number;
@@ -136,15 +136,19 @@ async function fetchWeather(
 }
 
 export const weatherTool = tool({
-	description: "Get the current weather in a location. Use ONLY if the user EXPLICITLY asks about weather, forecast, or temperature. NEVER use this for general conversation.",
+	description:
+		"Get the current weather in a location. Use ONLY if the user EXPLICITLY asks about weather, forecast, or temperature. NEVER use this for general conversation.",
 	inputSchema: z.object({
 		location: z
 			.string()
 			.optional()
-			.describe("The city or location to get the weather for. If not provided, uses the user's timezone location."),
+			.describe(
+				"The city or location to get the weather for. If not provided, uses the user's timezone location.",
+			),
 	}),
 	execute: async ({ location: providedLocation }) => {
-		const location = providedLocation || getCityFromTimezone(getResolvedTimezone());
+		const location =
+			providedLocation || getCityFromTimezone(getResolvedTimezone());
 		try {
 			// First, geocode the location
 			const geo = await geocodeLocation(location);
@@ -175,9 +179,7 @@ export const weatherTool = tool({
 		} catch (error) {
 			return {
 				error:
-					error instanceof Error
-						? error.message
-						: "Failed to fetch weather",
+					error instanceof Error ? error.message : "Failed to fetch weather",
 				location,
 			};
 		}

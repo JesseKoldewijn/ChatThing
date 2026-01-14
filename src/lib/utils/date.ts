@@ -12,7 +12,7 @@ export const formatInTimezone = (
 	options: {
 		includeTime?: boolean;
 		compact?: boolean;
-	} = { includeTime: true, compact: true }
+	} = { includeTime: true, compact: true },
 ): string => {
 	const date = typeof timestamp === "number" ? new Date(timestamp) : timestamp;
 
@@ -31,7 +31,10 @@ export const formatInTimezone = (
 		// We want to ensure it looks like DD/MM/YY HH:mm
 		return formatter.format(date).replace(",", "");
 	} catch (error) {
-		console.error("Error formatting date in timezone:", error, { timestamp, timezone });
+		console.error("Error formatting date in timezone:", error, {
+			timestamp,
+			timezone,
+		});
 		// Fallback to local time if timezone is invalid
 		return date.toLocaleString();
 	}
@@ -43,10 +46,10 @@ export const formatInTimezone = (
  */
 export const getStartOfDayInTimezone = (
 	timestamp: number,
-	timezone: string
+	timezone: string,
 ): number => {
 	const date = new Date(timestamp);
-	
+
 	// Use Intl to get parts of the date in the target timezone
 	const formatter = new Intl.DateTimeFormat("en-US", {
 		timeZone: timezone === "auto" ? undefined : timezone,
@@ -56,12 +59,12 @@ export const getStartOfDayInTimezone = (
 		hour: "numeric",
 		minute: "numeric",
 		second: "numeric",
-		hour12: false
+		hour12: false,
 	});
 
 	const parts = formatter.formatToParts(date);
-	const findPart = (type: string) => parts.find(p => p.type === type)?.value;
-	
+	const findPart = (type: string) => parts.find((p) => p.type === type)?.value;
+
 	const year = parseInt(findPart("year") || "0");
 	const month = parseInt(findPart("month") || "1");
 	const day = parseInt(findPart("day") || "1");
@@ -70,7 +73,7 @@ export const getStartOfDayInTimezone = (
 	// 1. Create a string in ISO format for that date's midnight
 	// 2. We can't easily parse this back into UTC without a library
 	// But we can approximate by getting the offset.
-	
+
 	// Simplified but better: just return the date parts as a UTC date at midnight
 	// This is what most calendars expect (the "logical" day)
 	return Date.UTC(year, month - 1, day, 0, 0, 0, 0);
@@ -90,7 +93,9 @@ export const getWeekdays = (locale = "en-US"): string[] => {
 	const baseDate = new Date(Date.UTC(2017, 0, 1)); // Sunday
 	const weekdays = [];
 	for (let i = 0; i < 7; i++) {
-		const dayName = new Intl.DateTimeFormat(locale, { weekday: "narrow" }).format(baseDate);
+		const dayName = new Intl.DateTimeFormat(locale, {
+			weekday: "narrow",
+		}).format(baseDate);
 		weekdays.push(dayName);
 		baseDate.setUTCDate(baseDate.getUTCDate() + 1);
 	}
@@ -105,7 +110,7 @@ export const getMonths = (locale = "en-US"): string[] => {
 	const months = [];
 	for (let i = 0; i < 12; i++) {
 		months.push(
-			new Intl.DateTimeFormat(locale, { month: "long" }).format(baseDate)
+			new Intl.DateTimeFormat(locale, { month: "long" }).format(baseDate),
 		);
 		baseDate.setUTCMonth(baseDate.getUTCMonth() + 1);
 	}
@@ -118,7 +123,7 @@ export const getMonths = (locale = "en-US"): string[] => {
 export const formatDateByGranularity = (
 	timestamp: number | Date,
 	timezone: string,
-	granularity: string
+	granularity: string,
 ): string => {
 	const date = typeof timestamp === "number" ? new Date(timestamp) : timestamp;
 	try {
@@ -167,7 +172,7 @@ export const formatDateByGranularity = (
  */
 export const getFriendlyDate = (
 	timestamp: number | Date,
-	timezone: string
+	timezone: string,
 ): string => {
 	const date = typeof timestamp === "number" ? new Date(timestamp) : timestamp;
 	try {

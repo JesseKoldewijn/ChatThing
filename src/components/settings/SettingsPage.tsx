@@ -1,87 +1,82 @@
-import { useCallback, useState, useMemo, useEffect } from "react";
-import { useStore } from "@nanostores/react";
-import { SettingsPageUI } from "./SettingsPage.ui";
-import {
-	appearanceAtom,
-	setAppearance,
-	themeAtom,
-	setTheme,
-	archiveThresholdAtom,
-	setArchiveThreshold,
-	temperatureUnitAtom,
-	setTemperatureUnit,
-	timezoneAtom,
-	setTimezone,
-	getSystemTimezone,
-	providerTypeAtom,
-	setProviderType,
-	masterPasswordAtom,
-	setMasterPassword,
-	encryptedOpenRouterApiKeyAtom,
-	setOpenRouterApiKey,
-	encryptedGoogleApiKeyAtom,
-	setGoogleApiKey,
-	encryptedOllamaApiKeyAtom,
-	setOllamaApiKey,
-	openRouterModelAtom, 
-	setOpenRouterModel,
-	googleModelAtom,
-	setGoogleModel,
-	ollamaModelAtom,
-	setOllamaModel,
-	ollamaBaseUrlAtom,
-	setOllamaBaseUrl,
-	getDecryptedOpenRouterApiKey,
-	getDecryptedGoogleApiKey,
-	getDecryptedOllamaApiKey,
-	resetSecuritySettings,
-	isLockedAtom,
-	PROVIDER_OLLAMA,
-} from "@/lib/stores/settings";
-import type { 
-	Theme, 
-	Appearance, 
-	ArchiveThreshold, 
-	TemperatureUnit, 
-	TimezonePreference 
-} from "@/lib/stores/settings";
-import { type ProviderType } from "@/lib/ai/constants";
-import {
-	conversationsAtom,
-	exportConversations,
-	importConversations,
-	clearAllConversations,
-	cleanupDeletedConversations,
-	runAutoArchive,
-	type Conversation,
-} from "@/lib/stores/conversations";
-import { useNavigation } from "@/lib/hooks/useNavigation";
-import {
-	showSuccess,
-	showError,
-	showInfo,
-} from "@/lib/stores/notifications";
-import { confirmAction } from "@/lib/stores/confirmation";
-import {
-	fetchOpenRouterModels,
-	openRouterModelsAtom,
-	isLoadingModelsAtom,
-} from "@/lib/ai/open-router/models";
+import type { ProviderType } from "@/lib/ai/constants";
 import {
 	fetchGoogleModels,
 	googleModelsAtom,
 	isLoadingGoogleModelsAtom,
 } from "@/lib/ai/google/models";
-import {
-	pullOllamaModel,
-	type PullProgress,
-} from "@/lib/ai/ollama/api";
+import { type PullProgress, pullOllamaModel } from "@/lib/ai/ollama/api";
 import {
 	fetchOllamaModelsAction,
-	ollamaModelsAtom,
 	isLoadingOllamaModelsAtom,
+	ollamaModelsAtom,
 	ollamaStatusAtom,
 } from "@/lib/ai/ollama/models";
+import {
+	fetchOpenRouterModels,
+	isLoadingModelsAtom,
+	openRouterModelsAtom,
+} from "@/lib/ai/open-router/models";
+import { useNavigation } from "@/lib/hooks/useNavigation";
+import { confirmAction } from "@/lib/stores/confirmation";
+import {
+	type Conversation,
+	cleanupDeletedConversations,
+	clearAllConversations,
+	conversationsAtom,
+	exportConversations,
+	importConversations,
+	runAutoArchive,
+} from "@/lib/stores/conversations";
+import { showError, showInfo, showSuccess } from "@/lib/stores/notifications";
+import type {
+	Appearance,
+	ArchiveThreshold,
+	TemperatureUnit,
+	Theme,
+	TimezonePreference,
+} from "@/lib/stores/settings";
+import {
+	appearanceAtom,
+	archiveThresholdAtom,
+	encryptedGoogleApiKeyAtom,
+	encryptedOllamaApiKeyAtom,
+	encryptedOpenRouterApiKeyAtom,
+	experimentsAtom,
+	getDecryptedGoogleApiKey,
+	getDecryptedOllamaApiKey,
+	getDecryptedOpenRouterApiKey,
+	getSystemTimezone,
+	googleModelAtom,
+	isLockedAtom,
+	masterPasswordAtom,
+	ollamaBaseUrlAtom,
+	ollamaModelAtom,
+	openRouterModelAtom,
+	PROVIDER_OLLAMA,
+	providerTypeAtom,
+	resetSecuritySettings,
+	setAppearance,
+	setArchiveThreshold,
+	setGoogleApiKey,
+	setGoogleModel,
+	setMasterPassword,
+	setOllamaApiKey,
+	setOllamaBaseUrl,
+	setOllamaModel,
+	setOpenRouterApiKey,
+	setOpenRouterModel,
+	setProviderType,
+	setTemperatureUnit,
+	setTheme,
+	setTimezone,
+	temperatureUnitAtom,
+	themeAtom,
+	timezoneAtom,
+	toggleExperiment,
+} from "@/lib/stores/settings";
+import { useStore } from "@nanostores/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { SettingsPageUI } from "./SettingsPage.ui";
 
 const EMPTY_ARRAY: Conversation[] = [];
 const DEFAULT_THRESHOLD: ArchiveThreshold = { value: 2, unit: "days" };
@@ -116,26 +111,34 @@ export const SettingsPage = () => {
 	const ollamaModels = useStore(ollamaModelsAtom);
 	const isLoadingOllamaModels = useStore(isLoadingOllamaModelsAtom);
 	const ollamaStatus = useStore(ollamaStatusAtom);
+	const experiments = useStore(experimentsAtom);
 	const [isImporting, setIsImporting] = useState(false);
 	const [pullProgress, setPullProgress] = useState<PullProgress | null>(null);
 	const [isPulling, setIsPulling] = useState(false);
 
-	const [unlockedOpenRouterApiKey, setUnlockedOpenRouterApiKey] = useState<string | null>(null);
-	const [unlockedGoogleApiKey, setUnlockedGoogleApiKey] = useState<string | null>(null);
-	const [unlockedOllamaApiKey, setUnlockedOllamaApiKey] = useState<string | null>(null);
+	const [unlockedOpenRouterApiKey, setUnlockedOpenRouterApiKey] = useState<
+		string | null
+	>(null);
+	const [unlockedGoogleApiKey, setUnlockedGoogleApiKey] = useState<
+		string | null
+	>(null);
+	const [unlockedOllamaApiKey, setUnlockedOllamaApiKey] = useState<
+		string | null
+	>(null);
 
 	// Ensure deterministic values during hydration by using defaults if not mounted
 	const currentAppearance = hasMounted ? rawAppearance : "system";
 	const currentTheme = hasMounted ? rawTheme : "default";
 	const conversations = hasMounted ? rawConversations : EMPTY_ARRAY;
-	const archiveThreshold = hasMounted
-		? rawArchiveThreshold
-		: DEFAULT_THRESHOLD;
+	const archiveThreshold = hasMounted ? rawArchiveThreshold : DEFAULT_THRESHOLD;
 	const temperatureUnit = hasMounted ? rawTemperatureUnit : "auto";
 	const timezone = hasMounted ? rawTimezone : "auto";
 	const providerType = hasMounted ? rawProviderType : PROVIDER_OLLAMA;
+	const currentExperiments = hasMounted ? experiments : {};
 	const masterPassword = hasMounted ? rawMasterPassword : null;
-	const encryptedOpenRouterApiKey = hasMounted ? rawEncryptedOpenRouterApiKey : null;
+	const encryptedOpenRouterApiKey = hasMounted
+		? rawEncryptedOpenRouterApiKey
+		: null;
 	const encryptedGoogleApiKey = hasMounted ? rawEncryptedGoogleApiKey : null;
 	const encryptedOllamaApiKey = hasMounted ? rawEncryptedOllamaApiKey : null;
 	const openRouterModel = hasMounted
@@ -158,7 +161,7 @@ export const SettingsPage = () => {
 					setUnlockedOpenRouterApiKey(orKey);
 					setUnlockedGoogleApiKey(gKey);
 					setUnlockedOllamaApiKey(olKey);
-					
+
 					// Fetch models once keys are unlocked
 					if (orKey) fetchOpenRouterModels();
 					if (gKey) fetchGoogleModels();
@@ -214,12 +217,10 @@ export const SettingsPage = () => {
 			return { activeCount: 0, archivedCount: 0, deletedCount: 0 };
 		}
 		return {
-			activeCount: conversations.filter((c) => c.status === "active")
-				.length,
+			activeCount: conversations.filter((c) => c.status === "active").length,
 			archivedCount: conversations.filter((c) => c.status === "archived")
 				.length,
-			deletedCount: conversations.filter((c) => c.status === "deleted")
-				.length,
+			deletedCount: conversations.filter((c) => c.status === "deleted").length,
 		};
 	}, [conversations, hasMounted]);
 
@@ -243,6 +244,10 @@ export const SettingsPage = () => {
 		setProviderType(type);
 	}, []);
 
+	const handleToggleExperiment = useCallback((id: string) => {
+		toggleExperiment(id);
+	}, []);
+
 	const handleMasterPasswordChange = useCallback((password: string | null) => {
 		setMasterPassword(password);
 	}, []);
@@ -250,7 +255,8 @@ export const SettingsPage = () => {
 	const handleResetSecurity = useCallback(() => {
 		confirmAction({
 			title: "Reset Security Settings",
-			message: "Are you sure you want to reset your master password? All stored API keys will be deleted and you will need to re-enter them with a new password.",
+			message:
+				"Are you sure you want to reset your master password? All stored API keys will be deleted and you will need to re-enter them with a new password.",
 			confirmText: "Reset Everything",
 			variant: "destructive",
 			onConfirm: () => {
@@ -307,7 +313,7 @@ export const SettingsPage = () => {
 		} catch (error) {
 			console.error("Failed to pull model:", error);
 			showError(
-				`Failed to pull model: ${error instanceof Error ? error.message : String(error)}`
+				`Failed to pull model: ${error instanceof Error ? error.message : String(error)}`,
 			);
 		} finally {
 			setIsPulling(false);
@@ -323,12 +329,12 @@ export const SettingsPage = () => {
 				const archivedCount = runAutoArchive();
 				if (archivedCount > 0) {
 					showInfo(
-						`${archivedCount} conversation${archivedCount !== 1 ? "s" : ""} were archived based on the new threshold.`
+						`${archivedCount} conversation${archivedCount !== 1 ? "s" : ""} were archived based on the new threshold.`,
 					);
 				}
 			}
 		},
-		[]
+		[],
 	);
 
 	const handleExport = useCallback(() => {
@@ -342,7 +348,7 @@ export const SettingsPage = () => {
 				const result = await importConversations(file, mode);
 				if (result.success) {
 					showSuccess(
-						`Successfully imported ${result.imported} conversation${result.imported !== 1 ? "s" : ""}.`
+						`Successfully imported ${result.imported} conversation${result.imported !== 1 ? "s" : ""}.`,
 					);
 				} else {
 					showError(`Import failed: ${result.error}`);
@@ -351,13 +357,14 @@ export const SettingsPage = () => {
 				setIsImporting(false);
 			}
 		},
-		[]
+		[],
 	);
 
 	const handleClearAll = useCallback(() => {
 		confirmAction({
 			title: "Delete All Conversations",
-			message: "Are you sure you want to delete ALL conversations? This includes active, archived, and deleted chats. This cannot be undone.",
+			message:
+				"Are you sure you want to delete ALL conversations? This includes active, archived, and deleted chats. This cannot be undone.",
 			confirmText: "Delete Everything",
 			variant: "destructive",
 			onConfirm: () => {
@@ -375,7 +382,9 @@ export const SettingsPage = () => {
 			variant: "destructive",
 			onConfirm: async () => {
 				const cleaned = await cleanupDeletedConversations();
-				showSuccess(`${cleaned} conversation${cleaned !== 1 ? "s" : ""} permanently deleted.`);
+				showSuccess(
+					`${cleaned} conversation${cleaned !== 1 ? "s" : ""} permanently deleted.`,
+				);
 			},
 		});
 	}, [deletedCount]);
@@ -418,12 +427,14 @@ export const SettingsPage = () => {
 			archivedCount={archivedCount}
 			deletedCount={deletedCount}
 			archiveThreshold={archiveThreshold}
+			experiments={currentExperiments}
 			isImporting={isImporting}
 			onAppearanceChange={handleAppearanceChange}
 			onThemeChange={handleThemeChange}
 			onTemperatureUnitChange={handleTemperatureUnitChange}
 			onTimezoneChange={handleTimezoneChange}
 			onProviderTypeChange={handleProviderTypeChange}
+			onToggleExperiment={handleToggleExperiment}
 			onMasterPasswordChange={handleMasterPasswordChange}
 			onResetSecurity={handleResetSecurity}
 			onOpenRouterApiKeyChange={handleOpenRouterApiKeyChange}

@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getAIManager, clearAIManagerCache } from "./index";
-import { 
-	providerTypeAtom, 
-	ollamaModelAtom, 
+import {
 	ollamaBaseUrlAtom,
+	ollamaModelAtom,
 	PROVIDER_OLLAMA,
-	PROVIDER_PROMPT_API
+	PROVIDER_PROMPT_API,
+	providerTypeAtom,
 } from "@/lib/stores/settings";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { clearAIManagerCache, getAIManager } from "./index";
 
 // Mock the providers
 vi.mock("./ollama/provider", () => ({
-	OllamaProvider: vi.fn().mockImplementation(function() {
+	OllamaProvider: vi.fn().mockImplementation(function () {
 		return {
 			type: PROVIDER_OLLAMA,
 			prompt: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock("./ollama/provider", () => ({
 }));
 
 vi.mock("./prompt-api/provider", () => ({
-	PromptApiProvider: vi.fn().mockImplementation(function() {
+	PromptApiProvider: vi.fn().mockImplementation(function () {
 		return {
 			type: PROVIDER_PROMPT_API,
 			prompt: vi.fn(),
@@ -31,7 +31,7 @@ describe("AI Manager (index)", () => {
 	beforeEach(() => {
 		clearAIManagerCache();
 		vi.clearAllMocks();
-		
+
 		// Reset atoms
 		providerTypeAtom.set(PROVIDER_OLLAMA);
 		ollamaModelAtom.set("test-model");
@@ -47,20 +47,20 @@ describe("AI Manager (index)", () => {
 
 	it("should return a new manager if config changes", async () => {
 		const manager1 = await getAIManager();
-		
+
 		// Change model
 		ollamaModelAtom.set("new-model");
-		
+
 		const manager2 = await getAIManager();
 		expect(manager1).not.toBe(manager2);
 	});
 
 	it("should return a new manager if provider type changes", async () => {
 		const manager1 = await getAIManager();
-		
+
 		// Change provider
 		providerTypeAtom.set(PROVIDER_PROMPT_API);
-		
+
 		const manager2 = await getAIManager();
 		expect(manager1).not.toBe(manager2);
 		expect(manager2.providerType).toBe(PROVIDER_PROMPT_API);
@@ -70,7 +70,7 @@ describe("AI Manager (index)", () => {
 		const manager1 = await getAIManager();
 		clearAIManagerCache();
 		const manager2 = await getAIManager();
-		
+
 		expect(manager1).not.toBe(manager2);
 	});
 });

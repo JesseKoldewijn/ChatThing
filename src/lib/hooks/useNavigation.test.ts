@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock TanStack Router
 const mockNavigate = vi.fn();
@@ -9,6 +9,7 @@ const mockSearch = {
 	sidebar: false,
 	archived: false,
 	deleted: false,
+	inactive: false,
 	forceCompat: false,
 };
 
@@ -22,7 +23,7 @@ vi.mock("@tanstack/react-router", () => ({
 	})),
 }));
 
-import { useNavigation, useChatSearchParams } from "./useNavigation";
+import { useChatSearchParams, useNavigation } from "./useNavigation";
 
 describe("useNavigation", () => {
 	beforeEach(() => {
@@ -114,6 +115,7 @@ describe("useChatSearchParams", () => {
 			sidebar: false,
 			archived: false,
 			deleted: false,
+			inactive: false,
 			forceCompat: false,
 		});
 	});
@@ -141,6 +143,12 @@ describe("useChatSearchParams", () => {
 			mockSearch.deleted = true;
 			const { result } = renderHook(() => useChatSearchParams());
 			expect(result.current.showDeleted).toBe(true);
+		});
+
+		it("should return showInactive state", () => {
+			mockSearch.inactive = true;
+			const { result } = renderHook(() => useChatSearchParams());
+			expect(result.current.showInactive).toBe(true);
 		});
 
 		it("should return forceCompat state", () => {
@@ -205,7 +213,7 @@ describe("useChatSearchParams", () => {
 				expect.objectContaining({
 					search: expect.any(Function),
 					replace: true,
-				})
+				}),
 			);
 		});
 	});
@@ -219,6 +227,28 @@ describe("useChatSearchParams", () => {
 			});
 
 			expect(mockNavigate).toHaveBeenCalled();
+		});
+
+		it("should clear archived, deleted, and inactive params when toggling sidebar off", () => {
+			mockSearch.sidebar = true;
+			mockSearch.archived = true;
+			mockSearch.deleted = true;
+			mockSearch.inactive = true;
+
+			const { result } = renderHook(() => useChatSearchParams());
+
+			act(() => {
+				result.current.toggleSidebar();
+			});
+
+			// Get the search function passed to navigate
+			const searchFn = mockNavigate.mock.calls[0][0].search;
+			const newSearch = searchFn(mockSearch);
+
+			expect(newSearch.sidebar).toBeUndefined();
+			expect(newSearch.archived).toBeUndefined();
+			expect(newSearch.deleted).toBeUndefined();
+			expect(newSearch.inactive).toBeUndefined();
 		});
 	});
 
@@ -234,8 +264,30 @@ describe("useChatSearchParams", () => {
 				expect.objectContaining({
 					search: expect.any(Function),
 					replace: true,
-				})
+				}),
 			);
+		});
+
+		it("should clear archived, deleted, and inactive params when closing sidebar", () => {
+			mockSearch.sidebar = true;
+			mockSearch.archived = true;
+			mockSearch.deleted = true;
+			mockSearch.inactive = true;
+
+			const { result } = renderHook(() => useChatSearchParams());
+
+			act(() => {
+				result.current.setSidebar(false);
+			});
+
+			// Get the search function passed to navigate
+			const searchFn = mockNavigate.mock.calls[0][0].search;
+			const newSearch = searchFn(mockSearch);
+
+			expect(newSearch.sidebar).toBeUndefined();
+			expect(newSearch.archived).toBeUndefined();
+			expect(newSearch.deleted).toBeUndefined();
+			expect(newSearch.inactive).toBeUndefined();
 		});
 	});
 
@@ -287,4 +339,3 @@ describe("useChatSearchParams", () => {
 		});
 	});
 });
-

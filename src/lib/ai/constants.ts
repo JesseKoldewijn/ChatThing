@@ -3,10 +3,10 @@ export const PROVIDER_GOOGLE = "google" as const;
 export const PROVIDER_OLLAMA = "ollama" as const;
 export const PROVIDER_PROMPT_API = "prompt-api" as const;
 
-export type ProviderType = 
-	| typeof PROVIDER_OPEN_ROUTER 
-	| typeof PROVIDER_GOOGLE 
-	| typeof PROVIDER_OLLAMA 
+export type ProviderType =
+	| typeof PROVIDER_OPEN_ROUTER
+	| typeof PROVIDER_GOOGLE
+	| typeof PROVIDER_OLLAMA
 	| typeof PROVIDER_PROMPT_API;
 
 interface ProviderInfo {

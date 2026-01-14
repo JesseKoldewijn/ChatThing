@@ -1,58 +1,20 @@
-import {
-	type ModelMessage as CoreMessage,
-	streamText,
-	generateText,
-	type LanguageModel,
-} from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { type Message } from "@/lib/stores/chat";
-import { weatherTool } from "../tools/weather";
+import { generateText, type LanguageModel, streamText } from "ai";
 import { datetimeTool } from "../tools/datetime";
-import { type AIProvider, type PromptOptions, type ProviderType, PROVIDER_GOOGLE, type StreamPart } from "../types";
+import { weatherTool } from "../tools/weather";
+import {
+	type AIProvider,
+	type PromptOptions,
+	PROVIDER_GOOGLE,
+	type ProviderType,
+	type StreamPart,
+} from "../types";
+import { convertHistoryToMessages, stripDataUrlPrefix } from "../utils";
 
 export interface GoogleSettings {
 	apiKey: string;
 	model?: string;
 }
-
-/**
- * Strip data URL prefix if present
- * e.g. "data:image/jpeg;base64,..." -> "..."
- */
-const stripDataUrlPrefix = (data: string): string => {
-	if (data.startsWith("data:")) {
-		const base64Index = data.indexOf(";base64,");
-		if (base64Index !== -1) {
-			return data.slice(base64Index + 8);
-		}
-	}
-	return data;
-};
-
-const convertHistoryToMessages = (history?: Message[]): CoreMessage[] => {
-	if (!history || history.length === 0) return [];
-
-	return history
-		.filter((msg) => msg.role !== "system")
-		.map((msg): CoreMessage => {
-			if (msg.role === "user") {
-				if (msg.images && msg.images.length > 0) {
-					return {
-						role: "user",
-						content: [
-							{ type: "text", text: msg.content },
-							...msg.images.map((img) => ({
-								type: "image" as const,
-								image: stripDataUrlPrefix(img.data),
-							})),
-						],
-					};
-				}
-				return { role: "user", content: msg.content };
-			}
-			return { role: "assistant", content: msg.content };
-		});
-};
 
 export class GoogleProvider implements AIProvider {
 	readonly type: ProviderType = PROVIDER_GOOGLE;
@@ -72,16 +34,16 @@ export class GoogleProvider implements AIProvider {
 
 	async prompt(
 		prompt: string,
-		options?: PromptOptions
+		options?: PromptOptions,
 	): Promise<AsyncIterable<StreamPart>> {
-		const messages: CoreMessage[] = [
+		const messages = [
 			...convertHistoryToMessages(options?.history),
 			{
-				role: "user",
+				role: "user" as const,
 				content:
 					options?.images && options.images.length > 0
 						? [
-								{ type: "text", text: prompt },
+								{ type: "text" as const, text: prompt },
 								...options.images.map((img) => ({
 									type: "image" as const,
 									image: stripDataUrlPrefix(img.data),
@@ -94,22 +56,27 @@ export class GoogleProvider implements AIProvider {
 		const result = streamText({
 			model: this.model,
 			messages,
-			tools: {
-				weather: weatherTool,
-				datetime: datetimeTool,
-			},
-			// @ts-expect-error - maxSteps is available when tools are used
-			maxSteps: 5,
+			...(options?.toolsEnabled && {
+				tools: {
+					weather: weatherTool,
+					datetime: datetimeTool,
+				},
+				maxSteps: 5,
+			}),
 			system: `You are a helpful AI assistant. 
 Current Date and Time: ${new Date().toLocaleString()}
 
-CRITICAL TOOL RULES:
+${
+	options?.toolsEnabled
+		? `CRITICAL TOOL RULES:
 1. Use tools ONLY when specifically requested or absolutely necessary to answer a factual question.
 2. datetime tool: ONLY use if the user explicitly asks for the current time or date. DO NOT use it for greetings, general conversation, or to "timestamp" your own responses.
 3. weather tool: ONLY use if the user explicitly asks about weather or temperature.
 4. If you need to know about the conversation history, refer to the messages provided in the context; do NOT attempt to use tools to fetch previous messages. 
 5. Do NOT hallucinate tools that are not provided in the toolset.
-6. If no tool is strictly required to answer the user, respond naturally without any tools.`,
+6. If no tool is strictly required to answer the user, respond naturally without any tools.`
+		: "Respond naturally to the user."
+}`,
 		});
 
 		return (async function* () {
@@ -120,11 +87,16 @@ CRITICAL TOOL RULES:
 							yield { type: "text", content: part.text };
 							break;
 						case "tool-call":
-							yield { 
-								type: "tool-call", 
-								toolName: part.toolName, 
+							yield {
+								type: "tool-call",
+								toolName: part.toolName,
 								toolCallId: part.toolCallId,
-								args: "args" in part ? part.args : ("input" in part ? part.input : {})
+								args:
+									"args" in part
+										? part.args
+										: "input" in part
+											? part.input
+											: {},
 							};
 							break;
 						case "error":
@@ -167,7 +139,7 @@ Title:`,
 				const lastSpace = truncated.lastIndexOf(" ");
 				title =
 					lastSpace > MAX_TITLE_LENGTH * 0.6
-						? truncated.slice(0, lastSpace)
+						? truncated.slice(0, lastSpace) + "..."
 						: truncated.trim() + "...";
 			}
 

@@ -1,8 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-	registerServiceWorker,
-	unregisterServiceWorkers,
-} from "./registerSW";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { registerServiceWorker, unregisterServiceWorkers } from "./registerSW";
 
 describe("registerServiceWorker", () => {
 	beforeEach(() => {
@@ -28,7 +25,7 @@ describe("registerServiceWorker", () => {
 		await registerServiceWorker();
 
 		expect(consoleSpy).toHaveBeenCalledWith(
-			"[PWA] Service workers not supported"
+			"[PWA] Service workers not supported",
 		);
 		consoleSpy.mockRestore();
 	});
@@ -217,16 +214,19 @@ describe("registerServiceWorker", () => {
 
 		// Simulate state change to installed
 		if (stateChangeHandler) {
-			Object.defineProperty(mockWorker, "state", { value: "installed", writable: true });
+			Object.defineProperty(mockWorker, "state", {
+				value: "installed",
+				writable: true,
+			});
 			(stateChangeHandler as () => void)();
 		}
 
 		expect(consoleSpy).toHaveBeenCalledWith(
-			"[PWA] New service worker installing..."
+			"[PWA] New service worker installing...",
 		);
 		expect(mockWorker.addEventListener).toHaveBeenCalledWith(
 			"statechange",
-			expect.any(Function)
+			expect.any(Function),
 		);
 
 		consoleSpy.mockRestore();
@@ -297,7 +297,7 @@ describe("registerServiceWorker", () => {
 
 		expect(consoleErrorSpy).toHaveBeenCalledWith(
 			"[PWA] Service worker registration failed:",
-			expect.any(Error)
+			expect.any(Error),
 		);
 
 		consoleErrorSpy.mockRestore();
@@ -339,10 +339,9 @@ describe("unregisterServiceWorkers", () => {
 		expect(mockUnregister1).toHaveBeenCalled();
 		expect(mockUnregister2).toHaveBeenCalled();
 		expect(consoleSpy).toHaveBeenCalledWith(
-			"[PWA] All service workers unregistered"
+			"[PWA] All service workers unregistered",
 		);
 
 		consoleSpy.mockRestore();
 	});
 });
-
